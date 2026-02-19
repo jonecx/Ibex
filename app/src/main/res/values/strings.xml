@@ -1,3 +1,43 @@
 <resources>
     <string name="app_name">Ibex</string>
+    <string name="permission_title">Storage Permission Required</string>
+    <string name="permission_description">Ibex needs access to your storage to browse and manage files.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="navigate_up">Navigate up</string>
+    <string name="select_file_hint">Select a file to view details</string>
+    <string name="empty_folder">This folder is empty</string>
+    <string name="error_loading">Error loading files</string>
+    <string name="internal_storage">Internal Storage</string>
+    <string name="sd_card">SD Card</string>
+    <string name="items_count">%1$d items</string>
+    <!-- Home screen -->
+    <string name="section_local">Local</string>
+    <string name="section_remote">Remote</string>
+    <string name="source_storage">Storage</string>
+    <string name="source_downloads">Downloads</string>
+    <string name="source_images">Images</string>
+    <string name="source_videos">Videos</string>
+    <string name="source_audio">Audio</string>
+    <string name="source_documents">Documents</string>
+    <string name="source_apps">Apps</string>
+    <string name="source_recent">Recent</string>
+    <string name="source_analysis">Analysis</string>
+    <string name="source_trash">Trash</string>
+    <string name="source_cloud">Cloud</string>
+    <string name="source_smb">SMB/CIFS</string>
+    <string name="source_ftp">FTP</string>
+    <string name="coming_soon">Coming soon</string>
+    <!-- File loading -->
+    <string name="unknown_file">Unknown</string>
+    <string name="failed_to_load_files">Failed to load files</string>
+    <!-- Common UI -->
+    <string name="unknown_error">Unknown error occurred</string>
+    <string name="retry">Retry</string>
+    <!-- File details -->
+    <string name="detail_type">Type</string>
+    <string name="detail_size">Size</string>
+    <string name="detail_items">Items</string>
+    <string name="detail_modified">Modified</string>
+    <string name="detail_mime_type">MIME Type</string>
+    <string name="detail_path">Path</string>
 </resources>
