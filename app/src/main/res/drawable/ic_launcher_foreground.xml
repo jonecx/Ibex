@@ -1,0 +1,56 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Ibex head silhouette - centered in safe zone (18-90) -->
+    <!-- Left horn with ridges -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M38,52 Q32,45 28,35 Q24,25 22,18 Q21,15 23,14 Q25,13 27,16 Q30,22 33,30 Q36,38 40,46 Z" />
+    <!-- Right horn with ridges -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M70,52 Q76,45 80,35 Q84,25 86,18 Q87,15 85,14 Q83,13 81,16 Q78,22 75,30 Q72,38 68,46 Z" />
+    <!-- Head shape -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,28 
+            Q38,30 36,50 
+            Q35,55 38,58 
+            L40,58 Q42,54 44,54 Q46,54 47,56 
+            L47,58 
+            Q50,60 54,62 
+            Q58,60 61,58 
+            L61,56 Q62,54 64,54 Q66,54 68,58 
+            L70,58 Q73,55 72,50 
+            Q70,30 54,28 Z" />
+    <!-- Left ear -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M38,50 Q34,48 32,52 Q34,56 38,54 Z" />
+    <!-- Right ear -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M70,50 Q74,48 76,52 Q74,56 70,54 Z" />
+    <!-- Left eye -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,48 Q44,46 46,45 Q48,46 47,48 Q46,50 45,48 Z" />
+    <!-- Right eye -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,48 Q62,46 64,45 Q66,46 65,48 Q64,50 63,48 Z" />
+    <!-- Nose -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,54 Q54,52 56,54 Q55,56 54,57 Q53,56 52,54 Z" />
+    <!-- Beard -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M52,62 Q54,68 56,62 Q55,65 54,70 Q53,65 52,62 Z" />
+    <!-- Neck -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M42,58 Q40,70 38,85 Q48,88 54,88 Q60,88 70,85 Q68,70 66,58 Q58,65 54,65 Q50,65 42,58 Z" />
+</vector>
