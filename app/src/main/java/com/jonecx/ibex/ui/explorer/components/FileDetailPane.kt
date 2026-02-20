@@ -117,7 +117,6 @@ fun FileDetailPane(
                             FileIcon(
                                 fileItem = fileItem,
                                 modifier = Modifier.size(80.dp),
-                                showThumbnail = false,
                             )
                         }
                     }
