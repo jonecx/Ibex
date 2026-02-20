@@ -42,6 +42,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -77,6 +78,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+    
+    // DataStore
+    implementation(libs.datastore.preferences)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
