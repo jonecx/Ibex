@@ -7,13 +7,14 @@ import android.provider.MediaStore
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
 class TrashRepository(
     private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : FileRepository {
 
     override fun getFiles(path: String): Flow<List<FileItem>> = flow {
@@ -24,7 +25,7 @@ class TrashRepository(
         }
 
         emit(trashedFiles.sortedByDescending { it.lastModified })
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(ioDispatcher)
 
     override fun getStorageRoots(): Flow<List<FileItem>> = flow {
         emit(emptyList())

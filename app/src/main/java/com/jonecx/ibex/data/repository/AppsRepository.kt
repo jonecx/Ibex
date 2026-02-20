@@ -6,7 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -14,12 +14,13 @@ import java.io.File
 
 class AppsRepository(
     private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : FileRepository {
 
     override fun getFiles(path: String): Flow<List<FileItem>> = flow {
         val apps = getInstalledApps()
         emit(apps)
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(ioDispatcher)
 
     override fun getStorageRoots(): Flow<List<FileItem>> = flow {
         emit(emptyList())

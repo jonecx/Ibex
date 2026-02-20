@@ -4,36 +4,43 @@ import android.webkit.MimeTypeMap
 import com.jonecx.ibex.data.model.FileType
 import java.io.File
 
+/**
+ * Utility object for determining file types and mime types.
+ * Uses Android's MimeTypeMap for mime type detection.
+ */
 object FileTypeUtils {
 
-    private val imageExtensions = setOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "svg")
-    private val videoExtensions = setOf("mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v", "3gp")
-    private val audioExtensions = setOf("mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus")
-    private val documentExtensions = setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "ods", "odp", "csv", "json", "xml", "html", "md")
-    private val archiveExtensions = setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz")
-
+    /**
+     * Determines the FileType for a given file using MimeTypeMap.
+     */
     fun getFileType(file: File): FileType {
         if (file.isDirectory) return FileType.DIRECTORY
+        val mimeType = getMimeType(file) ?: return FileType.UNKNOWN
+        return getFileTypeFromMimeType(mimeType)
+    }
 
-        val extension = file.extension.lowercase()
-
+    private fun getFileTypeFromMimeType(mimeType: String): FileType {
         return when {
-            extension in imageExtensions -> FileType.IMAGE
-            extension in videoExtensions -> FileType.VIDEO
-            extension in audioExtensions -> FileType.AUDIO
-            extension in documentExtensions -> FileType.DOCUMENT
-            extension in archiveExtensions -> FileType.ARCHIVE
-            extension == "apk" -> FileType.APK
+            mimeType.startsWith("image/") -> FileType.IMAGE
+            mimeType.startsWith("video/") -> FileType.VIDEO
+            mimeType.startsWith("audio/") -> FileType.AUDIO
+            mimeType.startsWith("text/") -> FileType.DOCUMENT
+            mimeType == "application/vnd.android.package-archive" -> FileType.APK
+            mimeType.contains("zip") || mimeType.contains("tar") ||
+                mimeType.contains("rar") || mimeType.contains("compress") ||
+                mimeType.contains("archive") -> FileType.ARCHIVE
+            mimeType.contains("document") || mimeType.contains("pdf") ||
+                mimeType.contains("word") || mimeType.contains("sheet") ||
+                mimeType.contains("presentation") || mimeType.contains("json") ||
+                mimeType.contains("xml") -> FileType.DOCUMENT
             else -> FileType.UNKNOWN
         }
     }
 
+    /**
+     * Gets mime type using Android's MimeTypeMap.
+     */
     fun getMimeType(file: File): String? {
-        val extension = file.extension.lowercase()
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-    }
-
-    fun isMediaFile(fileType: FileType): Boolean {
-        return fileType == FileType.IMAGE || fileType == FileType.VIDEO
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase())
     }
 }

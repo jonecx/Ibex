@@ -8,7 +8,7 @@ import androidx.core.net.toUri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.util.FileTypeUtils
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -16,13 +16,14 @@ import java.io.File
 
 class RecentFilesRepository(
     private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
     private val limit: Int = 20,
 ) : FileRepository {
 
     override fun getFiles(path: String): Flow<List<FileItem>> = flow {
         val recentFiles = queryRecentFiles()
         emit(recentFiles)
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(ioDispatcher)
 
     override fun getStorageRoots(): Flow<List<FileItem>> = flow {
         emit(emptyList())
