@@ -7,13 +7,16 @@ import android.provider.MediaStore
 import androidx.core.net.toUri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.util.FileTypeUtils
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
 
-class LocalFileRepository(private val context: Context) : FileRepository {
+class LocalFileRepository(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
+) : FileRepository {
 
     override fun getFiles(path: String): Flow<List<FileItem>> = flow {
         val directory = File(path)
@@ -30,7 +33,7 @@ class LocalFileRepository(private val context: Context) : FileRepository {
         } else {
             emit(emptyList())
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(ioDispatcher)
 
     private fun getTrashedFilePaths(): Set<String> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
@@ -105,7 +108,7 @@ class LocalFileRepository(private val context: Context) : FileRepository {
         }
 
         emit(roots)
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(ioDispatcher)
 
     override suspend fun getFileDetails(path: String): FileItem? {
         val file = File(path)

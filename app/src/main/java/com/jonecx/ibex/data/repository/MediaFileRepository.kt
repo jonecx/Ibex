@@ -8,7 +8,7 @@ import androidx.core.net.toUri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.util.FileTypeUtils
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -21,6 +21,7 @@ enum class MediaType {
 class MediaFileRepository(
     private val context: Context,
     private val mediaType: MediaType,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : FileRepository {
 
     override fun getFiles(path: String): Flow<List<FileItem>> = flow {
@@ -31,7 +32,7 @@ class MediaFileRepository(
             MediaType.DOCUMENTS -> queryDocuments()
         }
         emit(files)
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(ioDispatcher)
 
     override fun getStorageRoots(): Flow<List<FileItem>> = flow {
         emit(emptyList())
