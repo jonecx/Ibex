@@ -13,10 +13,12 @@ import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.ui.explorer.FileExplorerScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerViewModel
 import com.jonecx.ibex.ui.home.HomeScreen
+import com.jonecx.ibex.ui.settings.SettingsScreen
 import java.net.URLEncoder
 
 object Routes {
     const val HOME = "home"
+    const val SETTINGS = "settings"
     const val FILE_EXPLORER = "file_explorer/{sourceType}?rootPath={rootPath}&title={title}"
 
     fun fileExplorer(sourceType: FileSourceType, rootPath: String? = null, title: String? = null): String {
@@ -66,6 +68,15 @@ fun AppNavigation(
                         }
                     }
                 },
+                onSettingsClick = {
+                    navController.navigate(Routes.SETTINGS)
+                },
+            )
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 

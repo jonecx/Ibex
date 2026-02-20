@@ -19,7 +19,7 @@ fun ThumbnailImage(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    
+
     val imageRequest = ImageRequest.Builder(context)
         .data(fileItem.path)
         .crossfade(true)
