@@ -6,9 +6,11 @@ import coil.ImageLoaderFactory
 import coil.decode.VideoFrameDecoder
 import com.jonecx.ibex.analytics.PostHogTree
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.di.ApplicationScope
 import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -17,6 +19,10 @@ class IbexApplication : Application(), ImageLoaderFactory {
 
     @Inject
     lateinit var settingsPreferences: SettingsPreferencesContract
+
+    @Inject
+    @ApplicationScope
+    lateinit var applicationScope: CoroutineScope
 
     override fun onCreate() {
         super.onCreate()
@@ -28,7 +34,7 @@ class IbexApplication : Application(), ImageLoaderFactory {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
-        Timber.plant(PostHogTree(settingsPreferences))
+        Timber.plant(PostHogTree(settingsPreferences, applicationScope))
         Timber.i("Ibex application started")
     }
 

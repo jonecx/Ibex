@@ -18,6 +18,9 @@ class LocalFileRepository(
     private val ioDispatcher: CoroutineDispatcher,
 ) : FileRepository {
 
+    private var cachedTrashedPaths: Set<String> = emptySet()
+    private var trashedPathsCacheTime: Long = 0L
+
     override fun getFiles(path: String): Flow<List<FileItem>> = flow {
         val directory = File(path)
         if (directory.exists() && directory.isDirectory) {
@@ -38,6 +41,11 @@ class LocalFileRepository(
     private fun getTrashedFilePaths(): Set<String> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             return emptySet()
+        }
+
+        val now = System.currentTimeMillis()
+        if (now - trashedPathsCacheTime < TRASH_CACHE_TTL_MS) {
+            return cachedTrashedPaths
         }
 
         val trashedPaths = mutableSetOf<String>()
@@ -63,7 +71,13 @@ class LocalFileRepository(
             }
         }
 
+        cachedTrashedPaths = trashedPaths
+        trashedPathsCacheTime = System.currentTimeMillis()
         return trashedPaths
+    }
+
+    companion object {
+        private const val TRASH_CACHE_TTL_MS = 5_000L
     }
 
     override fun getStorageRoots(): Flow<List<FileItem>> = flow {

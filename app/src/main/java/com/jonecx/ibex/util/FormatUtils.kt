@@ -4,6 +4,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private val dateFormat = ThreadLocal.withInitial {
+    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+}
+
 fun formatFileSize(bytes: Long): String {
     if (bytes <= 0) return "0 B"
     val units = arrayOf("B", "KB", "MB", "GB", "TB")
@@ -18,6 +22,5 @@ fun formatFileSize(bytes: Long): String {
 
 fun formatDate(timestamp: Long): String {
     if (timestamp <= 0) return ""
-    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+    return dateFormat.get()!!.format(Date(timestamp))
 }

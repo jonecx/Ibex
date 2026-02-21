@@ -21,16 +21,18 @@ import java.net.URLDecoder
 import javax.inject.Inject
 
 data class FileExplorerUiState(
-    val currentPath: String = Environment.getExternalStorageDirectory().absolutePath,
+    val currentPath: String = INTERNAL_STORAGE_PATH,
     val files: List<FileItem> = emptyList(),
     val selectedFile: FileItem? = null,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
-    val navigationStack: List<String> = listOf(Environment.getExternalStorageDirectory().absolutePath),
-    val rootPath: String = Environment.getExternalStorageDirectory().absolutePath,
+    val navigationStack: List<String> = listOf(INTERNAL_STORAGE_PATH),
+    val rootPath: String = INTERNAL_STORAGE_PATH,
     val allowFolderNavigation: Boolean = true,
     val isAtInternalStorageRoot: Boolean = false,
 )
+
+val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
 
 @HiltViewModel
 class FileExplorerViewModel @Inject constructor(
@@ -54,7 +56,7 @@ class FileExplorerViewModel @Inject constructor(
         FileSourceType.LOCAL_STORAGE,
         FileSourceType.LOCAL_DOWNLOADS,
     )
-    private val startPath = initialPath ?: title ?: Environment.getExternalStorageDirectory().absolutePath
+    private val startPath = initialPath ?: title ?: INTERNAL_STORAGE_PATH
 
     private val _uiState = MutableStateFlow(
         FileExplorerUiState(
@@ -100,7 +102,7 @@ class FileExplorerViewModel @Inject constructor(
                     )
                 }
                 .collect { files ->
-                    val isAtRoot = path == Environment.getExternalStorageDirectory().absolutePath
+                    val isAtRoot = path == INTERNAL_STORAGE_PATH
                     _uiState.value = _uiState.value.copy(
                         currentPath = path,
                         files = files,
@@ -150,7 +152,7 @@ class FileExplorerViewModel @Inject constructor(
         }
         val path = _uiState.value.currentPath
         return when {
-            path == Environment.getExternalStorageDirectory().absolutePath -> null
+            path == INTERNAL_STORAGE_PATH -> null
             else -> path.substringAfterLast("/")
         }
     }
