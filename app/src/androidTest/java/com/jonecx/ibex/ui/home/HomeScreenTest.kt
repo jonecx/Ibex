@@ -18,7 +18,7 @@ class HomeScreenTest {
     @Before
     fun setup() {
         composeTestRule.setIbexContent {
-            HomeScreen(onSourceSelected = {})
+            HomeScreen(onSourceSelected = {}, onSettingsClick = {})
         }
     }
 
