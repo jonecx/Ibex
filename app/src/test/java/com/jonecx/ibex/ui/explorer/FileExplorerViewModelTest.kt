@@ -12,6 +12,7 @@ import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.di.FileRepositoryFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -134,6 +135,61 @@ class FileExplorerViewModelTest {
         assertEquals("Documents", viewModel.getCurrentDirectoryName())
     }
 
+    @Test
+    fun `loadFiles error sets error state`() = runTest {
+        val error = RuntimeException("disk error")
+        fakeRepository.errorToThrow = error
+        viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertFalse(state.isLoading)
+            assertEquals(error, state.error)
+        }
+    }
+
+    @Test
+    fun `setTitle updates currentPath`() = runTest {
+        viewModel.setTitle("My Custom Title")
+        assertEquals("My Custom Title", viewModel.uiState.value.currentPath)
+    }
+
+    @Test
+    fun `non-folder-navigation source disables folder navigation`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+
+        val state = viewModel.uiState.value
+        assertFalse(state.allowFolderNavigation)
+    }
+
+    @Test
+    fun `navigateTo directory is no-op when folder navigation disabled`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+
+        val stackBefore = viewModel.uiState.value.navigationStack.size
+        val dir = testFileItem("subdir", isDirectory = true)
+        viewModel.navigateTo(dir)
+
+        assertEquals(stackBefore, viewModel.uiState.value.navigationStack.size)
+        assertEquals(dir, viewModel.uiState.value.selectedFile)
+    }
+
+    @Test
+    fun `getCurrentDirectoryName returns currentPath when folder navigation disabled`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_AUDIO.name, title = "Audio")
+        assertEquals("Audio", viewModel.getCurrentDirectoryName())
+    }
+
+    @Test
+    fun `navigateUp clears selectedFile`() = runTest {
+        navigateToSubdir()
+        viewModel.selectFile(testFileItem("file.txt"))
+        assertEquals("file.txt", viewModel.uiState.value.selectedFile?.name)
+
+        viewModel.navigateUp()
+        assertNull(viewModel.uiState.value.selectedFile)
+    }
+
     private fun testFileItem(
         name: String,
         isDirectory: Boolean = false,
@@ -151,8 +207,12 @@ class FileExplorerViewModelTest {
 
 class FakeFileRepository : FileRepository {
     var filesToReturn: List<FileItem> = emptyList()
+    var errorToThrow: Throwable? = null
 
-    override fun getFiles(path: String): Flow<List<FileItem>> = flowOf(filesToReturn)
+    override fun getFiles(path: String): Flow<List<FileItem>> = flow {
+        errorToThrow?.let { throw it }
+        emit(filesToReturn)
+    }
 
     override fun getStorageRoots(): Flow<List<FileItem>> = flowOf(emptyList())
 
