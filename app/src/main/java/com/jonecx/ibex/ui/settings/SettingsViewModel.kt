@@ -2,7 +2,6 @@ package com.jonecx.ibex.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jonecx.ibex.BuildConfig
 import com.jonecx.ibex.data.preferences.SettingsPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +12,6 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val sendAnalyticsEnabled: Boolean = false,
-    val isDebugBuild: Boolean = false,
 )
 
 @HiltViewModel
@@ -21,7 +19,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsPreferences: SettingsPreferences,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState(isDebugBuild = BuildConfig.DEBUG))
+    private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {

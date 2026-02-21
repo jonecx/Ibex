@@ -67,14 +67,12 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
         ) {
-            if (uiState.isDebugBuild) {
-                SettingsToggleItem(
-                    title = stringResource(R.string.settings_send_analytics),
-                    description = stringResource(R.string.settings_send_analytics_description),
-                    checked = uiState.sendAnalyticsEnabled,
-                    onCheckedChange = viewModel::setSendAnalyticsEnabled,
-                )
-            }
+            SettingsToggleItem(
+                title = stringResource(R.string.settings_send_analytics),
+                description = stringResource(R.string.settings_send_analytics_description),
+                checked = uiState.sendAnalyticsEnabled,
+                onCheckedChange = viewModel::setSendAnalyticsEnabled,
+            )
         }
     }
 }

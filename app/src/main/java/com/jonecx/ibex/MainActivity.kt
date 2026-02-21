@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.ui.navigation.AppNavigation
 import com.jonecx.ibex.ui.permission.PermissionChecker
 import com.jonecx.ibex.ui.permission.PermissionScreen
@@ -24,6 +25,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var permissionChecker: PermissionChecker
 
+    @Inject
+    lateinit var analyticsManager: AnalyticsManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (hasPermission) {
-                        AppNavigation()
+                        AppNavigation(analyticsManager = analyticsManager)
                     } else {
                         PermissionScreen(
                             onPermissionGranted = { hasPermission = true },
