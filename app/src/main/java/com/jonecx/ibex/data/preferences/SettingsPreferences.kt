@@ -17,14 +17,14 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 @Singleton
 class SettingsPreferences @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
+) : SettingsPreferencesContract {
     private val dataStore = context.dataStore
 
-    val sendAnalyticsEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
+    override val sendAnalyticsEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
         preferences[SEND_ANALYTICS_ENABLED] ?: false
     }
 
-    suspend fun setSendAnalyticsEnabled(enabled: Boolean) {
+    override suspend fun setSendAnalyticsEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[SEND_ANALYTICS_ENABLED] = enabled
         }

@@ -2,7 +2,7 @@ package com.jonecx.ibex.analytics
 
 import android.content.Context
 import androidx.core.content.edit
-import com.jonecx.ibex.data.preferences.SettingsPreferences
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.posthog.PostHog
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class AnalyticsManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val settingsPreferences: SettingsPreferences,
+    private val settingsPreferences: SettingsPreferencesContract,
 ) {
 
     init {
