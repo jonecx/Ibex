@@ -9,14 +9,16 @@ plugins {
 apply(from = "spotless.gradle")
 
 tasks.register("sanityCheck") {
-    description = "Runs Spotless, unit tests, then instrumentation tests"
+    description = "Runs Spotless, unit tests, screenshot tests, then instrumentation tests"
     group = "verification"
     dependsOn("spotlessApply")
     dependsOn(":app:test")
+    dependsOn(":app:validateDebugScreenshotTest")
     dependsOn(":app:connectedDebugAndroidTest")
 }
 
 gradle.projectsEvaluated {
     project(":app").tasks.named("test") { mustRunAfter(rootProject.tasks.named("spotlessApply")) }
-    project(":app").tasks.named("connectedDebugAndroidTest") { mustRunAfter(project(":app").tasks.named("test")) }
+    project(":app").tasks.named("validateDebugScreenshotTest") { mustRunAfter(project(":app").tasks.named("test")) }
+    project(":app").tasks.named("connectedDebugAndroidTest") { mustRunAfter(project(":app").tasks.named("validateDebugScreenshotTest")) }
 }
