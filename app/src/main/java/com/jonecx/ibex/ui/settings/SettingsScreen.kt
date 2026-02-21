@@ -38,6 +38,22 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    SettingsScreenContent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onAnalyticsToggleChanged = viewModel::setSendAnalyticsEnabled,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun SettingsScreenContent(
+    uiState: SettingsUiState,
+    onNavigateBack: () -> Unit,
+    onAnalyticsToggleChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -71,7 +87,7 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_send_analytics),
                 description = stringResource(R.string.settings_send_analytics_description),
                 checked = uiState.sendAnalyticsEnabled,
-                onCheckedChange = viewModel::setSendAnalyticsEnabled,
+                onCheckedChange = onAnalyticsToggleChanged,
             )
         }
     }
