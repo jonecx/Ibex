@@ -1,14 +1,22 @@
 package com.jonecx.ibex.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.ui.explorer.FileExplorerScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerViewModel
@@ -30,9 +38,32 @@ object Routes {
 
 @Composable
 fun AppNavigation(
+    analyticsManager: AnalyticsManager,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    var currentScreen by remember { mutableStateOf("") }
+    var screenEntryTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            val newScreen = destination.route?.substringBefore("/") ?: "unknown"
+
+            if (currentScreen.isNotEmpty() && currentScreen != newScreen) {
+                val duration = System.currentTimeMillis() - screenEntryTime
+                analyticsManager.trackScreenExit(currentScreen, duration)
+            }
+
+            currentScreen = newScreen
+            screenEntryTime = System.currentTimeMillis()
+            analyticsManager.trackScreenView(newScreen)
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose {
+            navController.removeOnDestinationChangedListener(listener)
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
@@ -41,6 +72,7 @@ fun AppNavigation(
         composable(Routes.HOME) {
             HomeScreen(
                 onSourceSelected = { source ->
+                    analyticsManager.trackTileClick(source.name, source.id)
                     when (source.type) {
                         FileSourceType.LOCAL_STORAGE,
                         FileSourceType.LOCAL_DOWNLOADS,
