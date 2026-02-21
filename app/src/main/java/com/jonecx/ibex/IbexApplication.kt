@@ -5,7 +5,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.VideoFrameDecoder
 import com.jonecx.ibex.analytics.PostHogTree
-import com.jonecx.ibex.data.preferences.SettingsPreferences
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
 import dagger.hilt.android.HiltAndroidApp
@@ -16,7 +16,7 @@ import javax.inject.Inject
 class IbexApplication : Application(), ImageLoaderFactory {
 
     @Inject
-    lateinit var settingsPreferences: SettingsPreferences
+    lateinit var settingsPreferences: SettingsPreferencesContract
 
     override fun onCreate() {
         super.onCreate()

@@ -1,14 +1,14 @@
 package com.jonecx.ibex.analytics
 
 import android.util.Log
-import com.jonecx.ibex.data.preferences.SettingsPreferences
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.posthog.PostHog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 class PostHogTree(
-    private val settingsPreferences: SettingsPreferences,
+    private val settingsPreferences: SettingsPreferencesContract,
 ) : Timber.Tree() {
 
     private fun isAnalyticsEnabled(): Boolean {

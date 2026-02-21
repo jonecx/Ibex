@@ -9,7 +9,9 @@ import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.di.FileRepositoryFactory
+import com.jonecx.ibex.di.MainDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +36,7 @@ data class FileExplorerUiState(
 class FileExplorerViewModel @Inject constructor(
     private val repositoryFactory: FileRepositoryFactory,
     savedStateHandle: SavedStateHandle,
+    @MainDispatcher private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val sourceType: FileSourceType = FileSourceType.valueOf(
@@ -87,7 +90,7 @@ class FileExplorerViewModel @Inject constructor(
     }
 
     fun loadFiles(path: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             repository.getFiles(path)
                 .catch { e ->
