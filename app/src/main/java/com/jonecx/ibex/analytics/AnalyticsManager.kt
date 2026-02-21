@@ -3,12 +3,14 @@ package com.jonecx.ibex.analytics
 import android.content.Context
 import androidx.core.content.edit
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.di.ApplicationScope
 import com.posthog.PostHog
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,10 +18,17 @@ import javax.inject.Singleton
 class AnalyticsManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsPreferences: SettingsPreferencesContract,
+    @ApplicationScope private val scope: CoroutineScope,
 ) {
+    private val isAnalyticsEnabled = AtomicBoolean(false)
 
     init {
         identifyUser()
+        scope.launch {
+            settingsPreferences.sendAnalyticsEnabled.collect { enabled ->
+                isAnalyticsEnabled.set(enabled)
+            }
+        }
     }
 
     private fun identifyUser() {
@@ -39,8 +48,7 @@ class AnalyticsManager @Inject constructor(
     }
 
     private fun capture(event: String, properties: Map<String, Any> = emptyMap()) {
-        val isEnabled = runBlocking { settingsPreferences.sendAnalyticsEnabled.first() }
-        if (isEnabled) {
+        if (isAnalyticsEnabled.get()) {
             PostHog.capture(event, null, properties)
             Timber.d("AnalyticsManager: Sent $event")
         }
