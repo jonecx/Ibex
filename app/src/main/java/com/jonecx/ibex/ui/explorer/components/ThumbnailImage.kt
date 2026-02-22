@@ -12,6 +12,7 @@ import coil.request.ImageRequest
 import coil.request.videoFrameMillis
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.util.previewPlaceholder
 
 @Composable
 fun ThumbnailImage(
@@ -33,7 +34,9 @@ fun ThumbnailImage(
     AsyncImage(
         model = imageRequest,
         contentDescription = fileItem.name,
-        modifier = modifier.clip(RoundedCornerShape(8.dp)),
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .previewPlaceholder(fileItem.fileType),
         contentScale = ContentScale.Crop,
     )
 }

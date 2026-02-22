@@ -7,7 +7,7 @@ plugins {
 }
 
 apply(from = "spotless.gradle")
-
+// ./gradlew updateDebugScreenshotTest
 tasks.register("sanityCheck") {
     description = "Runs Spotless, unit tests, screenshot tests, then instrumentation tests"
     group = "verification"
