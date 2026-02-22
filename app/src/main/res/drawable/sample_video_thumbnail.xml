@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M0,0h48v48H0z" />
+    <!-- Film frame bars -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M0,0h48v6H0zM0,42h48v6H0z" />
+    <!-- Play button circle -->
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M24,24m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <!-- Play triangle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M21,18L31,24L21,30z" />
+</vector>
