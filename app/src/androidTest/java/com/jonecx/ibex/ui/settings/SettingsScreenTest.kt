@@ -5,7 +5,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.util.setSettingsContent
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -86,5 +88,54 @@ class SettingsScreenTest {
         composeTestRule.waitForIdle()
 
         assert(!analyticsEnabled) { "Expected analytics to be disabled after click" }
+    }
+
+    @Test
+    fun testViewModeRadioGroupIsDisplayed() {
+        composeTestRule.setSettingsContent()
+
+        composeTestRule.onNodeWithText("View Mode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("List").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Grid").assertIsDisplayed()
+    }
+
+    @Test
+    fun testViewModeDefaultIsListSelected() {
+        composeTestRule.setSettingsContent(
+            uiState = SettingsUiState(viewMode = ViewMode.LIST),
+        )
+
+        composeTestRule.onNodeWithText("View Mode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("List").assertIsDisplayed()
+    }
+
+    @Test
+    fun testViewModeGridClickTriggersCallback() {
+        var selectedMode: ViewMode? = null
+
+        composeTestRule.setSettingsContent(
+            uiState = SettingsUiState(viewMode = ViewMode.LIST),
+            onViewModeChanged = { selectedMode = it },
+        )
+
+        composeTestRule.onNodeWithText("Grid").performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(ViewMode.GRID, selectedMode)
+    }
+
+    @Test
+    fun testViewModeListClickTriggersCallback() {
+        var selectedMode: ViewMode? = null
+
+        composeTestRule.setSettingsContent(
+            uiState = SettingsUiState(viewMode = ViewMode.GRID),
+            onViewModeChanged = { selectedMode = it },
+        )
+
+        composeTestRule.onNodeWithText("List").performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(ViewMode.LIST, selectedMode)
     }
 }
