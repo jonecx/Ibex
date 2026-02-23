@@ -13,12 +13,18 @@ tasks.register("sanityCheck") {
     group = "verification"
     dependsOn("spotlessApply")
     dependsOn(":app:test")
-    dependsOn(":app:validateDebugScreenshotTest")
     dependsOn(":app:connectedDebugAndroidTest")
 }
 
 gradle.projectsEvaluated {
-    project(":app").tasks.named("test") { mustRunAfter(rootProject.tasks.named("spotlessApply")) }
-    project(":app").tasks.named("validateDebugScreenshotTest") { mustRunAfter(project(":app").tasks.named("test")) }
-    project(":app").tasks.named("connectedDebugAndroidTest") { mustRunAfter(project(":app").tasks.named("validateDebugScreenshotTest")) }
+    val appTasks = project(":app").tasks
+    appTasks.named("test") { mustRunAfter(rootProject.tasks.named("spotlessApply")) }
+
+    appTasks.findByName("validateDebugScreenshotTest")?.let {
+        rootProject.tasks.named("sanityCheck") { dependsOn(it) }
+        it.mustRunAfter(appTasks.named("test"))
+        appTasks.named("connectedDebugAndroidTest") { mustRunAfter(it) }
+    } ?: run {
+        appTasks.named("connectedDebugAndroidTest") { mustRunAfter(appTasks.named("test")) }
+    }
 }
