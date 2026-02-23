@@ -80,8 +80,4 @@ class AnalyticsManager @Inject constructor(
             ),
         )
     }
-
-    fun trackEvent(eventName: String, properties: Map<String, Any> = emptyMap()) {
-        capture(eventName, properties)
-    }
 }
