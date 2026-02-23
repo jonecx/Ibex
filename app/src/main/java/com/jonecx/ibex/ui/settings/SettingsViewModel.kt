@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,12 +31,12 @@ class SettingsViewModel @Inject constructor(
     init {
         viewModelScope.launch(dispatcher) {
             settingsPreferences.sendAnalyticsEnabled.collect { enabled ->
-                _uiState.value = _uiState.value.copy(sendAnalyticsEnabled = enabled)
+                _uiState.update { it.copy(sendAnalyticsEnabled = enabled) }
             }
         }
         viewModelScope.launch(dispatcher) {
             settingsPreferences.viewMode.collect { mode ->
-                _uiState.value = _uiState.value.copy(viewMode = mode)
+                _uiState.update { it.copy(viewMode = mode) }
             }
         }
     }
