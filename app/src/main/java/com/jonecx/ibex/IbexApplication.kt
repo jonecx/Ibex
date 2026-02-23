@@ -31,26 +31,26 @@ class IbexApplication : Application(), ImageLoaderFactory {
     }
 
     private fun initTimber() {
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-        }
+//        if (BuildConfig.DEBUG) {
+//            Timber.plant(Timber.DebugTree())
+//        }
         Timber.plant(PostHogTree(settingsPreferences, applicationScope))
         Timber.i("Ibex application started")
     }
 
     private fun initPostHog() {
-        if (BuildConfig.POSTHOG_API_KEY.isNotBlank()) {
-            val config = PostHogAndroidConfig(
-                apiKey = BuildConfig.POSTHOG_API_KEY,
-                host = BuildConfig.POSTHOG_HOST,
-            ).apply {
-                debug = true
-            }
-            PostHogAndroid.setup(this, config)
-            Timber.d("PostHog initialized with host: ${BuildConfig.POSTHOG_HOST}")
-        } else {
+        if (BuildConfig.POSTHOG_API_KEY.isEmpty()) {
             Timber.w("PostHog API key not configured")
+            return
         }
+        val config = PostHogAndroidConfig(
+            apiKey = BuildConfig.POSTHOG_API_KEY,
+            host = BuildConfig.POSTHOG_HOST,
+        ).apply {
+            debug = true // replace this with BuildConfig.DEBUG
+        }
+        PostHogAndroid.setup(this@IbexApplication, config)
+        Timber.d("PostHog initialized with host: ${BuildConfig.POSTHOG_HOST}")
     }
 
     override fun newImageLoader(): ImageLoader {
