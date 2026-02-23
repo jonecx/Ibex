@@ -7,13 +7,11 @@ import app.cash.turbine.test
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.FileType
-import com.jonecx.ibex.data.repository.FileRepository
-import com.jonecx.ibex.data.repository.MediaType
-import com.jonecx.ibex.di.FileRepositoryFactory
+import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.fixtures.FakeFileRepository
+import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
+import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,6 +30,7 @@ class FileExplorerViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var fakeRepository: FakeFileRepository
     private lateinit var fakeFactory: FakeFileRepositoryFactory
+    private lateinit var fakePreferences: FakeSettingsPreferences
 
     private val storagePath = Environment.getExternalStorageDirectory().absolutePath
     private lateinit var viewModel: FileExplorerViewModel
@@ -40,6 +39,7 @@ class FileExplorerViewModelTest {
     fun setup() {
         fakeRepository = FakeFileRepository()
         fakeFactory = FakeFileRepositoryFactory(fakeRepository)
+        fakePreferences = FakeSettingsPreferences()
         viewModel = createViewModel()
     }
 
@@ -55,7 +55,7 @@ class FileExplorerViewModelTest {
                 "title" to title,
             ),
         )
-        return FileExplorerViewModel(fakeFactory, savedStateHandle, testDispatcher)
+        return FileExplorerViewModel(fakeFactory, fakePreferences, savedStateHandle, testDispatcher)
     }
 
     private fun navigateToSubdir(name: String = "subdir") {
@@ -190,6 +190,34 @@ class FileExplorerViewModelTest {
         assertNull(viewModel.uiState.value.selectedFile)
     }
 
+    @Test
+    fun `initial viewMode is LIST`() = runTest {
+        assertEquals(ViewMode.LIST, viewModel.uiState.value.viewMode)
+    }
+
+    @Test
+    fun `viewMode reflects preference change to GRID`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(ViewMode.LIST, awaitItem().viewMode)
+
+            fakePreferences.setViewMode(ViewMode.GRID)
+            assertEquals(ViewMode.GRID, awaitItem().viewMode)
+        }
+    }
+
+    @Test
+    fun `viewMode reflects preference change back to LIST`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(ViewMode.LIST, awaitItem().viewMode)
+
+            fakePreferences.setViewMode(ViewMode.GRID)
+            assertEquals(ViewMode.GRID, awaitItem().viewMode)
+
+            fakePreferences.setViewMode(ViewMode.LIST)
+            assertEquals(ViewMode.LIST, awaitItem().viewMode)
+        }
+    }
+
     private fun testFileItem(
         name: String,
         isDirectory: Boolean = false,
@@ -203,28 +231,4 @@ class FileExplorerViewModelTest {
         isDirectory = isDirectory,
         fileType = if (isDirectory) FileType.DIRECTORY else FileType.UNKNOWN,
     )
-}
-
-class FakeFileRepository : FileRepository {
-    var filesToReturn: List<FileItem> = emptyList()
-    var errorToThrow: Throwable? = null
-
-    override fun getFiles(path: String): Flow<List<FileItem>> = flow {
-        errorToThrow?.let { throw it }
-        emit(filesToReturn)
-    }
-
-    override fun getStorageRoots(): Flow<List<FileItem>> = flowOf(emptyList())
-
-    override suspend fun getFileDetails(path: String): FileItem? = null
-}
-
-class FakeFileRepositoryFactory(
-    private val repository: FileRepository,
-) : FileRepositoryFactory {
-    override fun createLocalFileRepository(): FileRepository = repository
-    override fun createMediaFileRepository(mediaType: MediaType): FileRepository = repository
-    override fun createAppsRepository(): FileRepository = repository
-    override fun createRecentFilesRepository(): FileRepository = repository
-    override fun createTrashRepository(): FileRepository = repository
 }

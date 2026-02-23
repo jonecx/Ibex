@@ -49,6 +49,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    testFixtures {
+        enable = true
+    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -106,10 +109,15 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.posthog)
     
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.ui)
+    testFixturesImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(testFixtures(project(":app")))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.robolectric)
+    androidTestImplementation(testFixtures(project(":app")))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
