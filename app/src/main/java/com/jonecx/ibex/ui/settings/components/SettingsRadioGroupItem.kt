@@ -43,7 +43,7 @@ fun <T> SettingsRadioGroupItem(
             ) {
                 RadioButton(
                     selected = option == selectedOption,
-                    onClick = { onOptionSelected(option) },
+                    onClick = null,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
