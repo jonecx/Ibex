@@ -1,12 +1,12 @@
 package com.jonecx.ibex.ui.settings
 
 import app.cash.turbine.test
-import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -59,20 +59,35 @@ class SettingsViewModelTest {
     @Test
     fun `setSendAnalyticsEnabled updates preferences`() = runTest {
         viewModel.setSendAnalyticsEnabled(true)
-        assertTrue(fakePreferences.currentValue())
+        assertTrue(fakePreferences.currentAnalyticsValue())
 
         viewModel.setSendAnalyticsEnabled(false)
-        assertFalse(fakePreferences.currentValue())
-    }
-}
-
-class FakeSettingsPreferences : SettingsPreferencesContract {
-    private val _sendAnalyticsEnabled = MutableStateFlow(false)
-    override val sendAnalyticsEnabled: Flow<Boolean> = _sendAnalyticsEnabled
-
-    override suspend fun setSendAnalyticsEnabled(enabled: Boolean) {
-        _sendAnalyticsEnabled.value = enabled
+        assertFalse(fakePreferences.currentAnalyticsValue())
     }
 
-    fun currentValue(): Boolean = _sendAnalyticsEnabled.value
+    @Test
+    fun `initial state has list view mode`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(ViewMode.LIST, awaitItem().viewMode)
+        }
+    }
+
+    @Test
+    fun `uiState reflects view mode change to grid`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(ViewMode.LIST, awaitItem().viewMode)
+
+            fakePreferences.setViewMode(ViewMode.GRID)
+            assertEquals(ViewMode.GRID, awaitItem().viewMode)
+        }
+    }
+
+    @Test
+    fun `setViewMode updates preferences`() = runTest {
+        viewModel.setViewMode(ViewMode.GRID)
+        assertEquals(ViewMode.GRID, fakePreferences.currentViewMode())
+
+        viewModel.setViewMode(ViewMode.LIST)
+        assertEquals(ViewMode.LIST, fakePreferences.currentViewMode())
+    }
 }
