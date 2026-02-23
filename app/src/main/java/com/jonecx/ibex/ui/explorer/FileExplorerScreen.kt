@@ -30,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
@@ -166,7 +167,7 @@ private fun FileListPane(
                 when (uiState.viewMode) {
                     ViewMode.LIST -> {
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().testTag("file_list"),
                             contentPadding = contentPadding,
                         ) {
                             items(
@@ -185,7 +186,7 @@ private fun FileListPane(
                     ViewMode.GRID -> {
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 100.dp),
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().testTag("file_grid"),
                             contentPadding = contentPadding,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
