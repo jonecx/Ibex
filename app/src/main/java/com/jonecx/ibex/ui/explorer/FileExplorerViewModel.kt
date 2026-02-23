@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.di.FileRepositoryFactory
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import javax.inject.Inject
@@ -30,6 +33,7 @@ data class FileExplorerUiState(
     val rootPath: String = INTERNAL_STORAGE_PATH,
     val allowFolderNavigation: Boolean = true,
     val isAtInternalStorageRoot: Boolean = false,
+    val viewMode: ViewMode = ViewMode.LIST,
 )
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
@@ -37,6 +41,7 @@ val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().ab
 @HiltViewModel
 class FileExplorerViewModel @Inject constructor(
     private val repositoryFactory: FileRepositoryFactory,
+    private val settingsPreferences: SettingsPreferencesContract,
     savedStateHandle: SavedStateHandle,
     @MainDispatcher private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -73,6 +78,11 @@ class FileExplorerViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(currentPath = title)
         }
         loadFiles(startPath)
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.viewMode.collect { mode ->
+                _uiState.update { it.copy(viewMode = mode) }
+            }
+        }
     }
 
     private fun createRepository(sourceType: FileSourceType): FileRepository {
@@ -93,23 +103,27 @@ class FileExplorerViewModel @Inject constructor(
 
     fun loadFiles(path: String) {
         viewModelScope.launch(dispatcher) {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             repository.getFiles(path)
                 .catch { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e,
-                    )
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = e,
+                        )
+                    }
                 }
                 .collect { files ->
                     val isAtRoot = path == INTERNAL_STORAGE_PATH
-                    _uiState.value = _uiState.value.copy(
-                        currentPath = path,
-                        files = files,
-                        isLoading = false,
-                        error = null,
-                        isAtInternalStorageRoot = isAtRoot,
-                    )
+                    _uiState.update {
+                        it.copy(
+                            currentPath = path,
+                            files = files,
+                            isLoading = false,
+                            error = null,
+                            isAtInternalStorageRoot = isAtRoot,
+                        )
+                    }
                 }
         }
     }
@@ -117,13 +131,15 @@ class FileExplorerViewModel @Inject constructor(
     fun navigateTo(fileItem: FileItem) {
         if (fileItem.isDirectory && allowFolderNavigation) {
             val newStack = _uiState.value.navigationStack + fileItem.path
-            _uiState.value = _uiState.value.copy(
-                navigationStack = newStack,
-                selectedFile = null,
-            )
+            _uiState.update {
+                it.copy(
+                    navigationStack = newStack,
+                    selectedFile = null,
+                )
+            }
             loadFiles(fileItem.path)
         } else {
-            _uiState.value = _uiState.value.copy(selectedFile = fileItem)
+            _uiState.update { it.copy(selectedFile = fileItem) }
         }
     }
 
@@ -132,10 +148,12 @@ class FileExplorerViewModel @Inject constructor(
         if (stack.size > 1) {
             val newStack = stack.dropLast(1)
             val parentPath = newStack.last()
-            _uiState.value = _uiState.value.copy(
-                navigationStack = newStack,
-                selectedFile = null,
-            )
+            _uiState.update {
+                it.copy(
+                    navigationStack = newStack,
+                    selectedFile = null,
+                )
+            }
             loadFiles(parentPath)
             return true
         }
@@ -143,7 +161,7 @@ class FileExplorerViewModel @Inject constructor(
     }
 
     fun selectFile(fileItem: FileItem?) {
-        _uiState.value = _uiState.value.copy(selectedFile = fileItem)
+        _uiState.update { it.copy(selectedFile = fileItem) }
     }
 
     fun getCurrentDirectoryName(): String? {
@@ -158,7 +176,7 @@ class FileExplorerViewModel @Inject constructor(
     }
 
     fun setTitle(title: String) {
-        _uiState.value = _uiState.value.copy(currentPath = title)
+        _uiState.update { it.copy(currentPath = title) }
     }
 
     fun canNavigateUp(): Boolean {

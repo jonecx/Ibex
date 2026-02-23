@@ -8,6 +8,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import coil.request.videoFrameMillis
 import com.jonecx.ibex.data.model.FileItem
@@ -18,6 +19,7 @@ import com.jonecx.ibex.ui.util.previewPlaceholder
 fun ThumbnailImage(
     fileItem: FileItem,
     modifier: Modifier = Modifier,
+    onError: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
 
@@ -35,8 +37,13 @@ fun ThumbnailImage(
         model = imageRequest,
         contentDescription = fileItem.name,
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(6.dp))
             .previewPlaceholder(fileItem.fileType),
         contentScale = ContentScale.Crop,
+        onState = { state ->
+            if (state is AsyncImagePainter.State.Error) {
+                onError?.invoke()
+            }
+        },
     )
 }
