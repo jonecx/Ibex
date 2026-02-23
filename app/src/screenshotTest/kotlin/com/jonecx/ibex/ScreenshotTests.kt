@@ -124,6 +124,7 @@ fun SettingsScreenAnalyticsEnabledPreview() {
             uiState = SettingsUiState(sendAnalyticsEnabled = true),
             onNavigateBack = {},
             onAnalyticsToggleChanged = {},
+            onViewModeChanged = {},
         )
     }
 }
@@ -137,6 +138,7 @@ fun SettingsScreenAnalyticsDisabledPreview() {
             uiState = SettingsUiState(sendAnalyticsEnabled = false),
             onNavigateBack = {},
             onAnalyticsToggleChanged = {},
+            onViewModeChanged = {},
         )
     }
 }
@@ -172,6 +174,7 @@ fun SettingsScreenDarkThemePreview() {
             uiState = SettingsUiState(sendAnalyticsEnabled = true),
             onNavigateBack = {},
             onAnalyticsToggleChanged = {},
+            onViewModeChanged = {},
         )
     }
 }
