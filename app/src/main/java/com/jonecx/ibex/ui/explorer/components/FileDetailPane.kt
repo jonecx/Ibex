@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,8 +29,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import coil.request.videoFrameMillis
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
@@ -66,6 +65,7 @@ fun FileDetailPane(
         }
     } else {
         val context = LocalContext.current
+        val factory = LocalFileImageRequestFactory.current
 
         Column(
             modifier = modifier
@@ -86,26 +86,11 @@ fun FileDetailPane(
                     contentAlignment = Alignment.Center,
                 ) {
                     when (fileItem.fileType) {
-                        FileType.IMAGE -> {
+                        FileType.IMAGE,
+                        FileType.VIDEO,
+                        -> {
                             AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(fileItem.path)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = fileItem.name,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(12.dp)),
-                                contentScale = ContentScale.Fit,
-                            )
-                        }
-                        FileType.VIDEO -> {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(fileItem.path)
-                                    .videoFrameMillis(1000)
-                                    .crossfade(true)
-                                    .build(),
+                                model = remember(fileItem.path) { factory.create(context, fileItem) },
                                 contentDescription = fileItem.name,
                                 modifier = Modifier
                                     .fillMaxSize()

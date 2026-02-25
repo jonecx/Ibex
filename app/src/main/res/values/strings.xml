@@ -40,6 +40,8 @@
     <string name="detail_modified">Modified</string>
     <string name="detail_mime_type">MIME Type</string>
     <string name="detail_path">Path</string>
+    <!-- Image viewer -->
+    <string name="close_viewer">Close</string>
     <!-- Settings -->
     <string name="settings">Settings</string>
     <string name="settings_view_mode">View Mode</string>

@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
+import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.ErrorView
@@ -49,6 +50,7 @@ import kotlinx.coroutines.launch
 fun FileExplorerScreen(
     viewModel: FileExplorerViewModel,
     onNavigateBack: () -> Unit,
+    onOpenImageViewer: (viewableFiles: List<FileItem>, initialIndex: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -74,12 +76,24 @@ fun FileExplorerScreen(
                 FileListPane(
                     uiState = uiState,
                     onFileClick = { fileItem ->
-                        if (fileItem.isDirectory) {
-                            viewModel.navigateTo(fileItem)
-                        } else {
-                            viewModel.selectFile(fileItem)
-                            scope.launch {
-                                navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                        when (fileItem.fileType) {
+                            FileType.DIRECTORY -> viewModel.navigateTo(fileItem)
+
+                            FileType.IMAGE, FileType.VIDEO -> {
+                                val viewableFiles = uiState.files.filter {
+                                    it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
+                                }
+                                val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
+                                if (index >= 0) {
+                                    onOpenImageViewer(viewableFiles, index)
+                                }
+                            }
+
+                            else -> {
+                                viewModel.selectFile(fileItem)
+                                scope.launch {
+                                    navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                }
                             }
                         }
                     },
