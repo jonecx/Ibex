@@ -64,9 +64,6 @@ fun FileDetailPane(
             }
         }
     } else {
-        val context = LocalContext.current
-        val factory = LocalFileImageRequestFactory.current
-
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -89,6 +86,8 @@ fun FileDetailPane(
                         FileType.IMAGE,
                         FileType.VIDEO,
                         -> {
+                            val context = LocalContext.current
+                            val factory = LocalFileImageRequestFactory.current
                             AsyncImage(
                                 model = remember(fileItem.path) { factory.create(context, fileItem) },
                                 contentDescription = fileItem.name,
