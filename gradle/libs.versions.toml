@@ -19,7 +19,7 @@ datastore = "1.1.1"
 timber = "5.0.1"
 posthog = "3.3.2"
 coroutines = "1.8.1"
-turbine = "1.1.0"
+turbine = "1.2.1"
 robolectric = "4.12.2"
 screenshot = "0.0.1-alpha13"
 
