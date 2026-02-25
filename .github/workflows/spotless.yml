@@ -1,5 +1,5 @@
 # Checks code formatting with Spotless. Fails if any files need formatting.
-name: Spotless
+name: Code Formatting Check
 
 on:
   pull_request:
