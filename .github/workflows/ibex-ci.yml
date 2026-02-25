@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  checks: write
+  contents: read
+
 jobs:
   unit-tests:
     name: Unit Tests
@@ -36,12 +40,13 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
-      - name: Upload unit test results
+      - name: Unit test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: dorny/test-reporter@v1
         with:
-          name: unit-test-results
-          path: app/build/reports/tests/testDebugUnitTest/
+          name: Unit Test Results
+          path: app/build/test-results/testDebugUnitTest/**/*.xml
+          reporter: java-junit
 
   instrumented-tests:
     name: Instrumented Tests (${{ matrix.device.name }})
@@ -98,9 +103,10 @@ jobs:
           disable-animations: true
           script: ./gradlew connectedDebugAndroidTest
 
-      - name: Upload instrumented test results
+      - name: Instrumented test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: dorny/test-reporter@v1
         with:
-          name: instrumented-test-results-${{ matrix.device.api-level }}
-          path: app/build/reports/androidTests/connected/
+          name: Instrumented Test Results (API ${{ matrix.device.api-level }})
+          path: app/build/outputs/androidTest-results/connected/**/*.xml
+          reporter: java-junit
