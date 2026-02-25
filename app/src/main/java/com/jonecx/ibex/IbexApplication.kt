@@ -4,9 +4,8 @@ import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.jonecx.ibex.analytics.AnalyticsManager
-import com.jonecx.ibex.analytics.AnalyticsTree
+import com.jonecx.ibex.logging.AppLogger
 import dagger.hilt.android.HiltAndroidApp
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -19,20 +18,13 @@ class IbexApplication : Application(), ImageLoaderFactory {
     lateinit var analyticsManager: AnalyticsManager
 
     @Inject
-    lateinit var analyticsTree: AnalyticsTree
+    lateinit var logger: AppLogger
 
     override fun onCreate() {
         super.onCreate()
+        logger.initialize()
         analyticsManager.initialize()
-        initTimber()
-    }
-
-    private fun initTimber() {
-//        if (BuildConfig.DEBUG) {
-//            Timber.plant(Timber.DebugTree())
-//        }
-        Timber.plant(analyticsTree)
-        Timber.i("Ibex application started")
+        logger.i("Ibex application started")
     }
 
     override fun newImageLoader(): ImageLoader = imageLoader

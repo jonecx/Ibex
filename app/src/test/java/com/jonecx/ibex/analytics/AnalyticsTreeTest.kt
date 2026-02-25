@@ -2,6 +2,7 @@ package com.jonecx.ibex.analytics
 
 import android.util.Log
 import com.jonecx.ibex.fixtures.FakeAnalyticsProvider
+import com.jonecx.ibex.fixtures.FakeAppLogger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -22,6 +23,7 @@ class AnalyticsTreeTest {
         val analyticsManager = AnalyticsManager(
             context = RuntimeEnvironment.getApplication(),
             analyticsProvider = fakeProvider,
+            logger = FakeAppLogger(),
         )
         analyticsTree = AnalyticsTree(analyticsManager)
     }
