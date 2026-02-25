@@ -1,0 +1,36 @@
+# Checks code formatting with Spotless. Fails if any files need formatting.
+name: Spotless
+
+on:
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  spotless:
+    name: Spotless Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Create local.properties
+        run: |
+          echo "POSTHOG_API_KEY=" >> local.properties
+          echo "POSTHOG_HOST=https://us.i.posthog.com" >> local.properties
+
+      - name: Run Spotless check
+        run: ./gradlew spotlessCheck

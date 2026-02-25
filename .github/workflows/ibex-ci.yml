@@ -1,3 +1,4 @@
+# Runs unit tests (Robolectric) and instrumented tests on Pixel 5 & Pixel 7 Pro emulators.
 name: Tests
 
 on:
