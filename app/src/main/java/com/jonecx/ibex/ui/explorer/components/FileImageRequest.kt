@@ -16,7 +16,6 @@ class DefaultFileImageRequestFactory @Inject constructor() : FileImageRequestFac
     override fun create(context: Context, fileItem: FileItem): ImageRequest {
         return ImageRequest.Builder(context)
             .data(fileItem.path)
-            .crossfade(true)
             .apply {
                 if (fileItem.fileType == FileType.VIDEO) {
                     videoFrameMillis(1000)
