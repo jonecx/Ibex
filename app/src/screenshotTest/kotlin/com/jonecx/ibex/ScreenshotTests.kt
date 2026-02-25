@@ -4,16 +4,26 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.explorer.components.DefaultFileImageRequestFactory
 import com.jonecx.ibex.ui.explorer.components.FileListItem
+import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
 import com.jonecx.ibex.ui.settings.SettingsScreenContent
 import com.jonecx.ibex.ui.settings.SettingsUiState
 import com.jonecx.ibex.ui.theme.IbexTheme
+
+@Composable
+private fun WithImageRequestFactory(content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalFileImageRequestFactory provides DefaultFileImageRequestFactory()) {
+        content()
+    }
+}
 
 @PreviewTest
 @Preview(showBackground = true)
@@ -86,30 +96,32 @@ fun FileListItemSelectedPreview() {
 @Composable
 fun FileListItemAllTypesPreview() {
     IbexTheme {
-        Column(modifier = Modifier.padding(vertical = 4.dp)) {
-            listOf(
-                FileType.DIRECTORY to "Downloads",
-                FileType.DOCUMENT to "notes.txt",
-                FileType.AUDIO to "track.mp3",
-                FileType.VIDEO to "clip.mp4",
-                FileType.ARCHIVE to "backup.zip",
-                FileType.APK to "app.apk",
-                FileType.UNKNOWN to "data.bin",
-            ).forEach { (type, name) ->
-                FileListItem(
-                    fileItem = FileItem(
-                        name = name,
-                        path = "/storage/emulated/0/$name",
-                        uri = Uri.EMPTY,
-                        size = 1_024_000,
-                        lastModified = 1700000000000,
-                        isDirectory = type == FileType.DIRECTORY,
-                        fileType = type,
-                        childCount = if (type == FileType.DIRECTORY) 15 else null,
-                    ),
-                    isSelected = false,
-                    onClick = {},
-                )
+        WithImageRequestFactory {
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                listOf(
+                    FileType.DIRECTORY to "Downloads",
+                    FileType.DOCUMENT to "notes.txt",
+                    FileType.AUDIO to "track.mp3",
+                    FileType.VIDEO to "clip.mp4",
+                    FileType.ARCHIVE to "backup.zip",
+                    FileType.APK to "app.apk",
+                    FileType.UNKNOWN to "data.bin",
+                ).forEach { (type, name) ->
+                    FileListItem(
+                        fileItem = FileItem(
+                            name = name,
+                            path = "/storage/emulated/0/$name",
+                            uri = Uri.EMPTY,
+                            size = 1_024_000,
+                            lastModified = 1700000000000,
+                            isDirectory = type == FileType.DIRECTORY,
+                            fileType = type,
+                            childCount = if (type == FileType.DIRECTORY) 15 else null,
+                        ),
+                        isSelected = false,
+                        onClick = {},
+                    )
+                }
             }
         }
     }
@@ -148,20 +160,22 @@ fun SettingsScreenAnalyticsDisabledPreview() {
 @Composable
 fun FileListItemDarkThemePreview() {
     IbexTheme(darkTheme = true) {
-        FileListItem(
-            fileItem = FileItem(
-                name = "photo.jpg",
-                path = "/storage/emulated/0/DCIM/photo.jpg",
-                uri = Uri.EMPTY,
-                size = 3_500_000,
-                lastModified = 1700000000000,
-                isDirectory = false,
-                fileType = FileType.IMAGE,
-                mimeType = "image/jpeg",
-            ),
-            isSelected = false,
-            onClick = {},
-        )
+        WithImageRequestFactory {
+            FileListItem(
+                fileItem = FileItem(
+                    name = "photo.jpg",
+                    path = "/storage/emulated/0/DCIM/photo.jpg",
+                    uri = Uri.EMPTY,
+                    size = 3_500_000,
+                    lastModified = 1700000000000,
+                    isDirectory = false,
+                    fileType = FileType.IMAGE,
+                    mimeType = "image/jpeg",
+                ),
+                isSelected = false,
+                onClick = {},
+            )
+        }
     }
 }
 
