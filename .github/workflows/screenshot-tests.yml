@@ -1,0 +1,48 @@
+# Validates Compose screenshot tests against reference images on PRs.
+name: Screenshot Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  checks: write
+  contents: read
+
+jobs:
+  screenshot-tests:
+    name: Screenshot Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Create local.properties
+        run: |
+          echo "POSTHOG_API_KEY=" >> local.properties
+          echo "POSTHOG_HOST=https://us.i.posthog.com" >> local.properties
+
+      - name: Run screenshot tests
+        run: ./gradlew validateDebugScreenshotTest
+
+      - name: Screenshot test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Screenshot Test Results
+          path: app/build/test-results/validateDebugScreenshotTest/**/*.xml
+          reporter: java-junit
