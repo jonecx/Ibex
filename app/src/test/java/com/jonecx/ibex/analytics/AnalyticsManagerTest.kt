@@ -1,6 +1,7 @@
 package com.jonecx.ibex.analytics
 
 import com.jonecx.ibex.fixtures.FakeAnalyticsProvider
+import com.jonecx.ibex.fixtures.FakeAppLogger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -22,6 +23,7 @@ class AnalyticsManagerTest {
         analyticsManager = AnalyticsManager(
             context = RuntimeEnvironment.getApplication(),
             analyticsProvider = fakeProvider,
+            logger = FakeAppLogger(),
         )
     }
 

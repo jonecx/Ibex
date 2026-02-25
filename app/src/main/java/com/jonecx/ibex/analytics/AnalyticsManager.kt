@@ -2,8 +2,8 @@ package com.jonecx.ibex.analytics
 
 import android.content.Context
 import androidx.core.content.edit
+import com.jonecx.ibex.logging.AppLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
-import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,6 +12,7 @@ import javax.inject.Singleton
 class AnalyticsManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val analyticsProvider: AnalyticsProvider,
+    private val logger: AppLogger,
 ) {
 
     fun initialize() {
@@ -22,7 +23,7 @@ class AnalyticsManager @Inject constructor(
     private fun identifyUser() {
         val userId = getOrCreateUserId()
         analyticsProvider.identify(userId)
-        Timber.d("AnalyticsManager: User identified as $userId")
+        logger.d("AnalyticsManager: User identified as $userId")
     }
 
     private fun getOrCreateUserId(): String {
@@ -37,7 +38,7 @@ class AnalyticsManager @Inject constructor(
 
     internal fun capture(event: String, properties: Map<String, Any> = emptyMap()) {
         analyticsProvider.capture(event, properties)
-        Timber.d("AnalyticsManager: Sent $event")
+        logger.d("AnalyticsManager: Sent $event")
     }
 
     fun trackScreenView(screenName: String, properties: Map<String, Any> = emptyMap()) {
