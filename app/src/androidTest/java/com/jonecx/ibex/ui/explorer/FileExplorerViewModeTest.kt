@@ -8,10 +8,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import coil.Coil
+import coil.ImageLoader
 import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
-import com.jonecx.ibex.util.FakeImageLoader
 import com.jonecx.ibex.util.runOnUiThreadBlocking
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -32,11 +32,14 @@ class FileExplorerViewModeTest {
     @Inject
     lateinit var fakePreferences: FakeSettingsPreferences
 
+    @Inject
+    lateinit var imageLoader: ImageLoader
+
     @Before
     fun setup() {
         hiltRule.inject()
         fakePreferences.reset()
-        Coil.setImageLoader(FakeImageLoader(composeTestRule.activity))
+        Coil.setImageLoader(imageLoader)
     }
 
     @Test
