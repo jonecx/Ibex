@@ -1,5 +1,5 @@
 # Validates Compose screenshot tests against reference images on PRs.
-name: Screenshot Tests
+name: Compose Screenshot Validation
 
 on:
   pull_request:
