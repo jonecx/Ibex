@@ -1,16 +1,15 @@
 package com.jonecx.ibex.ui.explorer
 
-import android.net.Uri
 import android.os.Environment
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
-import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.fixtures.FakeFileRepository
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
+import com.jonecx.ibex.fixtures.testDirectoryFileItem
+import com.jonecx.ibex.fixtures.testFileItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -59,7 +58,7 @@ class FileExplorerViewModelTest {
     }
 
     private fun navigateToSubdir(name: String = "subdir") {
-        val dir = testFileItem(name, isDirectory = true, path = "$storagePath/$name")
+        val dir = testDirectoryFileItem(name, path = "$storagePath/$name")
         viewModel.navigateTo(dir)
     }
 
@@ -167,7 +166,7 @@ class FileExplorerViewModelTest {
         viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
 
         val stackBefore = viewModel.uiState.value.navigationStack.size
-        val dir = testFileItem("subdir", isDirectory = true)
+        val dir = testDirectoryFileItem("subdir")
         viewModel.navigateTo(dir)
 
         assertEquals(stackBefore, viewModel.uiState.value.navigationStack.size)
@@ -217,18 +216,4 @@ class FileExplorerViewModelTest {
             assertEquals(ViewMode.LIST, awaitItem().viewMode)
         }
     }
-
-    private fun testFileItem(
-        name: String,
-        isDirectory: Boolean = false,
-        path: String = "$storagePath/$name",
-    ) = FileItem(
-        name = name,
-        path = path,
-        uri = Uri.parse("file://$path"),
-        size = 1024,
-        lastModified = System.currentTimeMillis(),
-        isDirectory = isDirectory,
-        fileType = if (isDirectory) FileType.DIRECTORY else FileType.UNKNOWN,
-    )
 }

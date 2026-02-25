@@ -111,6 +111,7 @@ dependencies {
     
     testFixturesImplementation(platform(libs.androidx.compose.bom))
     testFixturesImplementation(libs.androidx.compose.ui)
+    testFixturesImplementation(libs.coil.compose)
     testFixturesImplementation(libs.kotlinx.coroutines.test)
     testImplementation(testFixtures(project(":app")))
     testImplementation(libs.junit)
