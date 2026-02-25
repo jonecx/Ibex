@@ -6,7 +6,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AnalyticsTree @Inject constructor(
+open class AnalyticsTree @Inject constructor(
     private val analyticsManager: AnalyticsManager,
 ) : Timber.Tree() {
 
