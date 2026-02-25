@@ -3,7 +3,6 @@ package com.jonecx.ibex
 import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import coil.decode.VideoFrameDecoder
 import com.jonecx.ibex.analytics.PostHogTree
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.di.ApplicationScope
@@ -23,6 +22,9 @@ class IbexApplication : Application(), ImageLoaderFactory {
     @Inject
     @ApplicationScope
     lateinit var applicationScope: CoroutineScope
+
+    @Inject
+    lateinit var imageLoader: ImageLoader
 
     override fun onCreate() {
         super.onCreate()
@@ -53,12 +55,5 @@ class IbexApplication : Application(), ImageLoaderFactory {
         Timber.d("PostHog initialized with host: ${BuildConfig.POSTHOG_HOST}")
     }
 
-    override fun newImageLoader(): ImageLoader {
-        return ImageLoader.Builder(this)
-            .components {
-                add(VideoFrameDecoder.Factory())
-            }
-            .crossfade(true)
-            .build()
-    }
+    override fun newImageLoader(): ImageLoader = imageLoader
 }
