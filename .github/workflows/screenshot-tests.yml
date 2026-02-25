@@ -41,7 +41,7 @@ jobs:
 
       - name: Screenshot test report
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Screenshot Test Results
           path: app/build/test-results/validateDebugScreenshotTest/**/*.xml

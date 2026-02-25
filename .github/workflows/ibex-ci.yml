@@ -43,7 +43,7 @@ jobs:
 
       - name: Unit test report
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Unit Test Results
           path: app/build/test-results/testDebugUnitTest/**/*.xml
@@ -106,7 +106,7 @@ jobs:
 
       - name: Instrumented test report
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Instrumented Test Results (API ${{ matrix.device.api-level }})
           path: app/build/outputs/androidTest-results/connected/**/*.xml
