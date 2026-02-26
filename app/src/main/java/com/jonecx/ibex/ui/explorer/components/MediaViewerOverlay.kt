@@ -25,6 +25,10 @@ import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.ui.player.PlayerFactory
 import com.jonecx.ibex.ui.player.VideoPlayer
+import com.jonecx.ibex.ui.theme.Black
+import com.jonecx.ibex.ui.theme.ScrimDark
+import com.jonecx.ibex.ui.theme.White
+import com.jonecx.ibex.ui.theme.WhiteSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +44,12 @@ fun MediaViewerOverlay(
         pageCount = { viewableFiles.size },
     )
 
-    val currentFile = viewableFiles.getOrNull(pagerState.currentPage)
+    val currentFile = viewableFiles.getOrNull(pagerState.settledPage)
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Black)
             .systemBarsPadding(),
     ) {
         HorizontalPager(
@@ -78,13 +82,13 @@ fun MediaViewerOverlay(
                     Text(
                         text = currentFile?.name ?: "",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = White,
                         maxLines = 1,
                     )
                     Text(
-                        text = "${pagerState.currentPage + 1} / ${viewableFiles.size}",
+                        text = "${pagerState.settledPage + 1} / ${viewableFiles.size}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = WhiteSecondary,
                     )
                 }
             },
@@ -93,12 +97,12 @@ fun MediaViewerOverlay(
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.close_viewer),
-                        tint = Color.White,
+                        tint = White,
                     )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Black.copy(alpha = 0.5f),
+                containerColor = ScrimDark,
             ),
         )
     }

@@ -13,9 +13,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.theme.FileArchiveColor
+import com.jonecx.ibex.ui.theme.FileAudioColor
+import com.jonecx.ibex.ui.theme.FileDirectoryColor
+import com.jonecx.ibex.ui.theme.FileDocumentColor
+import com.jonecx.ibex.ui.theme.FileImageColor
+import com.jonecx.ibex.ui.theme.FileVideoColor
 
 @Composable
 fun FileIcon(
@@ -23,13 +28,13 @@ fun FileIcon(
     modifier: Modifier = Modifier,
 ) {
     val (icon, tint) = when (fileItem.fileType) {
-        FileType.DIRECTORY -> Icons.Filled.Folder to Color(0xFFFFB74D)
-        FileType.IMAGE -> Icons.Filled.Image to Color(0xFF4CAF50)
-        FileType.VIDEO -> Icons.Filled.VideoFile to Color(0xFFE91E63)
-        FileType.AUDIO -> Icons.Filled.AudioFile to Color(0xFF9C27B0)
-        FileType.DOCUMENT -> Icons.Filled.Description to Color(0xFF2196F3)
-        FileType.ARCHIVE -> Icons.Filled.Archive to Color(0xFF795548)
-        FileType.APK -> Icons.Filled.Android to Color(0xFF4CAF50)
+        FileType.DIRECTORY -> Icons.Filled.Folder to FileDirectoryColor
+        FileType.IMAGE -> Icons.Filled.Image to FileImageColor
+        FileType.VIDEO -> Icons.Filled.VideoFile to FileVideoColor
+        FileType.AUDIO -> Icons.Filled.AudioFile to FileAudioColor
+        FileType.DOCUMENT -> Icons.Filled.Description to FileDocumentColor
+        FileType.ARCHIVE -> Icons.Filled.Archive to FileArchiveColor
+        FileType.APK -> Icons.Filled.Android to FileImageColor
         FileType.UNKNOWN -> Icons.AutoMirrored.Filled.InsertDriveFile to MaterialTheme.colorScheme.onSurfaceVariant
     }
     Icon(
