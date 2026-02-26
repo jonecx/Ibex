@@ -15,7 +15,19 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.VideoFile
-import androidx.compose.ui.graphics.Color
+import com.jonecx.ibex.ui.theme.SourceAnalysisColor
+import com.jonecx.ibex.ui.theme.SourceAppsColor
+import com.jonecx.ibex.ui.theme.SourceAudioColor
+import com.jonecx.ibex.ui.theme.SourceCloudColor
+import com.jonecx.ibex.ui.theme.SourceDocumentsColor
+import com.jonecx.ibex.ui.theme.SourceDownloadsColor
+import com.jonecx.ibex.ui.theme.SourceFtpColor
+import com.jonecx.ibex.ui.theme.SourceImagesColor
+import com.jonecx.ibex.ui.theme.SourceRecentColor
+import com.jonecx.ibex.ui.theme.SourceSmbColor
+import com.jonecx.ibex.ui.theme.SourceStorageColor
+import com.jonecx.ibex.ui.theme.SourceTrashColor
+import com.jonecx.ibex.ui.theme.SourceVideosColor
 
 object FileSources {
 
@@ -36,7 +48,7 @@ object FileSources {
             name = storage,
             type = FileSourceType.LOCAL_STORAGE,
             icon = Icons.Filled.Storage,
-            iconTint = Color(0xFF546E7A),
+            iconTint = SourceStorageColor,
             rootPath = Environment.getExternalStorageDirectory().absolutePath,
         ),
         FileSource(
@@ -44,7 +56,7 @@ object FileSources {
             name = downloads,
             type = FileSourceType.LOCAL_DOWNLOADS,
             icon = Icons.Filled.Download,
-            iconTint = Color(0xFFF57C00),
+            iconTint = SourceDownloadsColor,
             rootPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath,
         ),
         FileSource(
@@ -52,56 +64,56 @@ object FileSources {
             name = images,
             type = FileSourceType.LOCAL_IMAGES,
             icon = Icons.Filled.Image,
-            iconTint = Color(0xFFAB47BC),
+            iconTint = SourceImagesColor,
         ),
         FileSource(
             id = "videos",
             name = videos,
             type = FileSourceType.LOCAL_VIDEOS,
             icon = Icons.Filled.VideoFile,
-            iconTint = Color(0xFFEC407A),
+            iconTint = SourceVideosColor,
         ),
         FileSource(
             id = "audio",
             name = audio,
             type = FileSourceType.LOCAL_AUDIO,
             icon = Icons.Filled.AudioFile,
-            iconTint = Color(0xFF26C6DA),
+            iconTint = SourceAudioColor,
         ),
         FileSource(
             id = "documents",
             name = documents,
             type = FileSourceType.LOCAL_DOCUMENTS,
             icon = Icons.Filled.Description,
-            iconTint = Color(0xFF1976D2),
+            iconTint = SourceDocumentsColor,
         ),
         FileSource(
             id = "apps",
             name = apps,
             type = FileSourceType.LOCAL_APPS,
             icon = Icons.Filled.Android,
-            iconTint = Color(0xFF388E3C),
+            iconTint = SourceAppsColor,
         ),
         FileSource(
             id = "recent",
             name = recent,
             type = FileSourceType.LOCAL_RECENT,
             icon = Icons.Filled.Schedule,
-            iconTint = Color(0xFF78909C),
+            iconTint = SourceRecentColor,
         ),
         FileSource(
             id = "storage_analysis",
             name = analysis,
             type = FileSourceType.STORAGE_ANALYSIS,
             icon = Icons.Filled.PieChart,
-            iconTint = Color(0xFF8D6E63),
+            iconTint = SourceAnalysisColor,
         ),
         FileSource(
             id = "trash",
             name = trash,
             type = FileSourceType.LOCAL_TRASH,
             icon = Icons.Filled.Delete,
-            iconTint = Color(0xFFD32F2F),
+            iconTint = SourceTrashColor,
         ),
     )
 
@@ -116,7 +128,7 @@ object FileSources {
             name = cloud,
             type = FileSourceType.CLOUD,
             icon = Icons.Filled.Cloud,
-            iconTint = Color(0xFF42A5F5),
+            iconTint = SourceCloudColor,
             isLocal = false,
             isEnabled = false,
             subtitle = comingSoon,
@@ -126,7 +138,7 @@ object FileSources {
             name = smb,
             type = FileSourceType.SMB,
             icon = Icons.Filled.Lan,
-            iconTint = Color(0xFFE64A19),
+            iconTint = SourceSmbColor,
             isLocal = false,
             isEnabled = false,
             subtitle = comingSoon,
@@ -136,7 +148,7 @@ object FileSources {
             name = ftp,
             type = FileSourceType.FTP,
             icon = Icons.Filled.Folder,
-            iconTint = Color(0xFF26A69A),
+            iconTint = SourceFtpColor,
             isLocal = false,
             isEnabled = false,
             subtitle = comingSoon,

@@ -38,8 +38,9 @@ import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
-
-private val ControlsBackgroundColor = Color.Black.copy(alpha = 0.5f)
+import com.jonecx.ibex.ui.theme.Black
+import com.jonecx.ibex.ui.theme.ScrimDark
+import com.jonecx.ibex.ui.theme.White
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -83,7 +84,7 @@ fun VideoPlayer(
     }
 
     Box(
-        modifier = modifier.background(Color.Black),
+        modifier = modifier.background(Black),
         contentAlignment = Alignment.Center,
     ) {
         PlayerSurface(
@@ -114,18 +115,20 @@ private fun PlaybackControls(
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val scrimButtonColors = IconButtonDefaults.iconButtonColors(containerColor = ScrimDark)
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(
             onClick = { player.seekBack() },
-            colors = IconButtonDefaults.iconButtonColors(containerColor = ControlsBackgroundColor),
+            colors = scrimButtonColors,
         ) {
             Icon(
                 imageVector = Icons.Filled.Replay10,
                 contentDescription = stringResource(R.string.seek_back),
-                tint = Color.White,
+                tint = White,
             )
         }
         IconButton(
@@ -135,24 +138,24 @@ private fun PlaybackControls(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .size(56.dp)
-                .background(ControlsBackgroundColor, CircleShape),
+                .background(ScrimDark, CircleShape),
             colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Transparent),
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                tint = Color.White,
+                tint = White,
                 modifier = Modifier.size(36.dp),
             )
         }
         IconButton(
             onClick = { player.seekForward() },
-            colors = IconButtonDefaults.iconButtonColors(containerColor = ControlsBackgroundColor),
+            colors = scrimButtonColors,
         ) {
             Icon(
                 imageVector = Icons.Filled.Forward10,
                 contentDescription = stringResource(R.string.seek_forward),
-                tint = Color.White,
+                tint = White,
             )
         }
     }
