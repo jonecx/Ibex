@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 fun FileExplorerScreen(
     viewModel: FileExplorerViewModel,
     onNavigateBack: () -> Unit,
-    onOpenImageViewer: (viewableFiles: List<FileItem>, initialIndex: Int) -> Unit,
+    onOpenMediaViewer: (viewableFiles: List<FileItem>, initialIndex: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -85,7 +85,7 @@ fun FileExplorerScreen(
                                 }
                                 val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
                                 if (index >= 0) {
-                                    onOpenImageViewer(viewableFiles, index)
+                                    onOpenMediaViewer(viewableFiles, index)
                                 }
                             }
 

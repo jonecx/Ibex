@@ -5,7 +5,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ImageViewerArgs @Inject constructor() {
+class MediaViewerArgs @Inject constructor() {
     var viewableFiles: List<FileItem> = emptyList()
     var initialIndex: Int = 0
 

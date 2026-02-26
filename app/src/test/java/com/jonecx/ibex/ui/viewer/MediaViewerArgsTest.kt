@@ -9,13 +9,13 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ImageViewerArgsTest {
+class MediaViewerArgsTest {
 
-    private lateinit var args: ImageViewerArgs
+    private lateinit var args: MediaViewerArgs
 
     @Before
     fun setup() {
-        args = ImageViewerArgs()
+        args = MediaViewerArgs()
     }
 
     @Test
