@@ -16,3 +16,4 @@
 local.properties
 **/gradle-daemon-jvm.properties
 .kotlin
+.windsurf/
