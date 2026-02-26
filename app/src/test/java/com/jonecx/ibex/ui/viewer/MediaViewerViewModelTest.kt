@@ -6,6 +6,7 @@ import com.jonecx.ibex.fixtures.FakePlayerFactory
 import com.jonecx.ibex.fixtures.testImageFileItem
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,5 +59,13 @@ class MediaViewerViewModelTest {
 
         assertTrue(args.viewableFiles.isEmpty())
         assertEquals(0, args.initialIndex)
+    }
+
+    @Test
+    fun `playerFactory is the injected instance`() {
+        val args = MediaViewerArgs()
+        val viewModel = MediaViewerViewModel(args, playerFactory)
+
+        assertSame(playerFactory, viewModel.playerFactory)
     }
 }
