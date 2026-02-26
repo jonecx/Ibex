@@ -105,6 +105,10 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
     
+    // Media3 (ExoPlayer + Compose UI)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui.compose)
+
     // Logging & Analytics
     implementation(libs.timber)
     implementation(libs.posthog)
@@ -112,6 +116,7 @@ dependencies {
     testFixturesImplementation(platform(libs.androidx.compose.bom))
     testFixturesImplementation(libs.androidx.compose.ui)
     testFixturesImplementation(libs.coil.compose)
+    testFixturesImplementation(libs.media3.exoplayer)
     testFixturesImplementation(libs.kotlinx.coroutines.test)
     testImplementation(testFixtures(project(":app")))
     testImplementation(libs.junit)

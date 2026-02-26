@@ -22,15 +22,15 @@ import com.jonecx.ibex.ui.explorer.FileExplorerScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerViewModel
 import com.jonecx.ibex.ui.home.HomeScreen
 import com.jonecx.ibex.ui.settings.SettingsScreen
-import com.jonecx.ibex.ui.viewer.ImageViewerArgs
-import com.jonecx.ibex.ui.viewer.ImageViewerScreen
+import com.jonecx.ibex.ui.viewer.MediaViewerArgs
+import com.jonecx.ibex.ui.viewer.MediaViewerScreen
 import java.net.URLEncoder
 
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val FILE_EXPLORER = "file_explorer/{sourceType}?rootPath={rootPath}&title={title}"
-    const val IMAGE_VIEWER = "image_viewer"
+    const val MEDIA_VIEWER = "media_viewer"
 
     fun fileExplorer(sourceType: FileSourceType, rootPath: String? = null, title: String? = null): String {
         val encodedPath = rootPath?.let { URLEncoder.encode(it, "UTF-8") } ?: ""
@@ -42,7 +42,7 @@ object Routes {
 @Composable
 fun AppNavigation(
     analyticsManager: AnalyticsManager,
-    imageViewerArgs: ImageViewerArgs,
+    mediaViewerArgs: MediaViewerArgs,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -135,15 +135,15 @@ fun AppNavigation(
             FileExplorerScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onOpenImageViewer = { viewableFiles, initialIndex ->
-                    imageViewerArgs.set(viewableFiles, initialIndex)
-                    navController.navigate(Routes.IMAGE_VIEWER)
+                onOpenMediaViewer = { viewableFiles, initialIndex ->
+                    mediaViewerArgs.set(viewableFiles, initialIndex)
+                    navController.navigate(Routes.MEDIA_VIEWER)
                 },
             )
         }
 
-        composable(Routes.IMAGE_VIEWER) {
-            ImageViewerScreen(
+        composable(Routes.MEDIA_VIEWER) {
+            MediaViewerScreen(
                 onNavigateBack = { navController.popBackStack() },
             )
         }

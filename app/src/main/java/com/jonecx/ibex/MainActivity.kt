@@ -19,7 +19,7 @@ import com.jonecx.ibex.ui.navigation.AppNavigation
 import com.jonecx.ibex.ui.permission.PermissionChecker
 import com.jonecx.ibex.ui.permission.PermissionScreen
 import com.jonecx.ibex.ui.theme.IbexTheme
-import com.jonecx.ibex.ui.viewer.ImageViewerArgs
+import com.jonecx.ibex.ui.viewer.MediaViewerArgs
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
     lateinit var analyticsManager: AnalyticsManager
 
     @Inject
-    lateinit var imageViewerArgs: ImageViewerArgs
+    lateinit var mediaViewerArgs: MediaViewerArgs
 
     @Inject
     lateinit var fileImageRequestFactory: FileImageRequestFactory
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                         if (hasPermission) {
                             AppNavigation(
                                 analyticsManager = analyticsManager,
-                                imageViewerArgs = imageViewerArgs,
+                                mediaViewerArgs = mediaViewerArgs,
                             )
                         } else {
                             PermissionScreen(
