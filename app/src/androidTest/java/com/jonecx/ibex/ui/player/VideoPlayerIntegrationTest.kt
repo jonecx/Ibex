@@ -113,6 +113,24 @@ class VideoPlayerIntegrationTest {
     }
 
     @Test
+    fun loadingIndicatorShownWhileBuffering() {
+        setVideoPlayerContent(isActive = false)
+
+        composeTestRule.onNodeWithContentDescription("Loading video").assertIsDisplayed()
+    }
+
+    @Test
+    fun loadingIndicatorHiddenWhenReady() {
+        setVideoPlayerContent(isActive = true)
+
+        composeTestRule.waitUntil(timeoutMillis = PLAYBACK_TIMEOUT_MS) {
+            composeTestRule.onAllNodes(hasContentDescription("Loading video"))
+                .fetchSemanticsNodes()
+                .isEmpty()
+        }
+    }
+
+    @Test
     fun controlsAreDisplayed() {
         setVideoPlayerContent(isActive = false)
 
@@ -208,7 +226,6 @@ class VideoPlayerIntegrationTest {
         composeTestRule.onNodeWithContentDescription("Next").assertIsNotEnabled()
     }
 
-
     @Test
     fun firstVideoHasPreviousDisabledAndNextEnabled() {
         setMediaViewerContent(initialIndex = 0)
@@ -261,5 +278,4 @@ class VideoPlayerIntegrationTest {
         composeTestRule.onNodeWithContentDescription("Next").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
     }
-
 }
