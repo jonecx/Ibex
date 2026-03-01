@@ -108,6 +108,7 @@ dependencies {
     // Media3 (ExoPlayer + Compose UI)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui.compose)
+    implementation(libs.media3.ui.compose.material3)
 
     // Logging & Analytics
     implementation(libs.timber)
