@@ -1,5 +1,8 @@
 package com.jonecx.ibex.ui.explorer.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.jonecx.ibex.R
@@ -48,6 +55,8 @@ fun MediaViewerOverlay(
     val currentFile = viewableFiles.getOrNull(pagerState.settledPage)
     val scope = rememberCoroutineScope()
     val overlayBarColors = TopAppBarDefaults.topAppBarColors(containerColor = ScrimDark)
+    var controlsVisible by remember { mutableStateOf(true) }
+    val toggleControls = { controlsVisible = !controlsVisible }
 
     Box(
         modifier = modifier
@@ -68,6 +77,8 @@ fun MediaViewerOverlay(
                         isActive = pagerState.settledPage == page,
                         playerFactory = playerFactory,
                         modifier = Modifier.fillMaxSize(),
+                        controlsVisible = controlsVisible,
+                        onToggleControls = toggleControls,
                         onPrevious = if (page > 0) {
                             { scope.launch { pagerState.animateScrollToPage(page - 1) } }
                         } else {
@@ -84,37 +95,44 @@ fun MediaViewerOverlay(
                     ZoomableImage(
                         fileItem = fileItem,
                         modifier = Modifier.fillMaxSize(),
+                        onTap = toggleControls,
                     )
                 }
             }
         }
 
-        TopAppBar(
-            title = {
-                Column {
-                    Text(
-                        text = currentFile?.name ?: "",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = White,
-                        maxLines = 1,
-                    )
-                    Text(
-                        text = "${pagerState.settledPage + 1} / ${viewableFiles.size}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WhiteSecondary,
-                    )
-                }
-            },
-            navigationIcon = {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.close_viewer),
-                        tint = White,
-                    )
-                }
-            },
-            colors = overlayBarColors,
-        )
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = currentFile?.name ?: "",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = White,
+                            maxLines = 1,
+                        )
+                        Text(
+                            text = "${pagerState.settledPage + 1} / ${viewableFiles.size}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = WhiteSecondary,
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.close_viewer),
+                            tint = White,
+                        )
+                    }
+                },
+                colors = overlayBarColors,
+            )
+        }
     }
 }

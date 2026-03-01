@@ -5,13 +5,16 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
@@ -276,6 +279,33 @@ class VideoPlayerIntegrationTest {
             .assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Previous").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Next").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
+    }
+
+    @Test
+    fun tapVideoHidesControlsAndToolbar() {
+        setMediaViewerContent(initialIndex = 0)
+
+        composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsDisplayed()
+
+        composeTestRule.onRoot().performTouchInput { click(center) }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithContentDescription("Close").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Previous").assertDoesNotExist()
+    }
+
+    @Test
+    fun tapVideoTogglesControlsBackOn() {
+        setMediaViewerContent(initialIndex = 0)
+
+        composeTestRule.onRoot().performTouchInput { click(center) }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Close").assertDoesNotExist()
+
+        composeTestRule.onRoot().performTouchInput { click(center) }
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
     }
 }
