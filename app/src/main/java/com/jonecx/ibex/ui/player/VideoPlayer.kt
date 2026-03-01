@@ -1,7 +1,11 @@
 package com.jonecx.ibex.ui.player
 
 import androidx.annotation.OptIn
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,9 +18,11 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
@@ -39,6 +45,8 @@ fun VideoPlayer(
     isActive: Boolean,
     playerFactory: PlayerFactory,
     modifier: Modifier = Modifier,
+    controlsVisible: Boolean = true,
+    onToggleControls: () -> Unit = {},
     onPrevious: (() -> Unit)? = null,
     onNext: (() -> Unit)? = null,
 ) {
@@ -54,6 +62,7 @@ fun VideoPlayer(
     var duration by remember { mutableLongStateOf(0L) }
     var isPlaying by remember { mutableStateOf(false) }
     var isBuffering by remember { mutableStateOf(true) }
+    val currentOnToggle by rememberUpdatedState(onToggleControls)
 
     LaunchedEffect(isActive) {
         player.playWhenReady = isActive
@@ -104,7 +113,9 @@ fun VideoPlayer(
     }
 
     Box(
-        modifier = modifier.background(Black),
+        modifier = modifier
+            .background(Black)
+            .pointerInput(Unit) { detectTapGestures { currentOnToggle() } },
         contentAlignment = Alignment.Center,
     ) {
         PlayerSurface(
@@ -120,16 +131,22 @@ fun VideoPlayer(
             )
         }
 
-        PlaybackControls(
-            player = player,
-            currentPosition = currentPosition,
-            duration = duration,
-            onPrevious = onPrevious,
-            onNext = onNext,
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp),
-        )
+        ) {
+            PlaybackControls(
+                player = player,
+                currentPosition = currentPosition,
+                duration = duration,
+                onPrevious = onPrevious,
+                onNext = onNext,
+            )
+        }
     }
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,12 +26,14 @@ import com.jonecx.ibex.data.model.FileItem
 fun ZoomableImage(
     fileItem: FileItem,
     modifier: Modifier = Modifier,
+    onTap: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val factory = LocalFileImageRequestFactory.current
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
+    val currentOnTap by rememberUpdatedState(onTap)
 
     val imageRequest = remember(fileItem.path) { factory.create(context, fileItem) }
 
@@ -66,6 +69,7 @@ fun ZoomableImage(
                 }
                 .pointerInput(Unit) {
                     detectTapGestures(
+                        onTap = { currentOnTap() },
                         onDoubleTap = {
                             if (scale > 1f) {
                                 scale = 1f
