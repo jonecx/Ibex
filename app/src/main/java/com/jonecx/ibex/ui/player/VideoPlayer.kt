@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -24,8 +25,11 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
+import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
+import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.theme.Black
+import com.jonecx.ibex.ui.theme.White
 import kotlinx.coroutines.delay
 
 @OptIn(UnstableApi::class)
@@ -49,6 +53,7 @@ fun VideoPlayer(
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var isPlaying by remember { mutableStateOf(false) }
+    var isBuffering by remember { mutableStateOf(true) }
 
     LaunchedEffect(isActive) {
         player.playWhenReady = isActive
@@ -70,6 +75,7 @@ fun VideoPlayer(
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
+                isBuffering = playbackState == Player.STATE_BUFFERING
                 if (playbackState == Player.STATE_READY) {
                     duration = player.duration.coerceAtLeast(0L)
                 }
@@ -106,6 +112,13 @@ fun VideoPlayer(
             surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
             modifier = surfaceModifier,
         )
+
+        if (isBuffering) {
+            LoadingView(
+                color = White,
+                description = stringResource(R.string.video_loading),
+            )
+        }
 
         PlaybackControls(
             player = player,
