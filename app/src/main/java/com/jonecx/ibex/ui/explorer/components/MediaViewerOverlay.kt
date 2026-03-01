@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.jonecx.ibex.R
@@ -28,6 +29,7 @@ import com.jonecx.ibex.ui.theme.Black
 import com.jonecx.ibex.ui.theme.ScrimDark
 import com.jonecx.ibex.ui.theme.White
 import com.jonecx.ibex.ui.theme.WhiteSecondary
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +46,8 @@ fun MediaViewerOverlay(
     )
 
     val currentFile = viewableFiles.getOrNull(pagerState.settledPage)
+    val scope = rememberCoroutineScope()
+    val overlayBarColors = TopAppBarDefaults.topAppBarColors(containerColor = ScrimDark)
 
     Box(
         modifier = modifier
@@ -64,6 +68,16 @@ fun MediaViewerOverlay(
                         isActive = pagerState.settledPage == page,
                         playerFactory = playerFactory,
                         modifier = Modifier.fillMaxSize(),
+                        onPrevious = if (page > 0) {
+                            { scope.launch { pagerState.animateScrollToPage(page - 1) } }
+                        } else {
+                            null
+                        },
+                        onNext = if (page < viewableFiles.size - 1) {
+                            { scope.launch { pagerState.animateScrollToPage(page + 1) } }
+                        } else {
+                            null
+                        },
                     )
                 }
                 else -> {
@@ -100,9 +114,7 @@ fun MediaViewerOverlay(
                     )
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = ScrimDark,
-            ),
+            colors = overlayBarColors,
         )
     }
 }
