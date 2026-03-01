@@ -42,10 +42,6 @@
     <string name="detail_path">Path</string>
     <!-- Media viewer -->
     <string name="close_viewer">Close</string>
-    <string name="seek_back">Seek back</string>
-    <string name="seek_forward">Seek forward</string>
-    <string name="play">Play</string>
-    <string name="pause">Pause</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <!-- Settings -->
