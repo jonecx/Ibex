@@ -1,15 +1,21 @@
 package com.jonecx.ibex.ui.player
 
 import android.net.Uri
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.explorer.components.MediaViewerOverlay
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
@@ -18,7 +24,8 @@ import org.junit.Test
 import java.io.File
 import javax.inject.Inject
 
-private const val TEST_VIDEO_ASSET = "earth_MP4_480_1_5MG.mp4"
+private const val TEST_VIDEO_ASSET_1 = "earth_MP4_480_1_5MG.mp4"
+private const val TEST_VIDEO_ASSET_2 = "15764815-hd_1080_1920_60fps.mp4"
 private const val PLAYBACK_TIMEOUT_MS = 5_000L
 
 @HiltAndroidTest
@@ -33,44 +40,73 @@ class VideoPlayerIntegrationTest {
     @Inject
     lateinit var playerFactory: PlayerFactory
 
-    private lateinit var videoFileItem: FileItem
+    private lateinit var videoFileItems: List<FileItem>
 
     @Before
     fun setup() {
         hiltRule.inject()
 
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val videoFile = File(instrumentation.targetContext.cacheDir, TEST_VIDEO_ASSET)
-        if (!videoFile.exists()) {
-            instrumentation.context.assets.open(TEST_VIDEO_ASSET).use { input ->
-                videoFile.outputStream().use { output -> input.copyTo(output) }
+        videoFileItems = listOf(TEST_VIDEO_ASSET_1, TEST_VIDEO_ASSET_2).map { assetName ->
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val videoFile = File(instrumentation.targetContext.cacheDir, assetName)
+            if (!videoFile.exists()) {
+                instrumentation.context.assets.open(assetName).use { input ->
+                    videoFile.outputStream().use { output -> input.copyTo(output) }
+                }
             }
+            FileItem(
+                name = assetName,
+                path = videoFile.absolutePath,
+                uri = Uri.fromFile(videoFile),
+                size = videoFile.length(),
+                lastModified = videoFile.lastModified(),
+                isDirectory = false,
+                fileType = FileType.VIDEO,
+            )
         }
-
-        videoFileItem = FileItem(
-            name = TEST_VIDEO_ASSET,
-            path = videoFile.absolutePath,
-            uri = Uri.fromFile(videoFile),
-            size = videoFile.length(),
-            lastModified = videoFile.lastModified(),
-            isDirectory = false,
-            fileType = FileType.VIDEO,
-        )
     }
 
-    private fun setVideoPlayerContent(isActive: Boolean) {
+    private fun setVideoPlayerContent(
+        isActive: Boolean,
+        onPrevious: (() -> Unit)? = null,
+        onNext: (() -> Unit)? = null,
+    ) {
         composeTestRule.setContent {
             VideoPlayer(
-                fileItem = videoFileItem,
+                fileItem = videoFileItems.first(),
                 isActive = isActive,
+                playerFactory = playerFactory,
+                onPrevious = onPrevious,
+                onNext = onNext,
+            )
+        }
+    }
+
+    private fun setMediaViewerContent(initialIndex: Int = 0) {
+        composeTestRule.setContent {
+            MediaViewerOverlay(
+                viewableFiles = videoFileItems,
+                initialIndex = initialIndex,
+                onDismiss = {},
                 playerFactory = playerFactory,
             )
         }
     }
 
-    private fun ComposeContentTestRule.awaitControlDescription(description: String) {
+    private fun ComposeContentTestRule.awaitNode(
+        description: String,
+        substring: Boolean = false,
+    ) {
         waitUntil(timeoutMillis = PLAYBACK_TIMEOUT_MS) {
-            onAllNodes(hasContentDescription(description))
+            onAllNodes(hasContentDescription(description, substring = substring))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+    }
+
+    private fun ComposeContentTestRule.awaitText(text: String) {
+        waitUntil(timeoutMillis = PLAYBACK_TIMEOUT_MS) {
+            onAllNodes(hasText(text))
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
@@ -81,15 +117,17 @@ class VideoPlayerIntegrationTest {
         setVideoPlayerContent(isActive = false)
 
         composeTestRule.onNodeWithContentDescription("Play").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Seek back").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Seek forward").assertIsDisplayed()
+        composeTestRule.onNode(hasContentDescription("Skip back", substring = true))
+            .assertIsDisplayed()
+        composeTestRule.onNode(hasContentDescription("Skip forward", substring = true))
+            .assertIsDisplayed()
     }
 
     @Test
     fun videoPlaysWhenActive() {
         setVideoPlayerContent(isActive = true)
 
-        composeTestRule.awaitControlDescription("Pause")
+        composeTestRule.awaitNode("Pause")
         composeTestRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
     }
 
@@ -99,7 +137,7 @@ class VideoPlayerIntegrationTest {
 
         composeTestRule.onNodeWithContentDescription("Play").performClick()
 
-        composeTestRule.awaitControlDescription("Pause")
+        composeTestRule.awaitNode("Pause")
         composeTestRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
     }
 
@@ -107,10 +145,121 @@ class VideoPlayerIntegrationTest {
     fun tapPausePausesPlayback() {
         setVideoPlayerContent(isActive = true)
 
-        composeTestRule.awaitControlDescription("Pause")
+        composeTestRule.awaitNode("Pause")
         composeTestRule.onNodeWithContentDescription("Pause").performClick()
 
-        composeTestRule.awaitControlDescription("Play")
+        composeTestRule.awaitNode("Play")
         composeTestRule.onNodeWithContentDescription("Play").assertIsDisplayed()
     }
+
+    @Test
+    fun timeLabelsDisplayedWhenInactive() {
+        setVideoPlayerContent(isActive = false)
+
+        val nodes = composeTestRule.onAllNodes(hasText("0:00"))
+        nodes.assertCountEquals(2)
+    }
+
+    @Test
+    fun durationUpdatesWhenPlaying() {
+        setVideoPlayerContent(isActive = true)
+
+        composeTestRule.awaitNode("Pause")
+        composeTestRule.waitUntil(timeoutMillis = PLAYBACK_TIMEOUT_MS) {
+            composeTestRule.onAllNodes(hasText("0:00"))
+                .fetchSemanticsNodes()
+                .size < 2
+        }
+    }
+
+    @Test
+    fun previousAndNextButtonsDisplayedWhenCallbacksProvided() {
+        setVideoPlayerContent(
+            isActive = false,
+            onPrevious = {},
+            onNext = {},
+        )
+
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Next").assertIsDisplayed()
+    }
+
+    @Test
+    fun previousButtonDisabledWhenNoPreviousCallback() {
+        setVideoPlayerContent(
+            isActive = false,
+            onPrevious = null,
+            onNext = {},
+        )
+
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription("Next").assertIsEnabled()
+    }
+
+    @Test
+    fun nextButtonDisabledWhenNoNextCallback() {
+        setVideoPlayerContent(
+            isActive = false,
+            onPrevious = {},
+            onNext = null,
+        )
+
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription("Next").assertIsNotEnabled()
+    }
+
+
+    @Test
+    fun firstVideoHasPreviousDisabledAndNextEnabled() {
+        setMediaViewerContent(initialIndex = 0)
+
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription("Next").assertIsEnabled()
+    }
+
+    @Test
+    fun lastVideoHasPreviousEnabledAndNextDisabled() {
+        setMediaViewerContent(initialIndex = 1)
+
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsEnabled()
+        composeTestRule.onNodeWithContentDescription("Next").assertIsNotEnabled()
+    }
+
+    @Test
+    fun tapNextNavigatesToSecondVideo() {
+        setMediaViewerContent(initialIndex = 0)
+
+        composeTestRule.awaitText("1 / 2")
+        composeTestRule.onNodeWithContentDescription("Next").performClick()
+
+        composeTestRule.awaitText("2 / 2")
+        composeTestRule.onNodeWithText("2 / 2").assertIsDisplayed()
+    }
+
+    @Test
+    fun tapPreviousNavigatesToFirstVideo() {
+        setMediaViewerContent(initialIndex = 1)
+
+        composeTestRule.awaitText("2 / 2")
+        composeTestRule.onNodeWithContentDescription("Previous").performClick()
+
+        composeTestRule.awaitText("1 / 2")
+        composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
+    }
+
+    @Test
+    fun allControlsDisplayedInPager() {
+        setMediaViewerContent(initialIndex = 0)
+
+        composeTestRule.awaitNode("Pause")
+        composeTestRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
+        composeTestRule.onNode(hasContentDescription("Skip back", substring = true))
+            .assertIsDisplayed()
+        composeTestRule.onNode(hasContentDescription("Skip forward", substring = true))
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Next").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
+    }
+
 }
