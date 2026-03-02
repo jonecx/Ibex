@@ -12,6 +12,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +47,7 @@ fun MediaViewerOverlay(
     onDismiss: () -> Unit,
     playerFactory: PlayerFactory,
     modifier: Modifier = Modifier,
+    onDelete: (FileItem) -> Unit = {},
 ) {
     val pagerState = rememberPagerState(
         initialPage = initialIndex,
@@ -127,6 +129,15 @@ fun MediaViewerOverlay(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.close_viewer),
+                            tint = White,
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { currentFile?.let { onDelete(it) } }) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = stringResource(R.string.delete_file),
                             tint = White,
                         )
                     }
