@@ -115,6 +115,11 @@ class VideoPlayerIntegrationTest {
         }
     }
 
+    private fun openSpeedMenu() {
+        setVideoPlayerContent(isActive = false)
+        composeTestRule.onNodeWithContentDescription("Playback speed").performClick()
+    }
+
     @Test
     fun loadingIndicatorShownWhileBuffering() {
         setVideoPlayerContent(isActive = false)
@@ -268,6 +273,67 @@ class VideoPlayerIntegrationTest {
     }
 
     @Test
+    fun speedButtonDisplayedWithDefault() {
+        setVideoPlayerContent(isActive = false)
+
+        composeTestRule.onNodeWithContentDescription("Playback speed").assertIsDisplayed()
+        composeTestRule.onNodeWithText("1X").assertIsDisplayed()
+    }
+
+    @Test
+    fun speedMenuOpensOnTap() {
+        openSpeedMenu()
+
+        composeTestRule.onNodeWithText("0.25X").assertIsDisplayed()
+        composeTestRule.onNodeWithText("2X").assertIsDisplayed()
+    }
+
+    @Test
+    fun selectingSpeedUpdatesLabel() {
+        openSpeedMenu()
+        composeTestRule.onNodeWithText("1.5X").performClick()
+
+        composeTestRule.onNodeWithText("1.5X").assertIsDisplayed()
+        composeTestRule.onNodeWithText("0.25X").assertDoesNotExist()
+    }
+
+    @Test
+    fun speedMenuContainsAllOptions() {
+        openSpeedMenu()
+
+        listOf("0.25X", "0.5X", "0.75X", "1.25X", "1.5X", "1.75X", "2X").forEach {
+            composeTestRule.onNodeWithText(it).assertExists()
+        }
+        composeTestRule.onAllNodes(hasText("1X")).assertCountEquals(2)
+    }
+
+    @Test
+    fun speedMenuReopensWithSelectedSpeed() {
+        openSpeedMenu()
+        composeTestRule.onNodeWithText("0.75X").performClick()
+        composeTestRule.onNodeWithText("0.75X").assertIsDisplayed()
+
+        composeTestRule.onNodeWithContentDescription("Playback speed").performClick()
+        composeTestRule.onNodeWithText("0.25X").assertExists()
+    }
+
+    @Test
+    fun speedSelectionMinValue() {
+        openSpeedMenu()
+        composeTestRule.onNodeWithText("0.25X").performClick()
+
+        composeTestRule.onNodeWithText("0.25X").assertIsDisplayed()
+    }
+
+    @Test
+    fun speedSelectionMaxValue() {
+        openSpeedMenu()
+        composeTestRule.onNodeWithText("2X").performClick()
+
+        composeTestRule.onNodeWithText("2X").assertIsDisplayed()
+    }
+
+    @Test
     fun allControlsDisplayedInPager() {
         setMediaViewerContent(initialIndex = 0)
 
@@ -279,6 +345,7 @@ class VideoPlayerIntegrationTest {
             .assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Previous").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Next").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Playback speed").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
     }
 
