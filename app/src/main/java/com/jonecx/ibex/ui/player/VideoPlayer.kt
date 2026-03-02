@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -102,16 +103,6 @@ fun VideoPlayer(
         }
     }
 
-    val surfaceModifier = remember(videoAspectRatio) {
-        if (videoAspectRatio > 0f) {
-            Modifier
-                .fillMaxSize()
-                .aspectRatio(videoAspectRatio)
-        } else {
-            Modifier.fillMaxSize()
-        }
-    }
-
     Box(
         modifier = modifier
             .background(Black)
@@ -121,7 +112,15 @@ fun VideoPlayer(
         PlayerSurface(
             player = player,
             surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
-            modifier = surfaceModifier,
+            modifier = if (videoAspectRatio > 0f) {
+                Modifier
+                    .fillMaxSize()
+                    .aspectRatio(videoAspectRatio)
+            } else {
+                Modifier
+                    .fillMaxSize()
+                    .alpha(0f)
+            },
         )
 
         if (isBuffering) {
