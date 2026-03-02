@@ -406,10 +406,15 @@ class VideoPlayerIntegrationTest {
     @Test
     fun deleteRemovesFileFromPager() {
         var files by mutableStateOf(videoFileItems)
-        setMediaViewerContent(
-            viewableFiles = files,
-            onDelete = { fileItem -> files = files.filterNot { it.path == fileItem.path } },
-        )
+        composeTestRule.setContent {
+            MediaViewerOverlay(
+                viewableFiles = files,
+                initialIndex = 0,
+                onDismiss = {},
+                onDelete = { fileItem -> files = files.filterNot { it.path == fileItem.path } },
+                playerFactory = playerFactory,
+            )
+        }
 
         composeTestRule.awaitText("1 / 2")
         composeTestRule.onNodeWithContentDescription("Delete").performClick()
