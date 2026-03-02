@@ -1,7 +1,9 @@
 package com.jonecx.ibex.di
 
 import com.jonecx.ibex.data.repository.FakeFileRepository
+import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
+import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -19,5 +21,11 @@ object FakeRepositoryModule {
     @Singleton
     fun provideFileRepositoryFactory(): FileRepositoryFactory {
         return FakeFileRepositoryFactory(FakeFileRepository())
+    }
+
+    @Provides
+    @Singleton
+    fun provideFileTrashManager(): FileTrashManager {
+        return FakeFileTrashManager()
     }
 }

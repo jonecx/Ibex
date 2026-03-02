@@ -1,6 +1,9 @@
 package com.jonecx.ibex.ui.player
 
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -21,6 +24,7 @@ import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.ui.explorer.components.MediaViewerOverlay
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -85,12 +89,17 @@ class VideoPlayerIntegrationTest {
         }
     }
 
-    private fun setMediaViewerContent(initialIndex: Int = 0) {
+    private fun setMediaViewerContent(
+        initialIndex: Int = 0,
+        viewableFiles: List<FileItem> = videoFileItems,
+        onDelete: (FileItem) -> Unit = {},
+    ) {
         composeTestRule.setContent {
             MediaViewerOverlay(
-                viewableFiles = videoFileItems,
+                viewableFiles = viewableFiles,
                 initialIndex = initialIndex,
                 onDismiss = {},
+                onDelete = onDelete,
                 playerFactory = playerFactory,
             )
         }
@@ -346,7 +355,15 @@ class VideoPlayerIntegrationTest {
         composeTestRule.onNodeWithContentDescription("Previous").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Next").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Playback speed").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Delete").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
+    }
+
+    @Test
+    fun deleteButtonDisplayedInToolbar() {
+        setMediaViewerContent(initialIndex = 0)
+
+        composeTestRule.onNodeWithContentDescription("Delete").assertIsDisplayed()
     }
 
     @Test
@@ -374,5 +391,30 @@ class VideoPlayerIntegrationTest {
         composeTestRule.onRoot().performTouchInput { click(center) }
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
+    }
+
+    @Test
+    fun deleteButtonCallsOnDeleteWithCurrentFile() {
+        var deletedFile: FileItem? = null
+        setMediaViewerContent(onDelete = { deletedFile = it })
+
+        composeTestRule.onNodeWithContentDescription("Delete").performClick()
+        composeTestRule.waitForIdle()
+        assertEquals(videoFileItems[0], deletedFile)
+    }
+
+    @Test
+    fun deleteRemovesFileFromPager() {
+        var files by mutableStateOf(videoFileItems)
+        setMediaViewerContent(
+            viewableFiles = files,
+            onDelete = { fileItem -> files = files.filterNot { it.path == fileItem.path } },
+        )
+
+        composeTestRule.awaitText("1 / 2")
+        composeTestRule.onNodeWithContentDescription("Delete").performClick()
+
+        composeTestRule.awaitText("1 / 1")
+        composeTestRule.onNodeWithText("1 / 1").assertIsDisplayed()
     }
 }

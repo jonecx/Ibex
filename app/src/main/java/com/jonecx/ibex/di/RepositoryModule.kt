@@ -3,17 +3,20 @@ package com.jonecx.ibex.di
 import android.content.Context
 import com.jonecx.ibex.data.repository.AppsRepository
 import com.jonecx.ibex.data.repository.FileRepository
+import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.LocalFileRepository
 import com.jonecx.ibex.data.repository.MediaFileRepository
+import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.data.repository.RecentFilesRepository
 import com.jonecx.ibex.data.repository.TrashRepository
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
+import javax.inject.Inject
 import javax.inject.Singleton
 
 interface FileRepositoryFactory {
@@ -24,9 +27,10 @@ interface FileRepositoryFactory {
     fun createTrashRepository(): FileRepository
 }
 
-class RealFileRepositoryFactory(
-    private val context: Context,
-    private val ioDispatcher: CoroutineDispatcher,
+@Singleton
+class RealFileRepositoryFactory @Inject constructor(
+    @ApplicationContext private val context: Context,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : FileRepositoryFactory {
     override fun createLocalFileRepository(): FileRepository = LocalFileRepository(context, ioDispatcher)
 
@@ -42,14 +46,17 @@ class RealFileRepositoryFactory(
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule {
+abstract class RepositoryModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideFileRepositoryFactory(
-        @ApplicationContext context: Context,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): FileRepositoryFactory {
-        return RealFileRepositoryFactory(context, ioDispatcher)
-    }
+    abstract fun bindFileRepositoryFactory(
+        impl: RealFileRepositoryFactory,
+    ): FileRepositoryFactory
+
+    @Binds
+    @Singleton
+    abstract fun bindFileTrashManager(
+        impl: MediaStoreFileTrashManager,
+    ): FileTrashManager
 }

@@ -1,6 +1,7 @@
 package com.jonecx.ibex.ui.viewer
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -20,8 +21,11 @@ fun MediaViewerScreen(
             viewableFiles = uiState.viewableFiles,
             initialIndex = uiState.initialIndex,
             onDismiss = onNavigateBack,
+            onDelete = { fileItem -> viewModel.deleteFile(fileItem) },
             playerFactory = viewModel.playerFactory,
             modifier = modifier,
         )
+    } else {
+        LaunchedEffect(Unit) { onNavigateBack() }
     }
 }
