@@ -7,6 +7,7 @@ import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.fixtures.FakeFileRepository
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
+import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
@@ -30,6 +31,7 @@ class FileExplorerViewModelTest {
     private lateinit var fakeRepository: FakeFileRepository
     private lateinit var fakeFactory: FakeFileRepositoryFactory
     private lateinit var fakePreferences: FakeSettingsPreferences
+    private lateinit var fakeTrashManager: FakeFileTrashManager
 
     private val storagePath = Environment.getExternalStorageDirectory().absolutePath
     private lateinit var viewModel: FileExplorerViewModel
@@ -39,6 +41,7 @@ class FileExplorerViewModelTest {
         fakeRepository = FakeFileRepository()
         fakeFactory = FakeFileRepositoryFactory(fakeRepository)
         fakePreferences = FakeSettingsPreferences()
+        fakeTrashManager = FakeFileTrashManager()
         viewModel = createViewModel()
     }
 
@@ -54,7 +57,7 @@ class FileExplorerViewModelTest {
                 "title" to title,
             ),
         )
-        return FileExplorerViewModel(fakeFactory, fakePreferences, savedStateHandle, testDispatcher)
+        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, savedStateHandle, testDispatcher)
     }
 
     private fun navigateToSubdir(name: String = "subdir") {
@@ -232,5 +235,71 @@ class FileExplorerViewModelTest {
             assertEquals(listOf("new.txt"), refreshed.files.map { it.name })
             assertFalse(refreshed.isLoading)
         }
+    }
+
+    @Test
+    fun `enterSelectionMode enables selection with file`() = runTest {
+        val file = testFileItem("photo.jpg")
+        viewModel.enterSelectionMode(file)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isSelectionMode)
+        assertTrue(file.path in state.selectedFiles)
+        assertEquals(1, state.selectedFiles.size)
+    }
+
+    @Test
+    fun `toggleFileSelection adds and removes files`() = runTest {
+        val file1 = testFileItem("a.txt")
+        val file2 = testFileItem("b.txt")
+        viewModel.enterSelectionMode(file1)
+
+        viewModel.toggleFileSelection(file2)
+        assertEquals(2, viewModel.uiState.value.selectedFiles.size)
+
+        viewModel.toggleFileSelection(file1)
+        assertEquals(1, viewModel.uiState.value.selectedFiles.size)
+        assertTrue(file2.path in viewModel.uiState.value.selectedFiles)
+    }
+
+    @Test
+    fun `toggleFileSelection exits selection mode when last file deselected`() = runTest {
+        val file = testFileItem("a.txt")
+        viewModel.enterSelectionMode(file)
+
+        viewModel.toggleFileSelection(file)
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSelectionMode)
+        assertTrue(state.selectedFiles.isEmpty())
+    }
+
+    @Test
+    fun `clearSelection exits selection mode`() = runTest {
+        viewModel.enterSelectionMode(testFileItem("a.txt"))
+        assertTrue(viewModel.uiState.value.isSelectionMode)
+
+        viewModel.clearSelection()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSelectionMode)
+        assertTrue(state.selectedFiles.isEmpty())
+    }
+
+    @Test
+    fun `deleteSelectedFiles trashes files and clears selection`() = runTest {
+        val file1 = testFileItem("a.txt")
+        val file2 = testFileItem("b.txt")
+        fakeRepository.filesToReturn = listOf(file1, file2)
+        viewModel = createViewModel()
+
+        viewModel.enterSelectionMode(file1)
+        viewModel.toggleFileSelection(file2)
+        viewModel.deleteSelectedFiles()
+
+        assertEquals(2, fakeTrashManager.trashedFiles.size)
+        val state = viewModel.uiState.value
+        assertFalse(state.isSelectionMode)
+        assertTrue(state.selectedFiles.isEmpty())
     }
 }

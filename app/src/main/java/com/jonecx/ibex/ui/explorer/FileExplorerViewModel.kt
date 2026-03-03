@@ -9,11 +9,14 @@ import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.repository.FileRepository
+import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.di.FileRepositoryFactory
 import com.jonecx.ibex.di.MainDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +37,8 @@ data class FileExplorerUiState(
     val allowFolderNavigation: Boolean = true,
     val isAtInternalStorageRoot: Boolean = false,
     val viewMode: ViewMode = ViewMode.LIST,
+    val isSelectionMode: Boolean = false,
+    val selectedFiles: Set<String> = emptySet(),
 )
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
@@ -42,6 +47,7 @@ val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().ab
 class FileExplorerViewModel @Inject constructor(
     private val repositoryFactory: FileRepositoryFactory,
     private val settingsPreferences: SettingsPreferencesContract,
+    private val fileTrashManager: FileTrashManager,
     savedStateHandle: SavedStateHandle,
     @MainDispatcher private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -189,5 +195,52 @@ class FileExplorerViewModel @Inject constructor(
 
     fun canNavigateUp(): Boolean {
         return _uiState.value.navigationStack.size > 1
+    }
+
+    fun enterSelectionMode(fileItem: FileItem) {
+        _uiState.update {
+            it.copy(
+                isSelectionMode = true,
+                selectedFiles = setOf(fileItem.path),
+            )
+        }
+    }
+
+    fun toggleFileSelection(fileItem: FileItem) {
+        _uiState.update { state ->
+            val newSelection = if (fileItem.path in state.selectedFiles) {
+                state.selectedFiles - fileItem.path
+            } else {
+                state.selectedFiles + fileItem.path
+            }
+            if (newSelection.isEmpty()) {
+                state.copy(isSelectionMode = false, selectedFiles = emptySet())
+            } else {
+                state.copy(selectedFiles = newSelection)
+            }
+        }
+    }
+
+    fun clearSelection() {
+        _uiState.update {
+            it.copy(isSelectionMode = false, selectedFiles = emptySet())
+        }
+    }
+
+    fun deleteSelectedFiles() {
+        val state = _uiState.value
+        val filesToDelete = state.files.filter { it.path in state.selectedFiles }
+        if (filesToDelete.isEmpty()) return
+
+        viewModelScope.launch(dispatcher) {
+            filesToDelete.map { file -> async { fileTrashManager.trashFile(file) } }.awaitAll()
+            _uiState.update {
+                it.copy(
+                    isSelectionMode = false,
+                    selectedFiles = emptySet(),
+                )
+            }
+            refreshFiles()
+        }
     }
 }

@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,7 +30,10 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -37,6 +42,7 @@ import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.ErrorView
 import com.jonecx.ibex.ui.components.LoadingView
@@ -60,6 +66,7 @@ fun FileExplorerScreen(
     BackHandler(enabled = true) {
         scope.launch {
             when {
+                uiState.isSelectionMode -> viewModel.clearSelection()
                 navigator.canNavigateBack() -> navigator.navigateBack()
                 viewModel.canNavigateUp() -> viewModel.navigateUp()
                 else -> onNavigateBack()
@@ -76,27 +83,40 @@ fun FileExplorerScreen(
                 FileListPane(
                     uiState = uiState,
                     onFileClick = { fileItem ->
-                        when (fileItem.fileType) {
-                            FileType.DIRECTORY -> viewModel.navigateTo(fileItem)
+                        if (uiState.isSelectionMode) {
+                            viewModel.toggleFileSelection(fileItem)
+                        } else {
+                            when (fileItem.fileType) {
+                                FileType.DIRECTORY -> viewModel.navigateTo(fileItem)
 
-                            FileType.IMAGE, FileType.VIDEO -> {
-                                val viewableFiles = uiState.files.filter {
-                                    it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
+                                FileType.IMAGE, FileType.VIDEO -> {
+                                    val viewableFiles = uiState.files.filter {
+                                        it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
+                                    }
+                                    val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
+                                    if (index >= 0) {
+                                        onOpenMediaViewer(viewableFiles, index)
+                                    }
                                 }
-                                val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
-                                if (index >= 0) {
-                                    onOpenMediaViewer(viewableFiles, index)
-                                }
-                            }
 
-                            else -> {
-                                viewModel.selectFile(fileItem)
-                                scope.launch {
-                                    navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                else -> {
+                                    viewModel.selectFile(fileItem)
+                                    scope.launch {
+                                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                    }
                                 }
                             }
                         }
                     },
+                    onFileLongClick = { fileItem ->
+                        if (!uiState.isSelectionMode) {
+                            viewModel.enterSelectionMode(fileItem)
+                        } else {
+                            viewModel.toggleFileSelection(fileItem)
+                        }
+                    },
+                    onCancelSelection = { viewModel.clearSelection() },
+                    onDeleteSelected = { viewModel.deleteSelectedFiles() },
                     onNavigateUp = {
                         if (viewModel.canNavigateUp()) {
                             viewModel.navigateUp()
@@ -124,34 +144,69 @@ fun FileExplorerScreen(
 private fun FileListPane(
     uiState: FileExplorerUiState,
     onFileClick: (FileItem) -> Unit,
+    onFileLongClick: (FileItem) -> Unit,
+    onCancelSelection: () -> Unit,
+    onDeleteSelected: () -> Unit,
     onNavigateUp: () -> Unit,
     showBackButton: Boolean,
     currentDirectoryName: String,
     modifier: Modifier = Modifier,
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = currentDirectoryName,
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
-                navigationIcon = {
-                    if (showBackButton) {
-                        IconButton(onClick = onNavigateUp) {
+            if (uiState.isSelectionMode) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(R.string.selected_count, uiState.selectedFiles.size),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onCancelSelection) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.navigate_up),
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.cancel_selection),
                             )
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
+                    },
+                    actions = {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.delete_selected),
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    ),
+                )
+            } else {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = currentDirectoryName,
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    },
+                    navigationIcon = {
+                        if (showBackButton) {
+                            IconButton(onClick = onNavigateUp) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.navigate_up),
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
+            }
         },
         modifier = modifier,
     ) { paddingValues ->
@@ -193,6 +248,9 @@ private fun FileListPane(
                                     fileItem = fileItem,
                                     isSelected = selectedPath == fileItem.path,
                                     onClick = { onFileClick(fileItem) },
+                                    isSelectionMode = uiState.isSelectionMode,
+                                    isChecked = fileItem.path in uiState.selectedFiles,
+                                    onLongClick = { onFileLongClick(fileItem) },
                                 )
                             }
                         }
@@ -214,12 +272,29 @@ private fun FileListPane(
                                     fileItem = fileItem,
                                     isSelected = selectedPath == fileItem.path,
                                     onClick = { onFileClick(fileItem) },
+                                    isSelectionMode = uiState.isSelectionMode,
+                                    isChecked = fileItem.path in uiState.selectedFiles,
+                                    onLongClick = { onFileLongClick(fileItem) },
                                 )
                             }
                         }
                     }
                 }
             }
+        }
+
+        if (showDeleteDialog) {
+            ConfirmationDialog(
+                title = stringResource(R.string.delete_selected_title, uiState.selectedFiles.size),
+                message = stringResource(R.string.delete_selected_message),
+                confirmText = stringResource(R.string.delete_confirm),
+                dismissText = stringResource(R.string.delete_cancel),
+                onConfirm = {
+                    showDeleteDialog = false
+                    onDeleteSelected()
+                },
+                onDismiss = { showDeleteDialog = false },
+            )
         }
     }
 }
