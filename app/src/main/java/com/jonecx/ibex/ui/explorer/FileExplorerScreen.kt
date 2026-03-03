@@ -287,8 +287,8 @@ private fun FileListPane(
                             columns = GridCells.Adaptive(minSize = 100.dp),
                             modifier = Modifier.fillMaxSize().testTag("file_grid"),
                             contentPadding = contentPadding,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(0.5.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.5.dp),
                         ) {
                             items(
                                 items = uiState.files,
