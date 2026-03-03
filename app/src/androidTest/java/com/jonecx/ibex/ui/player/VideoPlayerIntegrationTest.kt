@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
@@ -25,6 +26,7 @@ import com.jonecx.ibex.ui.explorer.components.MediaViewerOverlay
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -122,6 +124,17 @@ class VideoPlayerIntegrationTest {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
+    }
+
+    private fun openDeleteDialog() {
+        composeTestRule.onNodeWithContentDescription("Delete").performClick()
+    }
+
+    private fun confirmDelete() {
+        composeTestRule.onAllNodes(hasText("Delete"))
+            .filterToOne(!hasContentDescription("Delete"))
+            .performClick()
+        composeTestRule.waitForIdle()
     }
 
     private fun openSpeedMenu() {
@@ -394,17 +407,42 @@ class VideoPlayerIntegrationTest {
     }
 
     @Test
-    fun deleteButtonCallsOnDeleteWithCurrentFile() {
+    fun deleteButtonShowsConfirmationDialog() {
+        setMediaViewerContent()
+
+        openDeleteDialog()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Delete file?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+    }
+
+    @Test
+    fun deleteCancelDismissesDialog() {
         var deletedFile: FileItem? = null
         setMediaViewerContent(onDelete = { deletedFile = it })
 
-        composeTestRule.onNodeWithContentDescription("Delete").performClick()
+        openDeleteDialog()
+        composeTestRule.onNodeWithText("Cancel").performClick()
         composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Delete file?").assertDoesNotExist()
+        assertNull(deletedFile)
+    }
+
+    @Test
+    fun deleteConfirmCallsOnDeleteWithCurrentFile() {
+        var deletedFile: FileItem? = null
+        setMediaViewerContent(onDelete = { deletedFile = it })
+
+        openDeleteDialog()
+        confirmDelete()
+
         assertEquals(videoFileItems[0], deletedFile)
     }
 
     @Test
-    fun deleteRemovesFileFromPager() {
+    fun deleteConfirmRemovesFileFromPager() {
         var files by mutableStateOf(videoFileItems)
         composeTestRule.setContent {
             MediaViewerOverlay(
@@ -417,7 +455,9 @@ class VideoPlayerIntegrationTest {
         }
 
         composeTestRule.awaitText("1 / 2")
-        composeTestRule.onNodeWithContentDescription("Delete").performClick()
+        openDeleteDialog()
+        composeTestRule.onNodeWithText("Delete file?").assertIsDisplayed()
+        confirmDelete()
 
         composeTestRule.awaitText("1 / 1")
         composeTestRule.onNodeWithText("1 / 1").assertIsDisplayed()
