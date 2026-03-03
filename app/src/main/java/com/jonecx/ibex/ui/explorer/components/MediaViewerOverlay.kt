@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.player.PlayerFactory
 import com.jonecx.ibex.ui.player.VideoPlayer
 import com.jonecx.ibex.ui.theme.Black
@@ -59,6 +60,7 @@ fun MediaViewerOverlay(
     val overlayBarColors = TopAppBarDefaults.topAppBarColors(containerColor = ScrimDark)
     var controlsVisible by remember { mutableStateOf(true) }
     val toggleControls = { controlsVisible = !controlsVisible }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -134,7 +136,7 @@ fun MediaViewerOverlay(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { currentFile?.let { onDelete(it) } }) {
+                    IconButton(onClick = { if (currentFile != null) showDeleteDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.Delete,
                             contentDescription = stringResource(R.string.delete_file),
@@ -143,6 +145,20 @@ fun MediaViewerOverlay(
                     }
                 },
                 colors = overlayBarColors,
+            )
+        }
+
+        if (showDeleteDialog && currentFile != null) {
+            ConfirmationDialog(
+                title = stringResource(R.string.delete_confirm_title),
+                message = stringResource(R.string.delete_confirm_message, currentFile.name),
+                confirmText = stringResource(R.string.delete_confirm),
+                dismissText = stringResource(R.string.delete_cancel),
+                onConfirm = {
+                    showDeleteDialog = false
+                    onDelete(currentFile)
+                },
+                onDismiss = { showDeleteDialog = false },
             )
         }
     }

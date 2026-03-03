@@ -47,6 +47,10 @@
     <string name="next">Next</string>
     <string name="playback_speed">Playback speed</string>
     <string name="delete_file">Delete</string>
+    <string name="delete_confirm_title">Delete file?</string>
+    <string name="delete_confirm_message">"%1$s" will be moved to trash.</string>
+    <string name="delete_confirm">Delete</string>
+    <string name="delete_cancel">Cancel</string>
     <!-- Settings -->
     <string name="settings">Settings</string>
     <string name="settings_view_mode">View Mode</string>
