@@ -2,7 +2,11 @@ package com.jonecx.ibex.di
 
 import android.content.Context
 import com.jonecx.ibex.data.repository.AppsRepository
+import com.jonecx.ibex.data.repository.DefaultFileClipboardManager
+import com.jonecx.ibex.data.repository.FileClipboardManager
+import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileRepository
+import com.jonecx.ibex.data.repository.FileSystemMoveManager
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.LocalFileRepository
 import com.jonecx.ibex.data.repository.MediaFileRepository
@@ -59,4 +63,16 @@ abstract class RepositoryModule {
     abstract fun bindFileTrashManager(
         impl: MediaStoreFileTrashManager,
     ): FileTrashManager
+
+    @Binds
+    @Singleton
+    abstract fun bindFileMoveManager(
+        impl: FileSystemMoveManager,
+    ): FileMoveManager
+
+    @Binds
+    @Singleton
+    abstract fun bindFileClipboardManager(
+        impl: DefaultFileClipboardManager,
+    ): FileClipboardManager
 }

@@ -8,6 +8,8 @@ import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.data.repository.ClipboardOperation
+import com.jonecx.ibex.data.repository.FileClipboardManager
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
@@ -15,6 +17,7 @@ import com.jonecx.ibex.di.FileRepositoryFactory
 import com.jonecx.ibex.di.MainDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +42,7 @@ data class FileExplorerUiState(
     val viewMode: ViewMode = ViewMode.LIST,
     val isSelectionMode: Boolean = false,
     val selectedFiles: Set<String> = emptySet(),
+    val clipboardOperation: ClipboardOperation? = null,
 )
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
@@ -48,6 +52,7 @@ class FileExplorerViewModel @Inject constructor(
     private val repositoryFactory: FileRepositoryFactory,
     private val settingsPreferences: SettingsPreferencesContract,
     private val fileTrashManager: FileTrashManager,
+    private val clipboardManager: FileClipboardManager,
     savedStateHandle: SavedStateHandle,
     @MainDispatcher private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -79,6 +84,8 @@ class FileExplorerViewModel @Inject constructor(
     )
     val uiState: StateFlow<FileExplorerUiState> = _uiState.asStateFlow()
 
+    private var loadFilesJob: Job? = null
+
     init {
         if (!allowFolderNavigation && title != null) {
             _uiState.value = _uiState.value.copy(currentPath = title)
@@ -87,6 +94,11 @@ class FileExplorerViewModel @Inject constructor(
         viewModelScope.launch(dispatcher) {
             settingsPreferences.viewMode.collect { mode ->
                 _uiState.update { it.copy(viewMode = mode) }
+            }
+        }
+        viewModelScope.launch(dispatcher) {
+            clipboardManager.state.collect { clipboard ->
+                _uiState.update { it.copy(clipboardOperation = clipboard.operation) }
             }
         }
     }
@@ -108,7 +120,8 @@ class FileExplorerViewModel @Inject constructor(
     }
 
     fun loadFiles(path: String, showLoading: Boolean = true) {
-        viewModelScope.launch(dispatcher) {
+        loadFilesJob?.cancel()
+        loadFilesJob = viewModelScope.launch(dispatcher) {
             if (showLoading) {
                 _uiState.update { it.copy(isLoading = true, error = null) }
             }
@@ -240,6 +253,36 @@ class FileExplorerViewModel @Inject constructor(
                     selectedFiles = emptySet(),
                 )
             }
+            refreshFiles()
+        }
+    }
+
+    fun moveToClipboard() = setClipboardFromSelection(ClipboardOperation.MOVE)
+
+    fun copyToClipboard() = setClipboardFromSelection(ClipboardOperation.COPY)
+
+    private fun setClipboardFromSelection(operation: ClipboardOperation) {
+        val state = _uiState.value
+        val files = state.files.filter { it.path in state.selectedFiles }
+        if (files.isEmpty()) return
+        clipboardManager.setClipboard(files, operation)
+        _uiState.update {
+            it.copy(
+                isSelectionMode = false,
+                selectedFiles = emptySet(),
+            )
+        }
+    }
+
+    fun cancelClipboard() {
+        clipboardManager.clear()
+    }
+
+    fun pasteFiles() {
+        val destDir = _uiState.value.currentPath
+
+        viewModelScope.launch(dispatcher) {
+            clipboardManager.paste(destDir)
             refreshFiles()
         }
     }

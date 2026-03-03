@@ -57,6 +57,13 @@
     <string name="delete_selected">Delete selected</string>
     <string name="delete_selected_title">Delete %1$d files?</string>
     <string name="delete_selected_message">Selected files will be moved to trash.</string>
+    <!-- Clipboard actions -->
+    <string name="copy">Copy</string>
+    <string name="move">Move</string>
+    <string name="rename">Rename</string>
+    <string name="more">More</string>
+    <string name="cancel">Cancel</string>
+    <string name="paste">Paste</string>
     <!-- Settings -->
     <string name="settings">Settings</string>
     <string name="settings_view_mode">View Mode</string>
