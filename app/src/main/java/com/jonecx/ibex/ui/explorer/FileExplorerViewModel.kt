@@ -101,16 +101,20 @@ class FileExplorerViewModel @Inject constructor(
         }
     }
 
-    fun loadFiles(path: String) {
+    fun loadFiles(path: String, showLoading: Boolean = true) {
         viewModelScope.launch(dispatcher) {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+            }
             repository.getFiles(path)
                 .catch { e ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = e,
-                        )
+                    if (showLoading) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = e,
+                            )
+                        }
                     }
                 }
                 .collect { files ->
@@ -158,6 +162,10 @@ class FileExplorerViewModel @Inject constructor(
             return true
         }
         return false
+    }
+
+    fun refreshFiles() {
+        loadFiles(_uiState.value.currentPath, showLoading = false)
     }
 
     fun selectFile(fileItem: FileItem?) {

@@ -2,6 +2,8 @@ package com.jonecx.ibex.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -132,6 +134,17 @@ fun AppNavigation(
         ) {
             val viewModel: FileExplorerViewModel = hiltViewModel()
 
+            val shouldRefresh by it.savedStateHandle
+                .getStateFlow("refresh", false)
+                .collectAsState()
+
+            LaunchedEffect(shouldRefresh) {
+                if (shouldRefresh) {
+                    viewModel.refreshFiles()
+                    it.savedStateHandle["refresh"] = false
+                }
+            }
+
             FileExplorerScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
@@ -144,7 +157,12 @@ fun AppNavigation(
 
         composable(Routes.MEDIA_VIEWER) {
             MediaViewerScreen(
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("refresh", true)
+                    navController.popBackStack()
+                },
             )
         }
     }
