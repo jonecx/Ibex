@@ -5,6 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.data.repository.ClipboardOperation
+import com.jonecx.ibex.fixtures.FakeFileClipboardManager
+import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepository
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
@@ -32,6 +35,8 @@ class FileExplorerViewModelTest {
     private lateinit var fakeFactory: FakeFileRepositoryFactory
     private lateinit var fakePreferences: FakeSettingsPreferences
     private lateinit var fakeTrashManager: FakeFileTrashManager
+    private lateinit var fakeMoveManager: FakeFileMoveManager
+    private lateinit var fakeClipboardManager: FakeFileClipboardManager
 
     private val storagePath = Environment.getExternalStorageDirectory().absolutePath
     private lateinit var viewModel: FileExplorerViewModel
@@ -42,6 +47,8 @@ class FileExplorerViewModelTest {
         fakeFactory = FakeFileRepositoryFactory(fakeRepository)
         fakePreferences = FakeSettingsPreferences()
         fakeTrashManager = FakeFileTrashManager()
+        fakeMoveManager = FakeFileMoveManager()
+        fakeClipboardManager = FakeFileClipboardManager(fakeMoveManager)
         viewModel = createViewModel()
     }
 
@@ -57,7 +64,7 @@ class FileExplorerViewModelTest {
                 "title" to title,
             ),
         )
-        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, savedStateHandle, testDispatcher)
+        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeClipboardManager, savedStateHandle, testDispatcher)
     }
 
     private fun navigateToSubdir(name: String = "subdir") {
@@ -301,5 +308,92 @@ class FileExplorerViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isSelectionMode)
         assertTrue(state.selectedFiles.isEmpty())
+    }
+
+    @Test
+    fun `moveToClipboard stores files and exits selection`() = runTest {
+        val file1 = testFileItem("a.txt")
+        val file2 = testFileItem("b.txt")
+        fakeRepository.filesToReturn = listOf(file1, file2)
+        viewModel = createViewModel()
+
+        viewModel.enterSelectionMode(file1)
+        viewModel.toggleFileSelection(file2)
+        viewModel.moveToClipboard()
+
+        val uiState = viewModel.uiState.value
+        assertFalse(uiState.isSelectionMode)
+        assertTrue(uiState.selectedFiles.isEmpty())
+        assertEquals(ClipboardOperation.MOVE, uiState.clipboardOperation)
+
+        val clipboard = fakeClipboardManager.state.value
+        assertEquals(2, clipboard.files.size)
+        assertEquals(ClipboardOperation.MOVE, clipboard.operation)
+    }
+
+    @Test
+    fun `copyToClipboard stores files and exits selection`() = runTest {
+        val file1 = testFileItem("a.txt")
+        fakeRepository.filesToReturn = listOf(file1)
+        viewModel = createViewModel()
+
+        viewModel.enterSelectionMode(file1)
+        viewModel.copyToClipboard()
+
+        assertEquals(ClipboardOperation.COPY, viewModel.uiState.value.clipboardOperation)
+
+        val clipboard = fakeClipboardManager.state.value
+        assertEquals(1, clipboard.files.size)
+        assertEquals(ClipboardOperation.COPY, clipboard.operation)
+    }
+
+    @Test
+    fun `cancelClipboard clears clipboard`() = runTest {
+        val file1 = testFileItem("a.txt")
+        fakeRepository.filesToReturn = listOf(file1)
+        viewModel = createViewModel()
+
+        viewModel.enterSelectionMode(file1)
+        viewModel.moveToClipboard()
+        assertTrue(fakeClipboardManager.state.value.hasContent)
+
+        viewModel.cancelClipboard()
+
+        assertFalse(fakeClipboardManager.state.value.hasContent)
+        assertNull(viewModel.uiState.value.clipboardOperation)
+    }
+
+    @Test
+    fun `pasteFiles with MOVE calls moveFile and clears clipboard`() = runTest {
+        val file1 = testFileItem("a.txt")
+        val file2 = testFileItem("b.txt")
+        fakeRepository.filesToReturn = listOf(file1, file2)
+        viewModel = createViewModel()
+
+        viewModel.enterSelectionMode(file1)
+        viewModel.toggleFileSelection(file2)
+        viewModel.moveToClipboard()
+        viewModel.pasteFiles()
+
+        assertEquals(2, fakeMoveManager.movedFiles.size)
+        assertTrue(fakeMoveManager.copiedFiles.isEmpty())
+        assertFalse(fakeClipboardManager.state.value.hasContent)
+        assertNull(viewModel.uiState.value.clipboardOperation)
+    }
+
+    @Test
+    fun `pasteFiles with COPY calls copyFile and clears clipboard`() = runTest {
+        val file1 = testFileItem("a.txt")
+        fakeRepository.filesToReturn = listOf(file1)
+        viewModel = createViewModel()
+
+        viewModel.enterSelectionMode(file1)
+        viewModel.copyToClipboard()
+        viewModel.pasteFiles()
+
+        assertEquals(1, fakeMoveManager.copiedFiles.size)
+        assertTrue(fakeMoveManager.movedFiles.isEmpty())
+        assertFalse(fakeClipboardManager.state.value.hasContent)
+        assertNull(viewModel.uiState.value.clipboardOperation)
     }
 }

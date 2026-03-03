@@ -65,6 +65,10 @@ kotlin {
     }
 }
 
+composeCompiler {
+    stabilityConfigurationFile = project.layout.projectDirectory.file("compose-stability.conf")
+}
+
 ksp {
     arg("correctErrorTypes", "true")
 }

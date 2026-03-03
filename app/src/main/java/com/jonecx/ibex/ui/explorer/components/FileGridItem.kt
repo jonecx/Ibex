@@ -56,7 +56,7 @@ fun FileGridItem(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val hasThumbnail = fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO
-        var thumbnailFailed by remember { mutableStateOf(false) }
+        var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
 
         Box(
             modifier = Modifier
