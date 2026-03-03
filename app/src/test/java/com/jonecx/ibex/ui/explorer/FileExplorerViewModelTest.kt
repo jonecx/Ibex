@@ -216,4 +216,21 @@ class FileExplorerViewModelTest {
             assertEquals(ViewMode.LIST, awaitItem().viewMode)
         }
     }
+
+    @Test
+    fun `refreshFiles updates list without loading state`() = runTest {
+        fakeRepository.filesToReturn = listOf(testFileItem("old.txt"))
+        viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            assertEquals(listOf("old.txt"), awaitItem().files.map { it.name })
+
+            fakeRepository.filesToReturn = listOf(testFileItem("new.txt"))
+            viewModel.refreshFiles()
+
+            val refreshed = awaitItem()
+            assertEquals(listOf("new.txt"), refreshed.files.map { it.name })
+            assertFalse(refreshed.isLoading)
+        }
+    }
 }
