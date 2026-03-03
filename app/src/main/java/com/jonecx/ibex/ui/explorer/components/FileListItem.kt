@@ -1,7 +1,8 @@
 package com.jonecx.ibex.ui.explorer.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,17 +22,24 @@ import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.util.formatDate
 import com.jonecx.ibex.util.formatFileSize
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileListItem(
     fileItem: FileItem,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSelectionMode: Boolean = false,
+    isChecked: Boolean = false,
+    onLongClick: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .background(
                 if (isSelected) {
                     MaterialTheme.colorScheme.primaryContainer
@@ -42,6 +50,11 @@ fun FileListItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (isSelectionMode) {
+            SelectionCheckmark(isChecked = isChecked)
+            Spacer(modifier = Modifier.width(12.dp))
+        }
+
         when (fileItem.fileType) {
             FileType.IMAGE, FileType.VIDEO -> ThumbnailImage(
                 fileItem = fileItem,

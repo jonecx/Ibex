@@ -1,7 +1,8 @@
 package com.jonecx.ibex.ui.explorer.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -26,17 +27,24 @@ import com.jonecx.ibex.data.model.FileType
 
 private val GridItemShape = RoundedCornerShape(8.dp)
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileGridItem(
     fileItem: FileItem,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSelectionMode: Boolean = false,
+    isChecked: Boolean = false,
+    onLongClick: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
             .clip(GridItemShape)
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .background(
                 if (isSelected) {
                     MaterialTheme.colorScheme.primaryContainer
@@ -65,6 +73,15 @@ fun FileGridItem(
                 else -> FileIcon(
                     fileItem = fileItem,
                     modifier = Modifier.fillMaxWidth(0.5f).aspectRatio(1f),
+                )
+            }
+
+            if (isSelectionMode) {
+                SelectionCheckmark(
+                    isChecked = isChecked,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp),
                 )
             }
         }
