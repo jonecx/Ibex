@@ -45,7 +45,7 @@ fun ThumbnailImage(
             contentDescription = fileItem.name,
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(2.dp))
                 .previewPlaceholder(fileItem.fileType),
             contentScale = ContentScale.Crop,
             onState = { state ->

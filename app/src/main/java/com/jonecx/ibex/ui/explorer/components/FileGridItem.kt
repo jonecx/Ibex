@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 
-private val GridItemShape = RoundedCornerShape(8.dp)
+private val GridItemShape = RoundedCornerShape(2.dp)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -52,7 +52,7 @@ fun FileGridItem(
                     MaterialTheme.colorScheme.surface
                 },
             )
-            .padding(4.dp),
+            .padding(1.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val hasThumbnail = fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO
