@@ -71,9 +71,9 @@ class FileExplorerViewModelTest {
     ): FileExplorerViewModel {
         val savedStateHandle = SavedStateHandle(
             mapOf(
-                "sourceType" to sourceType,
-                "rootPath" to rootPath,
-                "title" to title,
+                FileExplorerViewModel.ARG_SOURCE_TYPE to sourceType,
+                FileExplorerViewModel.ARG_ROOT_PATH to rootPath,
+                FileExplorerViewModel.ARG_TITLE to title,
             ),
         )
         return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeMoveManager, fakeClipboardManager, savedStateHandle, testDispatcher)
