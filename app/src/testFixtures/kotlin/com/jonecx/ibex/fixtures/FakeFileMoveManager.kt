@@ -17,4 +17,11 @@ class FakeFileMoveManager : FileMoveManager {
         copiedFiles.add(fileItem to destinationDir)
         return shouldSucceed
     }
+
+    val renamedFiles = mutableListOf<Pair<FileItem, String>>()
+
+    override suspend fun renameFile(fileItem: FileItem, newName: String): Boolean {
+        renamedFiles.add(fileItem to newName)
+        return shouldSucceed
+    }
 }

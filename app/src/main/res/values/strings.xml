@@ -54,7 +54,7 @@
     <!-- Selection mode -->
     <string name="selected_count">%1$d selected</string>
     <string name="cancel_selection">Cancel selection</string>
-    <string name="delete_selected">Delete selected</string>
+    <string name="delete_selected">Delete</string>
     <string name="delete_selected_title">Delete %1$d files?</string>
     <string name="delete_selected_message">Selected files will be moved to trash.</string>
     <!-- Clipboard actions -->
@@ -64,6 +64,9 @@
     <string name="more">More</string>
     <string name="cancel">Cancel</string>
     <string name="paste">Paste</string>
+    <string name="rename_dialog_title">Rename</string>
+    <string name="rename_dialog_hint">New name</string>
+    <string name="rename_dialog_confirm">Rename</string>
     <!-- Settings -->
     <string name="settings">Settings</string>
     <string name="settings_view_mode">View Mode</string>

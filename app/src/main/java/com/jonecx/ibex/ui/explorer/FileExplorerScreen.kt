@@ -20,11 +20,14 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -93,14 +96,15 @@ fun FileExplorerScreen(
                 FileListPane(
                     uiState = uiState,
                     onFileClick = { fileItem ->
-                        if (uiState.isSelectionMode) {
+                        val state = viewModel.uiState.value
+                        if (state.isSelectionMode) {
                             viewModel.toggleFileSelection(fileItem)
                         } else {
                             when (fileItem.fileType) {
                                 FileType.DIRECTORY -> viewModel.navigateTo(fileItem)
 
                                 FileType.IMAGE, FileType.VIDEO -> {
-                                    val viewableFiles = uiState.files.filter {
+                                    val viewableFiles = state.files.filter {
                                         it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
                                     }
                                     val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
@@ -119,7 +123,7 @@ fun FileExplorerScreen(
                         }
                     },
                     onFileLongClick = { fileItem ->
-                        if (!uiState.isSelectionMode) {
+                        if (!viewModel.uiState.value.isSelectionMode) {
                             viewModel.enterSelectionMode(fileItem)
                         } else {
                             viewModel.toggleFileSelection(fileItem)
@@ -129,6 +133,7 @@ fun FileExplorerScreen(
                     onDeleteSelected = { viewModel.deleteSelectedFiles() },
                     onMoveSelected = { viewModel.moveToClipboard() },
                     onCopySelected = { viewModel.copyToClipboard() },
+                    onRenameSelected = { newName -> viewModel.renameSelectedFile(newName) },
                     onPaste = { viewModel.pasteFiles() },
                     onCancelClipboard = { viewModel.cancelClipboard() },
                     onNavigateUp = {
@@ -163,6 +168,7 @@ private fun FileListPane(
     onDeleteSelected: () -> Unit,
     onMoveSelected: () -> Unit,
     onCopySelected: () -> Unit,
+    onRenameSelected: (String) -> Unit,
     onPaste: () -> Unit,
     onCancelClipboard: () -> Unit,
     onNavigateUp: () -> Unit,
@@ -171,6 +177,7 @@ private fun FileListPane(
     modifier: Modifier = Modifier,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -224,7 +231,9 @@ private fun FileListPane(
                     SelectionActionBar(
                         onCopy = onCopySelected,
                         onMove = onMoveSelected,
+                        onRename = { showRenameDialog = true },
                         onDelete = { showDeleteDialog = true },
+                        singleSelection = uiState.selectedFiles.size == 1,
                     )
                 }
                 uiState.clipboardOperation != null -> {
@@ -323,6 +332,19 @@ private fun FileListPane(
                 onDismiss = { showDeleteDialog = false },
             )
         }
+
+        if (showRenameDialog) {
+            val currentName = uiState.files
+                .firstOrNull { it.path in uiState.selectedFiles }?.name.orEmpty()
+            RenameDialog(
+                currentName = currentName,
+                onConfirm = { newName ->
+                    showRenameDialog = false
+                    onRenameSelected(newName)
+                },
+                onDismiss = { showRenameDialog = false },
+            )
+        }
     }
 }
 
@@ -330,7 +352,9 @@ private fun FileListPane(
 private fun SelectionActionBar(
     onCopy: () -> Unit,
     onMove: () -> Unit,
+    onRename: () -> Unit,
     onDelete: () -> Unit,
+    singleSelection: Boolean,
 ) {
     BottomAppBar(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -346,6 +370,13 @@ private fun SelectionActionBar(
             icon = Icons.Filled.DriveFileMove,
             label = stringResource(R.string.move),
             onClick = onMove,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        ActionBarButton(
+            icon = Icons.Filled.EditNote,
+            label = stringResource(R.string.rename),
+            onClick = onRename,
+            enabled = singleSelection,
         )
         Spacer(modifier = Modifier.weight(1f))
         ActionBarButton(
@@ -386,8 +417,9 @@ private fun ActionBarButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
-    TextButton(onClick = onClick) {
+    TextButton(onClick = onClick, enabled = enabled) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = icon,
@@ -401,4 +433,39 @@ private fun ActionBarButton(
             )
         }
     }
+}
+
+@Composable
+private fun RenameDialog(
+    currentName: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(currentName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.rename_dialog_title)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(text = stringResource(R.string.rename_dialog_hint)) },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name) },
+                enabled = name.isNotBlank() && name != currentName,
+            ) {
+                Text(text = stringResource(R.string.rename_dialog_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.delete_cancel))
+            }
+        },
+    )
 }
