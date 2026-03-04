@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -115,6 +116,7 @@ fun VideoPlayer(
             modifier = if (videoAspectRatio > 0f) {
                 Modifier
                     .fillMaxSize()
+                    .wrapContentSize()
                     .aspectRatio(videoAspectRatio)
             } else {
                 Modifier
