@@ -432,6 +432,51 @@ class FileExplorerViewModelTest {
         assertEquals(currentPath to "Notes", fakeMoveManager.createdFolders.first())
     }
 
+    private fun assertFolderNavigation(sourceType: FileSourceType, expected: Boolean) {
+        viewModel = createViewModel(sourceType = sourceType.name)
+        assertEquals(expected, viewModel.uiState.value.allowFolderNavigation)
+    }
+
+    @Test
+    fun `allowFolderNavigation is true for local storage`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_STORAGE, expected = true)
+    }
+
+    @Test
+    fun `allowFolderNavigation is true for downloads`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_DOWNLOADS, expected = true)
+    }
+
+    @Test
+    fun `allowFolderNavigation is false for images`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_IMAGES, expected = false)
+    }
+
+    @Test
+    fun `allowFolderNavigation is false for videos`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_VIDEOS, expected = false)
+    }
+
+    @Test
+    fun `allowFolderNavigation is false for audio`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_AUDIO, expected = false)
+    }
+
+    @Test
+    fun `allowFolderNavigation is false for documents`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_DOCUMENTS, expected = false)
+    }
+
+    @Test
+    fun `allowFolderNavigation is false for apps`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_APPS, expected = false)
+    }
+
+    @Test
+    fun `allowFolderNavigation is false for trash`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_TRASH, expected = false)
+    }
+
     @Test
     fun `pasteFiles with COPY calls copyFile and clears clipboard`() = runTest {
         val file1 = testFileItem("a.txt")
