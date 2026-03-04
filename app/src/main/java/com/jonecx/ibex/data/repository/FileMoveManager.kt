@@ -17,6 +17,7 @@ interface FileMoveManager {
     suspend fun moveFile(fileItem: FileItem, destinationDir: String): Boolean
     suspend fun copyFile(fileItem: FileItem, destinationDir: String): Boolean
     suspend fun renameFile(fileItem: FileItem, newName: String): Boolean
+    suspend fun createFolder(parentDir: String, name: String): Boolean
 }
 
 @Singleton
@@ -46,6 +47,12 @@ class FileSystemMoveManager @Inject constructor(
     override suspend fun renameFile(fileItem: FileItem, newName: String): Boolean =
         withSourceAndDestination(fileItem, fileItem.path.substringBeforeLast("/"), newName) { source, destination ->
             source.renameTo(destination)
+        }
+
+    override suspend fun createFolder(parentDir: String, name: String): Boolean =
+        withContext(ioDispatcher) {
+            val folder = File(parentDir, name)
+            !folder.exists() && folder.mkdir()
         }
 
     private suspend fun withSourceAndDestination(

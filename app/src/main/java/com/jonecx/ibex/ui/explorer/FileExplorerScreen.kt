@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.EditNote
@@ -134,6 +135,7 @@ fun FileExplorerScreen(
                     onMoveSelected = { viewModel.moveToClipboard() },
                     onCopySelected = { viewModel.copyToClipboard() },
                     onRenameSelected = { newName -> viewModel.renameSelectedFile(newName) },
+                    onCreateFolder = { name -> viewModel.createFolder(name) },
                     onPaste = { viewModel.pasteFiles() },
                     onCancelClipboard = { viewModel.cancelClipboard() },
                     onNavigateUp = {
@@ -169,6 +171,7 @@ private fun FileListPane(
     onMoveSelected: () -> Unit,
     onCopySelected: () -> Unit,
     onRenameSelected: (String) -> Unit,
+    onCreateFolder: (String) -> Unit,
     onPaste: () -> Unit,
     onCancelClipboard: () -> Unit,
     onNavigateUp: () -> Unit,
@@ -178,6 +181,7 @@ private fun FileListPane(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showCreateFolderDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -217,6 +221,14 @@ private fun FileListPane(
                                     contentDescription = stringResource(R.string.navigate_up),
                                 )
                             }
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showCreateFolderDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.CreateNewFolder,
+                                contentDescription = stringResource(R.string.create_folder),
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -336,13 +348,30 @@ private fun FileListPane(
         if (showRenameDialog) {
             val currentName = uiState.files
                 .firstOrNull { it.path in uiState.selectedFiles }?.name.orEmpty()
-            RenameDialog(
-                currentName = currentName,
+            TextInputDialog(
+                title = stringResource(R.string.rename_dialog_title),
+                hint = stringResource(R.string.rename_dialog_hint),
+                confirmText = stringResource(R.string.rename_dialog_confirm),
+                initialValue = currentName,
+                isConfirmEnabled = { it.isNotBlank() && it != currentName },
                 onConfirm = { newName ->
                     showRenameDialog = false
                     onRenameSelected(newName)
                 },
                 onDismiss = { showRenameDialog = false },
+            )
+        }
+
+        if (showCreateFolderDialog) {
+            TextInputDialog(
+                title = stringResource(R.string.create_folder_dialog_title),
+                hint = stringResource(R.string.create_folder_dialog_hint),
+                confirmText = stringResource(R.string.create_folder_dialog_confirm),
+                onConfirm = { name ->
+                    showCreateFolderDialog = false
+                    onCreateFolder(name)
+                },
+                onDismiss = { showCreateFolderDialog = false },
             )
         }
     }
@@ -436,30 +465,34 @@ private fun ActionBarButton(
 }
 
 @Composable
-private fun RenameDialog(
-    currentName: String,
+private fun TextInputDialog(
+    title: String,
+    hint: String,
+    confirmText: String,
+    initialValue: String = "",
+    isConfirmEnabled: (String) -> Boolean = { it.isNotBlank() },
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var name by remember { mutableStateOf(currentName) }
+    var text by remember { mutableStateOf(initialValue) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.rename_dialog_title)) },
+        title = { Text(text = title) },
         text = {
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(text = stringResource(R.string.rename_dialog_hint)) },
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(text = hint) },
                 singleLine = true,
             )
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name) },
-                enabled = name.isNotBlank() && name != currentName,
+                onClick = { onConfirm(text) },
+                enabled = isConfirmEnabled(text),
             ) {
-                Text(text = stringResource(R.string.rename_dialog_confirm))
+                Text(text = confirmText)
             }
         },
         dismissButton = {

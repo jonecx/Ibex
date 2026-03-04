@@ -24,4 +24,11 @@ class FakeFileMoveManager : FileMoveManager {
         renamedFiles.add(fileItem to newName)
         return shouldSucceed
     }
+
+    val createdFolders = mutableListOf<Pair<String, String>>()
+
+    override suspend fun createFolder(parentDir: String, name: String): Boolean {
+        createdFolders.add(parentDir to name)
+        return shouldSucceed
+    }
 }

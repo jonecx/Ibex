@@ -270,6 +270,15 @@ class FileExplorerViewModel @Inject constructor(
         }
     }
 
+    fun createFolder(name: String) {
+        val parentDir = _uiState.value.currentPath
+
+        viewModelScope.launch(dispatcher) {
+            fileMoveManager.createFolder(parentDir, name)
+            refreshFiles()
+        }
+    }
+
     fun cancelClipboard() {
         clipboardManager.clear()
     }
