@@ -16,6 +16,7 @@ enum class ClipboardOperation {
 interface FileMoveManager {
     suspend fun moveFile(fileItem: FileItem, destinationDir: String): Boolean
     suspend fun copyFile(fileItem: FileItem, destinationDir: String): Boolean
+    suspend fun renameFile(fileItem: FileItem, newName: String): Boolean
 }
 
 @Singleton
@@ -42,14 +43,20 @@ class FileSystemMoveManager @Inject constructor(
             }
         }
 
+    override suspend fun renameFile(fileItem: FileItem, newName: String): Boolean =
+        withSourceAndDestination(fileItem, fileItem.path.substringBeforeLast("/"), newName) { source, destination ->
+            source.renameTo(destination)
+        }
+
     private suspend fun withSourceAndDestination(
         fileItem: FileItem,
         destinationDir: String,
+        destinationName: String? = null,
         action: (source: File, destination: File) -> Boolean,
     ): Boolean = withContext(ioDispatcher) {
         val source = File(fileItem.path)
         if (!source.exists()) return@withContext false
-        val destination = File(destinationDir, source.name)
+        val destination = File(destinationDir, destinationName ?: source.name)
         action(source, destination)
     }
 }

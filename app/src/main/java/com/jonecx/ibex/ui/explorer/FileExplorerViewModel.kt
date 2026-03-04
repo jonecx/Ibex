@@ -1,6 +1,7 @@
 package com.jonecx.ibex.ui.explorer
 
 import android.os.Environment
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import com.jonecx.ibex.data.repository.FileClipboardManager
+import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
@@ -29,6 +31,7 @@ import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import javax.inject.Inject
 
+@Immutable
 data class FileExplorerUiState(
     val currentPath: String = INTERNAL_STORAGE_PATH,
     val files: List<FileItem> = emptyList(),
@@ -52,6 +55,7 @@ class FileExplorerViewModel @Inject constructor(
     private val repositoryFactory: FileRepositoryFactory,
     private val settingsPreferences: SettingsPreferencesContract,
     private val fileTrashManager: FileTrashManager,
+    private val fileMoveManager: FileMoveManager,
     private val clipboardManager: FileClipboardManager,
     savedStateHandle: SavedStateHandle,
     @MainDispatcher private val dispatcher: CoroutineDispatcher,
@@ -60,12 +64,8 @@ class FileExplorerViewModel @Inject constructor(
     private val sourceType: FileSourceType = FileSourceType.valueOf(
         savedStateHandle.get<String>("sourceType") ?: FileSourceType.LOCAL_STORAGE.name,
     )
-    private val initialPath: String? = savedStateHandle.get<String>("rootPath")?.let {
-        if (it.isNotEmpty()) URLDecoder.decode(it, "UTF-8") else null
-    }
-    private val title: String? = savedStateHandle.get<String>("title")?.let {
-        if (it.isNotEmpty()) URLDecoder.decode(it, "UTF-8") else null
-    }
+    private val initialPath: String? = savedStateHandle.decodedString("rootPath")
+    private val title: String? = savedStateHandle.decodedString("title")
 
     private val repository: FileRepository = createRepository(sourceType)
     private val allowFolderNavigation: Boolean = sourceType in listOf(
@@ -235,24 +235,16 @@ class FileExplorerViewModel @Inject constructor(
     }
 
     fun clearSelection() {
-        _uiState.update {
-            it.copy(isSelectionMode = false, selectedFiles = emptySet())
-        }
+        _uiState.update { it.exitSelectionMode() }
     }
 
     fun deleteSelectedFiles() {
-        val state = _uiState.value
-        val filesToDelete = state.files.filter { it.path in state.selectedFiles }
+        val filesToDelete = _uiState.value.selectedFileItems()
         if (filesToDelete.isEmpty()) return
 
         viewModelScope.launch(dispatcher) {
             filesToDelete.map { file -> async { fileTrashManager.trashFile(file) } }.awaitAll()
-            _uiState.update {
-                it.copy(
-                    isSelectionMode = false,
-                    selectedFiles = emptySet(),
-                )
-            }
+            _uiState.update { it.exitSelectionMode() }
             refreshFiles()
         }
     }
@@ -262,15 +254,19 @@ class FileExplorerViewModel @Inject constructor(
     fun copyToClipboard() = setClipboardFromSelection(ClipboardOperation.COPY)
 
     private fun setClipboardFromSelection(operation: ClipboardOperation) {
-        val state = _uiState.value
-        val files = state.files.filter { it.path in state.selectedFiles }
+        val files = _uiState.value.selectedFileItems()
         if (files.isEmpty()) return
         clipboardManager.setClipboard(files, operation)
-        _uiState.update {
-            it.copy(
-                isSelectionMode = false,
-                selectedFiles = emptySet(),
-            )
+        _uiState.update { it.exitSelectionMode() }
+    }
+
+    fun renameSelectedFile(newName: String) {
+        val file = _uiState.value.selectedFileItems().firstOrNull() ?: return
+
+        viewModelScope.launch(dispatcher) {
+            fileMoveManager.renameFile(file, newName)
+            _uiState.update { it.exitSelectionMode() }
+            refreshFiles()
         }
     }
 
@@ -287,3 +283,14 @@ class FileExplorerViewModel @Inject constructor(
         }
     }
 }
+
+private fun FileExplorerUiState.exitSelectionMode() = copy(
+    isSelectionMode = false,
+    selectedFiles = emptySet(),
+)
+
+private fun FileExplorerUiState.selectedFileItems(): List<FileItem> =
+    files.filter { it.path in selectedFiles }
+
+private fun SavedStateHandle.decodedString(key: String): String? =
+    get<String>(key)?.let { if (it.isNotEmpty()) URLDecoder.decode(it, "UTF-8") else null }

@@ -15,6 +15,6 @@ abstract class PermissionModule {
     @Binds
     @Singleton
     abstract fun bindPermissionChecker(
-        realPermissionChecker: RealPermissionChecker,
+        impl: RealPermissionChecker,
     ): PermissionChecker
 }

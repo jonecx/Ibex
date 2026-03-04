@@ -64,7 +64,7 @@ class FileExplorerViewModelTest {
                 "title" to title,
             ),
         )
-        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeClipboardManager, savedStateHandle, testDispatcher)
+        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeMoveManager, fakeClipboardManager, savedStateHandle, testDispatcher)
     }
 
     private fun navigateToSubdir(name: String = "subdir") {
