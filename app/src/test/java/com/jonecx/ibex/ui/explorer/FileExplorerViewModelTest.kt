@@ -3,6 +3,7 @@ package com.jonecx.ibex.ui.explorer
 import android.os.Environment
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.repository.ClipboardOperation
@@ -14,9 +15,13 @@ import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -38,11 +43,13 @@ class FileExplorerViewModelTest {
     private lateinit var fakeMoveManager: FakeFileMoveManager
     private lateinit var fakeClipboardManager: FakeFileClipboardManager
 
-    private val storagePath = Environment.getExternalStorageDirectory().absolutePath
+    private lateinit var storagePath: String
     private lateinit var viewModel: FileExplorerViewModel
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        storagePath = Environment.getExternalStorageDirectory().absolutePath
         fakeRepository = FakeFileRepository()
         fakeFactory = FakeFileRepositoryFactory(fakeRepository)
         fakePreferences = FakeSettingsPreferences()
@@ -50,6 +57,11 @@ class FileExplorerViewModelTest {
         fakeMoveManager = FakeFileMoveManager()
         fakeClipboardManager = FakeFileClipboardManager(fakeMoveManager)
         viewModel = createViewModel()
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     private fun createViewModel(
@@ -67,6 +79,11 @@ class FileExplorerViewModelTest {
         return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeMoveManager, fakeClipboardManager, savedStateHandle, testDispatcher)
     }
 
+    private fun createViewModelWithFiles(vararg files: FileItem): FileExplorerViewModel {
+        fakeRepository.filesToReturn = files.toList()
+        return createViewModel().also { viewModel = it }
+    }
+
     private fun navigateToSubdir(name: String = "subdir") {
         val dir = testDirectoryFileItem(name, path = "$storagePath/$name")
         viewModel.navigateTo(dir)
@@ -74,8 +91,7 @@ class FileExplorerViewModelTest {
 
     @Test
     fun `initial state loads files`() = runTest {
-        fakeRepository.filesToReturn = listOf(testFileItem("file1.txt"), testFileItem("file2.txt"))
-        viewModel = createViewModel()
+        createViewModelWithFiles(testFileItem("file1.txt"), testFileItem("file2.txt"))
 
         viewModel.uiState.test {
             val state = awaitItem()
@@ -148,7 +164,7 @@ class FileExplorerViewModelTest {
     fun `loadFiles error sets error state`() = runTest {
         val error = RuntimeException("disk error")
         fakeRepository.errorToThrow = error
-        viewModel = createViewModel()
+        createViewModelWithFiles()
 
         viewModel.uiState.test {
             val state = awaitItem()
@@ -229,8 +245,7 @@ class FileExplorerViewModelTest {
 
     @Test
     fun `refreshFiles updates list without loading state`() = runTest {
-        fakeRepository.filesToReturn = listOf(testFileItem("old.txt"))
-        viewModel = createViewModel()
+        createViewModelWithFiles(testFileItem("old.txt"))
 
         viewModel.uiState.test {
             assertEquals(listOf("old.txt"), awaitItem().files.map { it.name })
@@ -297,8 +312,7 @@ class FileExplorerViewModelTest {
     fun `deleteSelectedFiles trashes files and clears selection`() = runTest {
         val file1 = testFileItem("a.txt")
         val file2 = testFileItem("b.txt")
-        fakeRepository.filesToReturn = listOf(file1, file2)
-        viewModel = createViewModel()
+        createViewModelWithFiles(file1, file2)
 
         viewModel.enterSelectionMode(file1)
         viewModel.toggleFileSelection(file2)
@@ -314,8 +328,7 @@ class FileExplorerViewModelTest {
     fun `moveToClipboard stores files and exits selection`() = runTest {
         val file1 = testFileItem("a.txt")
         val file2 = testFileItem("b.txt")
-        fakeRepository.filesToReturn = listOf(file1, file2)
-        viewModel = createViewModel()
+        createViewModelWithFiles(file1, file2)
 
         viewModel.enterSelectionMode(file1)
         viewModel.toggleFileSelection(file2)
@@ -334,8 +347,7 @@ class FileExplorerViewModelTest {
     @Test
     fun `copyToClipboard stores files and exits selection`() = runTest {
         val file1 = testFileItem("a.txt")
-        fakeRepository.filesToReturn = listOf(file1)
-        viewModel = createViewModel()
+        createViewModelWithFiles(file1)
 
         viewModel.enterSelectionMode(file1)
         viewModel.copyToClipboard()
@@ -350,8 +362,7 @@ class FileExplorerViewModelTest {
     @Test
     fun `cancelClipboard clears clipboard`() = runTest {
         val file1 = testFileItem("a.txt")
-        fakeRepository.filesToReturn = listOf(file1)
-        viewModel = createViewModel()
+        createViewModelWithFiles(file1)
 
         viewModel.enterSelectionMode(file1)
         viewModel.moveToClipboard()
@@ -367,8 +378,7 @@ class FileExplorerViewModelTest {
     fun `pasteFiles with MOVE calls moveFile and clears clipboard`() = runTest {
         val file1 = testFileItem("a.txt")
         val file2 = testFileItem("b.txt")
-        fakeRepository.filesToReturn = listOf(file1, file2)
-        viewModel = createViewModel()
+        createViewModelWithFiles(file1, file2)
 
         viewModel.enterSelectionMode(file1)
         viewModel.toggleFileSelection(file2)
@@ -382,10 +392,50 @@ class FileExplorerViewModelTest {
     }
 
     @Test
+    fun `renameSelectedFile renames file and exits selection`() = runTest {
+        val file = testFileItem("old.txt")
+        createViewModelWithFiles(file)
+
+        viewModel.enterSelectionMode(file)
+        viewModel.renameSelectedFile("new.txt")
+
+        assertEquals(1, fakeMoveManager.renamedFiles.size)
+        assertEquals(file to "new.txt", fakeMoveManager.renamedFiles.first())
+        val state = viewModel.uiState.value
+        assertFalse(state.isSelectionMode)
+        assertTrue(state.selectedFiles.isEmpty())
+    }
+
+    @Test
+    fun `renameSelectedFile is no-op when no files selected`() = runTest {
+        viewModel.renameSelectedFile("new.txt")
+        assertTrue(fakeMoveManager.renamedFiles.isEmpty())
+    }
+
+    @Test
+    fun `createFolder calls fileMoveManager with current path`() = runTest {
+        val currentPath = viewModel.uiState.value.currentPath
+        viewModel.createFolder("New Folder")
+
+        assertEquals(1, fakeMoveManager.createdFolders.size)
+        assertEquals(currentPath to "New Folder", fakeMoveManager.createdFolders.first())
+    }
+
+    @Test
+    fun `createFolder in subdirectory uses correct parent path`() = runTest {
+        navigateToSubdir("Documents")
+        val currentPath = viewModel.uiState.value.currentPath
+
+        viewModel.createFolder("Notes")
+
+        assertEquals(1, fakeMoveManager.createdFolders.size)
+        assertEquals(currentPath to "Notes", fakeMoveManager.createdFolders.first())
+    }
+
+    @Test
     fun `pasteFiles with COPY calls copyFile and clears clipboard`() = runTest {
         val file1 = testFileItem("a.txt")
-        fakeRepository.filesToReturn = listOf(file1)
-        viewModel = createViewModel()
+        createViewModelWithFiles(file1)
 
         viewModel.enterSelectionMode(file1)
         viewModel.copyToClipboard()
