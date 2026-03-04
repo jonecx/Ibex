@@ -201,6 +201,7 @@ private fun FileListPane(
                             )
                         }
                     },
+                    actions = { CreateFolderAction(uiState.allowFolderNavigation) { showCreateFolderDialog = true } },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ),
@@ -223,14 +224,7 @@ private fun FileListPane(
                             }
                         }
                     },
-                    actions = {
-                        IconButton(onClick = { showCreateFolderDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.CreateNewFolder,
-                                contentDescription = stringResource(R.string.create_folder),
-                            )
-                        }
-                    },
+                    actions = { CreateFolderAction(uiState.allowFolderNavigation) { showCreateFolderDialog = true } },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                     ),
@@ -372,6 +366,18 @@ private fun FileListPane(
                     onCreateFolder(name)
                 },
                 onDismiss = { showCreateFolderDialog = false },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreateFolderAction(visible: Boolean, onClick: () -> Unit) {
+    if (visible) {
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Filled.CreateNewFolder,
+                contentDescription = stringResource(R.string.create_folder),
             )
         }
     }

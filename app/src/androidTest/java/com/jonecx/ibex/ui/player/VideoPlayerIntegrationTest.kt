@@ -137,6 +137,12 @@ class VideoPlayerIntegrationTest {
         composeTestRule.waitForIdle()
     }
 
+    private fun setVideoPlayerContentFrozen() {
+        composeTestRule.mainClock.autoAdvance = false
+        setVideoPlayerContent(isActive = false)
+        composeTestRule.mainClock.advanceTimeByFrame()
+    }
+
     private fun openSpeedMenu() {
         setVideoPlayerContent(isActive = false)
         composeTestRule.onNodeWithContentDescription("Playback speed").performClick()
@@ -144,7 +150,7 @@ class VideoPlayerIntegrationTest {
 
     @Test
     fun loadingIndicatorShownWhileBuffering() {
-        setVideoPlayerContent(isActive = false)
+        setVideoPlayerContentFrozen()
 
         composeTestRule.onNodeWithContentDescription("Loading video").assertIsDisplayed()
     }
@@ -202,7 +208,7 @@ class VideoPlayerIntegrationTest {
 
     @Test
     fun timeLabelsDisplayedWhenInactive() {
-        setVideoPlayerContent(isActive = false)
+        setVideoPlayerContentFrozen()
 
         val nodes = composeTestRule.onAllNodes(hasText("0:00"))
         nodes.assertCountEquals(2)
