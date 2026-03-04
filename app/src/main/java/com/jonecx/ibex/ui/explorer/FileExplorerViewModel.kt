@@ -61,11 +61,17 @@ class FileExplorerViewModel @Inject constructor(
     @MainDispatcher private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
+    companion object {
+        const val ARG_SOURCE_TYPE = "sourceType"
+        const val ARG_ROOT_PATH = "rootPath"
+        const val ARG_TITLE = "title"
+    }
+
     private val sourceType: FileSourceType = FileSourceType.valueOf(
-        savedStateHandle.get<String>("sourceType") ?: FileSourceType.LOCAL_STORAGE.name,
+        savedStateHandle.get<String>(ARG_SOURCE_TYPE) ?: FileSourceType.LOCAL_STORAGE.name,
     )
-    private val initialPath: String? = savedStateHandle.decodedString("rootPath")
-    private val title: String? = savedStateHandle.decodedString("title")
+    private val initialPath: String? = savedStateHandle.decodedString(ARG_ROOT_PATH)
+    private val title: String? = savedStateHandle.decodedString(ARG_TITLE)
 
     private val repository: FileRepository = createRepository(sourceType)
     private val allowFolderNavigation: Boolean = sourceType in listOf(

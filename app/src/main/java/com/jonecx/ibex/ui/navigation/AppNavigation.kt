@@ -31,13 +31,14 @@ import java.net.URLEncoder
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
-    const val FILE_EXPLORER = "file_explorer/{sourceType}?rootPath={rootPath}&title={title}"
+    const val FILE_EXPLORER = "file_explorer/{${FileExplorerViewModel.ARG_SOURCE_TYPE}}?${FileExplorerViewModel.ARG_ROOT_PATH}={${FileExplorerViewModel.ARG_ROOT_PATH}}&${FileExplorerViewModel.ARG_TITLE}={${FileExplorerViewModel.ARG_TITLE}}"
     const val MEDIA_VIEWER = "media_viewer"
+    const val KEY_REFRESH = "refresh"
 
     fun fileExplorer(sourceType: FileSourceType, rootPath: String? = null, title: String? = null): String {
         val encodedPath = rootPath?.let { URLEncoder.encode(it, "UTF-8") } ?: ""
         val encodedTitle = title?.let { URLEncoder.encode(it, "UTF-8") } ?: ""
-        return "file_explorer/${sourceType.name}?rootPath=$encodedPath&title=$encodedTitle"
+        return "file_explorer/${sourceType.name}?${FileExplorerViewModel.ARG_ROOT_PATH}=$encodedPath&${FileExplorerViewModel.ARG_TITLE}=$encodedTitle"
     }
 }
 
@@ -121,12 +122,12 @@ fun AppNavigation(
         composable(
             route = Routes.FILE_EXPLORER,
             arguments = listOf(
-                navArgument("sourceType") { type = NavType.StringType },
-                navArgument("rootPath") {
+                navArgument(FileExplorerViewModel.ARG_SOURCE_TYPE) { type = NavType.StringType },
+                navArgument(FileExplorerViewModel.ARG_ROOT_PATH) {
                     type = NavType.StringType
                     defaultValue = ""
                 },
-                navArgument("title") {
+                navArgument(FileExplorerViewModel.ARG_TITLE) {
                     type = NavType.StringType
                     defaultValue = ""
                 },
@@ -135,13 +136,13 @@ fun AppNavigation(
             val viewModel: FileExplorerViewModel = hiltViewModel()
 
             val shouldRefresh by it.savedStateHandle
-                .getStateFlow("refresh", false)
+                .getStateFlow(Routes.KEY_REFRESH, false)
                 .collectAsState()
 
             LaunchedEffect(shouldRefresh) {
                 if (shouldRefresh) {
                     viewModel.refreshFiles()
-                    it.savedStateHandle["refresh"] = false
+                    it.savedStateHandle[Routes.KEY_REFRESH] = false
                 }
             }
 
@@ -160,7 +161,7 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("refresh", true)
+                        ?.set(Routes.KEY_REFRESH, true)
                     navController.popBackStack()
                 },
             )
