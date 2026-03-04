@@ -67,6 +67,11 @@
     <string name="rename_dialog_title">Rename</string>
     <string name="rename_dialog_hint">New name</string>
     <string name="rename_dialog_confirm">Rename</string>
+    <!-- Create folder -->
+    <string name="create_folder">New folder</string>
+    <string name="create_folder_dialog_title">New folder</string>
+    <string name="create_folder_dialog_hint">Folder name</string>
+    <string name="create_folder_dialog_confirm">Create</string>
     <!-- Settings -->
     <string name="settings">Settings</string>
     <string name="settings_view_mode">View Mode</string>
