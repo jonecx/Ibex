@@ -299,7 +299,7 @@ private fun FileListPane(
                     }
                     ViewMode.GRID -> {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 100.dp),
+                            columns = GridCells.Fixed(uiState.gridColumns),
                             modifier = Modifier.fillMaxSize().testTag("file_grid"),
                             contentPadding = contentPadding,
                             horizontalArrangement = Arrangement.spacedBy(0.5.dp),

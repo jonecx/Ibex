@@ -127,17 +127,25 @@ fun FileListItemAllTypesPreview() {
     }
 }
 
+@Composable
+private fun SettingsPreview(
+    uiState: SettingsUiState = SettingsUiState(),
+) {
+    SettingsScreenContent(
+        uiState = uiState,
+        onNavigateBack = {},
+        onAnalyticsToggleChanged = {},
+        onViewModeChanged = {},
+        onGridColumnsChanged = {},
+    )
+}
+
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenAnalyticsEnabledPreview() {
     IbexTheme {
-        SettingsScreenContent(
-            uiState = SettingsUiState(sendAnalyticsEnabled = true),
-            onNavigateBack = {},
-            onAnalyticsToggleChanged = {},
-            onViewModeChanged = {},
-        )
+        SettingsPreview(uiState = SettingsUiState(sendAnalyticsEnabled = true))
     }
 }
 
@@ -146,12 +154,7 @@ fun SettingsScreenAnalyticsEnabledPreview() {
 @Composable
 fun SettingsScreenAnalyticsDisabledPreview() {
     IbexTheme {
-        SettingsScreenContent(
-            uiState = SettingsUiState(sendAnalyticsEnabled = false),
-            onNavigateBack = {},
-            onAnalyticsToggleChanged = {},
-            onViewModeChanged = {},
-        )
+        SettingsPreview(uiState = SettingsUiState(sendAnalyticsEnabled = false))
     }
 }
 
@@ -184,11 +187,6 @@ fun FileListItemDarkThemePreview() {
 @Composable
 fun SettingsScreenDarkThemePreview() {
     IbexTheme(darkTheme = true) {
-        SettingsScreenContent(
-            uiState = SettingsUiState(sendAnalyticsEnabled = true),
-            onNavigateBack = {},
-            onAnalyticsToggleChanged = {},
-            onViewModeChanged = {},
-        )
+        SettingsPreview(uiState = SettingsUiState(sendAnalyticsEnabled = true))
     }
 }
