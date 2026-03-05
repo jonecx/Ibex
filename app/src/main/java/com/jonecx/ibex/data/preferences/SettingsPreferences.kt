@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.jonecx.ibex.data.model.ViewMode
@@ -42,8 +43,22 @@ class SettingsPreferences @Inject constructor(
         }
     }
 
+    override val gridColumns: Flow<Int> = dataStore.data.map { preferences ->
+        preferences[GRID_COLUMNS] ?: SettingsPreferencesContract.DEFAULT_GRID_COLUMNS
+    }
+
+    override suspend fun setGridColumns(columns: Int) {
+        dataStore.edit { preferences ->
+            preferences[GRID_COLUMNS] = columns.coerceIn(
+                SettingsPreferencesContract.MIN_GRID_COLUMNS,
+                SettingsPreferencesContract.MAX_GRID_COLUMNS,
+            )
+        }
+    }
+
     companion object {
         private val SEND_ANALYTICS_ENABLED = booleanPreferencesKey("send_analytics_enabled")
         private val VIEW_MODE = stringPreferencesKey("view_mode")
+        private val GRID_COLUMNS = intPreferencesKey("grid_columns")
     }
 }

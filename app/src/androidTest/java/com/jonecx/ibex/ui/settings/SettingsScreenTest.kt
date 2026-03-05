@@ -138,4 +138,33 @@ class SettingsScreenTest {
 
         assertEquals(ViewMode.LIST, selectedMode)
     }
+
+    @Test
+    fun testGridColumnsSliderHiddenInListMode() {
+        composeTestRule.setSettingsContent(
+            uiState = SettingsUiState(viewMode = ViewMode.LIST),
+        )
+
+        composeTestRule.onNodeWithText("Grid Columns").assertDoesNotExist()
+    }
+
+    @Test
+    fun testGridColumnsSliderShownInGridMode() {
+        composeTestRule.setSettingsContent(
+            uiState = SettingsUiState(viewMode = ViewMode.GRID),
+        )
+
+        composeTestRule.onNodeWithText("Grid Columns").assertIsDisplayed()
+    }
+
+    @Test
+    fun testGridColumnsSliderDisplaysAllStepLabels() {
+        composeTestRule.setSettingsContent(
+            uiState = SettingsUiState(viewMode = ViewMode.GRID),
+        )
+
+        listOf("2", "3", "4", "5", "6").forEach {
+            composeTestRule.onNodeWithText(it).assertIsDisplayed()
+        }
+    }
 }

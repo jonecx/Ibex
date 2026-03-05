@@ -30,6 +30,7 @@ fun ComposeContentTestRule.setSettingsContent(
     onNavigateBack: () -> Unit = {},
     onAnalyticsToggleChanged: (Boolean) -> Unit = {},
     onViewModeChanged: (ViewMode) -> Unit = {},
+    onGridColumnsChanged: (Int) -> Unit = {},
 ) {
     setIbexContent {
         SettingsScreenContent(
@@ -37,6 +38,7 @@ fun ComposeContentTestRule.setSettingsContent(
             onNavigateBack = onNavigateBack,
             onAnalyticsToggleChanged = onAnalyticsToggleChanged,
             onViewModeChanged = onViewModeChanged,
+            onGridColumnsChanged = onGridColumnsChanged,
         )
     }
 }

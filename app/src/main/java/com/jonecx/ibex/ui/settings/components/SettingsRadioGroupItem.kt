@@ -23,6 +23,7 @@ fun <T> SettingsRadioGroupItem(
     labelFor: @Composable (T) -> String,
     onOptionSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
+    optionExtra: (@Composable (T) -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -50,6 +51,9 @@ fun <T> SettingsRadioGroupItem(
                     text = labelFor(option),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+            if (option == selectedOption) {
+                optionExtra?.invoke(option)
             }
         }
     }

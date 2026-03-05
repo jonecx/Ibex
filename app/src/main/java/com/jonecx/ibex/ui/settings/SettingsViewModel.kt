@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
 import com.jonecx.ibex.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -17,6 +18,7 @@ import javax.inject.Inject
 data class SettingsUiState(
     val sendAnalyticsEnabled: Boolean = false,
     val viewMode: ViewMode = ViewMode.LIST,
+    val gridColumns: Int = DEFAULT_GRID_COLUMNS,
 )
 
 @HiltViewModel
@@ -39,6 +41,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(viewMode = mode) }
             }
         }
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.gridColumns.collect { columns ->
+                _uiState.update { it.copy(gridColumns = columns) }
+            }
+        }
     }
 
     fun setSendAnalyticsEnabled(enabled: Boolean) {
@@ -50,6 +57,12 @@ class SettingsViewModel @Inject constructor(
     fun setViewMode(mode: ViewMode) {
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setViewMode(mode)
+        }
+    }
+
+    fun setGridColumns(columns: Int) {
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.setGridColumns(columns)
         }
     }
 }

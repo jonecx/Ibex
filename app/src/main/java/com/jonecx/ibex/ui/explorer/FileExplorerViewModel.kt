@@ -9,6 +9,7 @@ import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import com.jonecx.ibex.data.repository.FileClipboardManager
 import com.jonecx.ibex.data.repository.FileMoveManager
@@ -43,6 +44,7 @@ data class FileExplorerUiState(
     val allowFolderNavigation: Boolean = true,
     val isAtInternalStorageRoot: Boolean = false,
     val viewMode: ViewMode = ViewMode.LIST,
+    val gridColumns: Int = DEFAULT_GRID_COLUMNS,
     val isSelectionMode: Boolean = false,
     val selectedFiles: Set<String> = emptySet(),
     val clipboardOperation: ClipboardOperation? = null,
@@ -100,6 +102,11 @@ class FileExplorerViewModel @Inject constructor(
         viewModelScope.launch(dispatcher) {
             settingsPreferences.viewMode.collect { mode ->
                 _uiState.update { it.copy(viewMode = mode) }
+            }
+        }
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.gridColumns.collect { columns ->
+                _uiState.update { it.copy(gridColumns = columns) }
             }
         }
         viewModelScope.launch(dispatcher) {

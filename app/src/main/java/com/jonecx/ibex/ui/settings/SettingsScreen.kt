@@ -21,7 +21,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.ui.settings.components.SettingsRadioGroupItem
+import com.jonecx.ibex.ui.settings.components.SettingsStepSliderItem
 import com.jonecx.ibex.ui.settings.components.SettingsToggleItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +40,7 @@ fun SettingsScreen(
         onNavigateBack = onNavigateBack,
         onAnalyticsToggleChanged = viewModel::setSendAnalyticsEnabled,
         onViewModeChanged = viewModel::setViewMode,
+        onGridColumnsChanged = viewModel::setGridColumns,
         modifier = modifier,
     )
 }
@@ -49,6 +52,7 @@ internal fun SettingsScreenContent(
     onNavigateBack: () -> Unit,
     onAnalyticsToggleChanged: (Boolean) -> Unit,
     onViewModeChanged: (ViewMode) -> Unit,
+    onGridColumnsChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -91,6 +95,16 @@ internal fun SettingsScreenContent(
                     }
                 },
                 onOptionSelected = onViewModeChanged,
+                optionExtra = { mode ->
+                    if (mode == ViewMode.GRID) {
+                        SettingsStepSliderItem(
+                            title = stringResource(R.string.settings_grid_columns),
+                            value = uiState.gridColumns,
+                            steps = SettingsPreferencesContract.GRID_COLUMN_OPTIONS,
+                            onValueChanged = onGridColumnsChanged,
+                        )
+                    }
+                },
             )
 
             SettingsToggleItem(

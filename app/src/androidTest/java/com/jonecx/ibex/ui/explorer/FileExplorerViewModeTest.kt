@@ -111,6 +111,27 @@ class FileExplorerViewModeTest {
     }
 
     @Test
+    fun testGridColumnsChangeAppliesWhileOnExplorer() {
+        composeTestRule.runOnUiThreadBlocking {
+            fakePreferences.setViewMode(ViewMode.GRID)
+            fakePreferences.setGridColumns(2)
+        }
+
+        composeTestRule.onNodeWithText("Storage").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("file_grid").assertIsDisplayed()
+
+        composeTestRule.runOnUiThreadBlocking {
+            fakePreferences.setGridColumns(6)
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag("file_grid").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Alarms").assertIsDisplayed()
+    }
+
+    @Test
     fun testViewModeSwitchesLiveWhileOnExplorer() {
         composeTestRule.onNodeWithText("Storage").performClick()
         composeTestRule.waitForIdle()

@@ -77,6 +77,7 @@
     <string name="settings_view_mode">View Mode</string>
     <string name="settings_view_mode_list">List</string>
     <string name="settings_view_mode_grid">Grid</string>
+    <string name="settings_grid_columns">Grid Columns</string>
     <string name="settings_send_analytics">Send Analytics</string>
     <string name="settings_send_analytics_description">Send anonymous usage data to help improve the app</string>
 </resources>
