@@ -80,4 +80,16 @@
     <string name="settings_grid_columns">Grid Columns</string>
     <string name="settings_send_analytics">Send Analytics</string>
     <string name="settings_send_analytics_description">Send anonymous usage data to help improve the app</string>
+    <!-- Storage Analysis -->
+    <string name="analysis_title">Storage Analysis</string>
+    <string name="analysis_total_storage">Total Storage</string>
+    <string name="analysis_used">Used</string>
+    <string name="analysis_free">Free</string>
+    <string name="analysis_category_images">Images</string>
+    <string name="analysis_category_videos">Videos</string>
+    <string name="analysis_category_audio">Audio</string>
+    <string name="analysis_category_documents">Documents</string>
+    <string name="analysis_category_apps">Apps</string>
+    <string name="analysis_category_other">Other</string>
+    <string name="analysis_category_free">Free Space</string>
 </resources>

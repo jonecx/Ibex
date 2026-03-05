@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.ui.analysis.StorageAnalysisScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerViewModel
 import com.jonecx.ibex.ui.home.HomeScreen
@@ -31,6 +32,7 @@ import java.net.URLEncoder
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val STORAGE_ANALYSIS = "storage_analysis"
     const val FILE_EXPLORER = "file_explorer/{${FileExplorerViewModel.ARG_SOURCE_TYPE}}?${FileExplorerViewModel.ARG_ROOT_PATH}={${FileExplorerViewModel.ARG_ROOT_PATH}}&${FileExplorerViewModel.ARG_TITLE}={${FileExplorerViewModel.ARG_TITLE}}"
     const val MEDIA_VIEWER = "media_viewer"
     const val KEY_REFRESH = "refresh"
@@ -97,7 +99,7 @@ fun AppNavigation(
                             navController.navigate(Routes.fileExplorer(source.type, null, source.name))
                         }
                         FileSourceType.STORAGE_ANALYSIS -> {
-                            // TODO: Implement storage analysis screen
+                            navController.navigate(Routes.STORAGE_ANALYSIS)
                         }
                         FileSourceType.CLOUD,
                         FileSourceType.SMB,
@@ -115,6 +117,12 @@ fun AppNavigation(
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(Routes.STORAGE_ANALYSIS) {
+            StorageAnalysisScreen(
                 onNavigateBack = { navController.popBackStack() },
             )
         }

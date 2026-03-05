@@ -11,8 +11,10 @@ import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.LocalFileRepository
 import com.jonecx.ibex.data.repository.MediaFileRepository
 import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
+import com.jonecx.ibex.data.repository.MediaStoreStorageAnalyzer
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.data.repository.RecentFilesRepository
+import com.jonecx.ibex.data.repository.StorageAnalyzer
 import com.jonecx.ibex.data.repository.TrashRepository
 import dagger.Binds
 import dagger.Module
@@ -75,4 +77,10 @@ abstract class RepositoryModule {
     abstract fun bindFileClipboardManager(
         impl: DefaultFileClipboardManager,
     ): FileClipboardManager
+
+    @Binds
+    @Singleton
+    abstract fun bindStorageAnalyzer(
+        impl: MediaStoreStorageAnalyzer,
+    ): StorageAnalyzer
 }

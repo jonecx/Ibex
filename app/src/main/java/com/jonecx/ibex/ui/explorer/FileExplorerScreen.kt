@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
@@ -402,7 +403,7 @@ private fun SelectionActionBar(
         )
         Spacer(modifier = Modifier.weight(1f))
         ActionBarButton(
-            icon = Icons.Filled.DriveFileMove,
+            icon = Icons.AutoMirrored.Filled.DriveFileMove,
             label = stringResource(R.string.move),
             onClick = onMove,
         )
