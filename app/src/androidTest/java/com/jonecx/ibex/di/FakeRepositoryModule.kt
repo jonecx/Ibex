@@ -4,10 +4,12 @@ import com.jonecx.ibex.data.repository.FakeFileRepository
 import com.jonecx.ibex.data.repository.FileClipboardManager
 import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileTrashManager
+import com.jonecx.ibex.data.repository.StorageAnalyzer
 import com.jonecx.ibex.fixtures.FakeFileClipboardManager
 import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
+import com.jonecx.ibex.fixtures.FakeStorageAnalyzer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -43,5 +45,11 @@ object FakeRepositoryModule {
     @Singleton
     fun provideFileClipboardManager(fileMoveManager: FileMoveManager): FileClipboardManager {
         return FakeFileClipboardManager(fileMoveManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStorageAnalyzer(): StorageAnalyzer {
+        return FakeStorageAnalyzer()
     }
 }

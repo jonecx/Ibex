@@ -10,6 +10,18 @@ import java.io.File
  */
 object FileTypeUtils {
 
+    val DOCUMENT_MIME_TYPES = arrayOf(
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    )
+
+    val DOCUMENT_MIME_SELECTION_PLACEHOLDERS = DOCUMENT_MIME_TYPES.joinToString { "?" }
+
     /**
      * Determines the FileType for a given file using MimeTypeMap.
      */

@@ -11,6 +11,9 @@ import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.fixtures.FakeStorageAnalyzer
+import com.jonecx.ibex.ui.analysis.StorageAnalysisScreenContent
+import com.jonecx.ibex.ui.analysis.StorageAnalysisUiState
 import com.jonecx.ibex.ui.explorer.components.DefaultFileImageRequestFactory
 import com.jonecx.ibex.ui.explorer.components.FileListItem
 import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
@@ -188,5 +191,50 @@ fun FileListItemDarkThemePreview() {
 fun SettingsScreenDarkThemePreview() {
     IbexTheme(darkTheme = true) {
         SettingsPreview(uiState = SettingsUiState(sendAnalyticsEnabled = true))
+    }
+}
+
+private val sampleBreakdown = kotlinx.coroutines.runBlocking {
+    FakeStorageAnalyzer().analyze()
+}
+
+@Composable
+private fun StorageAnalysisPreview(
+    uiState: StorageAnalysisUiState = StorageAnalysisUiState(
+        isLoading = false,
+        breakdown = sampleBreakdown,
+    ),
+) {
+    StorageAnalysisScreenContent(
+        uiState = uiState,
+        onNavigateBack = {},
+        onRetry = {},
+    )
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun StorageAnalysisScreenPreview() {
+    IbexTheme {
+        StorageAnalysisPreview()
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun StorageAnalysisScreenLoadingPreview() {
+    IbexTheme {
+        StorageAnalysisPreview(uiState = StorageAnalysisUiState(isLoading = true))
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun StorageAnalysisScreenDarkThemePreview() {
+    IbexTheme(darkTheme = true) {
+        StorageAnalysisPreview()
     }
 }

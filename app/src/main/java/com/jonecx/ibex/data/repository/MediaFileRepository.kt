@@ -254,16 +254,8 @@ class MediaFileRepository(
             } else {
                 ""
             }
-            val selection = "${MediaStore.Files.FileColumns.MIME_TYPE} IN (?, ?, ?, ?, ?, ?, ?)$trashFilter"
-            val selectionArgs = arrayOf(
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/vnd.ms-excel",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "application/vnd.ms-powerpoint",
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            )
+            val selection = "${MediaStore.Files.FileColumns.MIME_TYPE} IN (${FileTypeUtils.DOCUMENT_MIME_SELECTION_PLACEHOLDERS})$trashFilter"
+            val selectionArgs = FileTypeUtils.DOCUMENT_MIME_TYPES
             val sortOrder = "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
 
             context.contentResolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
