@@ -23,7 +23,8 @@ turbine = "1.1.0"
 robolectric = "4.12.2"
 screenshot = "0.0.1-alpha13"
 media3 = "1.9.2"
-benchmarkMacro = "1.3.3"
+benchmarkMacro = "1.5.0-alpha03"
+profileinstaller = "1.4.1"
 uiautomator = "2.3.0"
 
 [libraries]
@@ -64,6 +65,7 @@ media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", versi
 media3-ui-compose = { group = "androidx.media3", name = "media3-ui-compose", version.ref = "media3" }
 media3-ui-compose-material3 = { group = "androidx.media3", name = "media3-ui-compose-material3", version.ref = "media3" }
 benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacro" }
+profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 
 [plugins]
@@ -73,3 +75,4 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 android-test = { id = "com.android.test", version.ref = "agp" }
+baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmarkMacro" }

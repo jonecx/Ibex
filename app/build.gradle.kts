@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.screenshot)
+    alias(libs.plugins.baselineprofile)
 }
 
 val localProperties = Properties().apply {
@@ -45,12 +46,14 @@ android {
                 "proguard-rules.pro"
             )
         }
-        create("benchmark") {
-            initWith(buildTypes.getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += listOf("release")
-            isDebuggable = false
-            buildConfigField("boolean", "SKIP_PERMISSION_CHECK", "true")
+        listOf("benchmark", "nonMinifiedRelease").forEach { name ->
+            create(name) {
+                initWith(buildTypes.getByName("release"))
+                signingConfig = signingConfigs.getByName("debug")
+                matchingFallbacks += listOf("release")
+                isDebuggable = false
+                buildConfigField("boolean", "SKIP_PERMISSION_CHECK", "true")
+            }
         }
     }
     compileOptions {
@@ -79,6 +82,10 @@ composeCompiler {
 
 ksp {
     arg("correctErrorTypes", "true")
+}
+
+baselineProfile {
+    dexLayoutOptimization = true
 }
 
 dependencies {
@@ -121,6 +128,10 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui.compose)
     implementation(libs.media3.ui.compose.material3)
+
+    // Baseline Profile
+    implementation(libs.profileinstaller)
+    baselineProfile(project(":macrobenchmark"))
 
     // Logging & Analytics
     implementation(libs.timber)
