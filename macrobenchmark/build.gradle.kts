@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.test)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -39,7 +40,6 @@ dependencies {
 
 afterEvaluate {
     tasks.register("grantBenchmarkStoragePermission") {
-        dependsOn(":app:installBenchmark")
         doLast {
             val sdkDir = rootProject.file("local.properties")
                 .readLines()
@@ -57,12 +57,16 @@ afterEvaluate {
         }
     }
 
-    tasks.named("connectedBenchmarkAndroidTest") {
+    tasks.matching { it.name.startsWith("connected") && it.name.endsWith("AndroidTest") }.configureEach {
         dependsOn("grantBenchmarkStoragePermission")
     }
 
+    val benchmarkTestTask = tasks.matching {
+        it.name == "connectedBenchmarkBenchmarkAndroidTest"
+    }
+
     tasks.register("benchmarkCheck") {
-        dependsOn("connectedBenchmarkAndroidTest")
+        dependsOn(benchmarkTestTask)
         doLast {
             val benchDir = rootProject.file("benchmarks")
             fun runScript(vararg args: String) {
