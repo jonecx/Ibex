@@ -51,6 +51,7 @@ class ScrollBenchmark {
             startupMode = StartupMode.WARM,
             compilationMode = compilationMode,
             setupBlock = {
+                grantStoragePermission()
                 pressHome()
                 startActivityAndWait()
 

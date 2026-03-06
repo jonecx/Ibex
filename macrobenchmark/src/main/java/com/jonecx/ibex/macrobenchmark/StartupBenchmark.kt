@@ -32,6 +32,7 @@ class StartupBenchmark {
             startupMode = startupMode,
             compilationMode = compilationMode,
             setupBlock = {
+                grantStoragePermission()
                 pressHome()
             },
         ) {
