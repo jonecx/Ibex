@@ -34,6 +34,7 @@ android {
 
         buildConfigField("String", "POSTHOG_API_KEY", "\"${localProperties.getProperty("POSTHOG_API_KEY", localProperties.getProperty("posthog.apiKey", ""))}\"")
         buildConfigField("String", "POSTHOG_HOST", "\"${localProperties.getProperty("POSTHOG_HOST", localProperties.getProperty("posthog.host", "https://us.i.posthog.com"))}\"")
+        buildConfigField("boolean", "SKIP_PERMISSION_CHECK", "false")
     }
 
     buildTypes {
@@ -43,6 +44,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+            buildConfigField("boolean", "SKIP_PERMISSION_CHECK", "true")
         }
     }
     compileOptions {

@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Ibex"
 include(":app")
+include(":macrobenchmark")

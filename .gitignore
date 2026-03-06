@@ -17,3 +17,10 @@ local.properties
 **/gradle-daemon-jvm.properties
 .kotlin
 .windsurf/
+
+# Benchmark
+benchmarks/report.html
+benchmarks/__pycache__/
+
+# Build outputs (all modules)
+**/build/
