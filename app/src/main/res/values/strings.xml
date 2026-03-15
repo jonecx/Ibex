@@ -26,7 +26,6 @@
     <string name="source_cloud">Cloud</string>
     <string name="source_smb">SMB/CIFS</string>
     <string name="source_ftp">FTP</string>
-    <string name="coming_soon">Coming soon</string>
     <!-- File loading -->
     <string name="unknown_file">Unknown</string>
     <string name="failed_to_load_files">Failed to load files</string>
@@ -92,4 +91,33 @@
     <string name="analysis_category_apps">Apps</string>
     <string name="analysis_category_other">Other</string>
     <string name="analysis_category_free">Free Space</string>
+    <!-- Network Connections -->
+    <string name="network_connections_title">Network Connections</string>
+    <string name="network_connections_title_smb">SMB/CIFS</string>
+    <string name="network_connections_title_ftp">FTP</string>
+    <string name="network_connections_title_cloud">Cloud</string>
+    <string name="network_no_connections">No connections yet.\nTap + to add one.</string>
+    <string name="network_add_connection">Add connection</string>
+    <string name="network_delete_connection">Delete connection</string>
+    <string name="network_edit_connection">Edit connection</string>
+    <string name="network_delete_title">Delete connection?</string>
+    <string name="network_delete_message">"%1$s" will be removed.</string>
+    <string name="network_delete_confirm">Delete</string>
+    <!-- Add Network Connection -->
+    <string name="add_connection_title">Add Connection</string>
+    <string name="edit_connection_title">Edit Connection</string>
+    <string name="add_connection_protocol">Protocol</string>
+    <string name="add_connection_host">Host</string>
+    <string name="add_connection_port">Port</string>
+    <string name="add_connection_username">Username</string>
+    <string name="add_connection_password">Password</string>
+    <string name="add_connection_anonymous">Anonymous</string>
+    <string name="add_connection_display_name">Display name</string>
+    <string name="add_connection_save">Save</string>
+    <string name="add_connection_show_password">Show password</string>
+    <string name="add_connection_hide_password">Hide password</string>
+    <string name="add_connection_protocol_smb">SMB</string>
+    <string name="add_connection_protocol_ftp">FTP</string>
+    <string name="add_connection_protocol_cloud">Cloud</string>
+    <string name="add_connection_url">URL / Hostname</string>
 </resources>

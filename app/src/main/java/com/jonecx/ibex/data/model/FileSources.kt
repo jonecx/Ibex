@@ -121,7 +121,6 @@ object FileSources {
         cloud: String,
         smb: String,
         ftp: String,
-        comingSoon: String,
     ): List<FileSource> = listOf(
         FileSource(
             id = "cloud",
@@ -130,8 +129,6 @@ object FileSources {
             icon = Icons.Filled.Cloud,
             iconTint = SourceCloudColor,
             isLocal = false,
-            isEnabled = false,
-            subtitle = comingSoon,
         ),
         FileSource(
             id = "smb",
@@ -140,8 +137,6 @@ object FileSources {
             icon = Icons.Filled.Lan,
             iconTint = SourceSmbColor,
             isLocal = false,
-            isEnabled = false,
-            subtitle = comingSoon,
         ),
         FileSource(
             id = "ftp",
@@ -150,8 +145,6 @@ object FileSources {
             icon = Icons.Filled.Folder,
             iconTint = SourceFtpColor,
             isLocal = false,
-            isEnabled = false,
-            subtitle = comingSoon,
         ),
     )
 }

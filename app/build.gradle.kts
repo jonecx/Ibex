@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.screenshot)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.baselineprofile)
 }
 
@@ -124,6 +125,12 @@ dependencies {
     
     // DataStore
     implementation(libs.datastore.preferences)
+
+    // Kotlinx Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    // Tink (encryption for credentials)
+    implementation(libs.tink.android)
     
     // Media3 (ExoPlayer + Compose UI)
     implementation(libs.media3.exoplayer)

@@ -1,6 +1,8 @@
 package com.jonecx.ibex.di
 
+import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
+import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import dagger.Module
 import dagger.Provides
@@ -26,4 +28,16 @@ object FakePreferencesModule {
     fun provideSettingsPreferencesContract(
         fake: FakeSettingsPreferences,
     ): SettingsPreferencesContract = fake
+
+    @Provides
+    @Singleton
+    fun provideFakeNetworkConnectionsPreferences(): FakeNetworkConnectionsPreferences {
+        return FakeNetworkConnectionsPreferences()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectionsPreferencesContract(
+        fake: FakeNetworkConnectionsPreferences,
+    ): NetworkConnectionsPreferencesContract = fake
 }
