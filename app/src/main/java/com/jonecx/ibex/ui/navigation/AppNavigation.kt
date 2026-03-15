@@ -20,10 +20,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.ui.analysis.StorageAnalysisScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerViewModel
 import com.jonecx.ibex.ui.home.HomeScreen
+import com.jonecx.ibex.ui.network.AddNetworkConnectionScreen
+import com.jonecx.ibex.ui.network.NetworkConnectionsScreen
+import com.jonecx.ibex.ui.network.NetworkConnectionsViewModel
 import com.jonecx.ibex.ui.settings.SettingsScreen
 import com.jonecx.ibex.ui.viewer.MediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerScreen
@@ -33,6 +37,12 @@ object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val STORAGE_ANALYSIS = "storage_analysis"
+    private const val NETWORK_CONNECTIONS_BASE = "network_connections"
+    const val NETWORK_CONNECTIONS = "$NETWORK_CONNECTIONS_BASE?${NetworkConnectionsViewModel.ARG_PROTOCOL}={${NetworkConnectionsViewModel.ARG_PROTOCOL}}"
+    const val ADD_NETWORK_CONNECTION = "add_network_connection"
+
+    fun networkConnections(protocol: NetworkProtocol): String =
+        "$NETWORK_CONNECTIONS_BASE?${NetworkConnectionsViewModel.ARG_PROTOCOL}=${protocol.name}"
     const val FILE_EXPLORER = "file_explorer/{${FileExplorerViewModel.ARG_SOURCE_TYPE}}?${FileExplorerViewModel.ARG_ROOT_PATH}={${FileExplorerViewModel.ARG_ROOT_PATH}}&${FileExplorerViewModel.ARG_TITLE}={${FileExplorerViewModel.ARG_TITLE}}"
     const val MEDIA_VIEWER = "media_viewer"
     const val KEY_REFRESH = "refresh"
@@ -101,11 +111,12 @@ fun AppNavigation(
                         FileSourceType.STORAGE_ANALYSIS -> {
                             navController.navigate(Routes.STORAGE_ANALYSIS)
                         }
-                        FileSourceType.CLOUD,
                         FileSourceType.SMB,
                         FileSourceType.FTP,
+                        FileSourceType.CLOUD,
                         -> {
-                            // TODO: Implement remote sources
+                            val protocol = NetworkProtocol.valueOf(source.type.name)
+                            navController.navigate(Routes.networkConnections(protocol))
                         }
                     }
                 },
@@ -161,6 +172,58 @@ fun AppNavigation(
                     mediaViewerArgs.set(viewableFiles, initialIndex)
                     navController.navigate(Routes.MEDIA_VIEWER)
                 },
+            )
+        }
+
+        composable(
+            route = Routes.NETWORK_CONNECTIONS,
+            arguments = listOf(
+                navArgument(NetworkConnectionsViewModel.ARG_PROTOCOL) {
+                    type = NavType.StringType
+                    defaultValue = NetworkProtocol.SMB.name
+                },
+            ),
+        ) {
+            val viewModel: NetworkConnectionsViewModel = hiltViewModel()
+            NetworkConnectionsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onConnectionSelected = { connection ->
+                    // TODO: Browse network share
+                },
+                onAddConnection = {
+                    viewModel.clearConnectionToEdit()
+                    navController.navigate(Routes.ADD_NETWORK_CONNECTION)
+                },
+                onEditConnection = { connection ->
+                    viewModel.setConnectionToEdit(connection)
+                    navController.navigate(Routes.ADD_NETWORK_CONNECTION)
+                },
+                viewModel = viewModel,
+            )
+        }
+
+        composable(Routes.ADD_NETWORK_CONNECTION) {
+            val parentEntry = remember(it) {
+                navController.getBackStackEntry(Routes.NETWORK_CONNECTIONS)
+            }
+            val viewModel: NetworkConnectionsViewModel = hiltViewModel(parentEntry)
+            val uiState = viewModel.uiState.collectAsState().value
+            AddNetworkConnectionScreen(
+                onNavigateBack = {
+                    viewModel.clearConnectionToEdit()
+                    navController.popBackStack()
+                },
+                onSave = { connection ->
+                    if (uiState.connectionToEdit != null) {
+                        viewModel.updateConnection(connection)
+                    } else {
+                        viewModel.addConnection(connection)
+                    }
+                    viewModel.clearConnectionToEdit()
+                    navController.popBackStack()
+                },
+                defaultProtocol = uiState.defaultProtocol,
+                connectionToEdit = uiState.connectionToEdit,
             )
         }
 

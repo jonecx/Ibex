@@ -1,9 +1,7 @@
 package com.jonecx.ibex.ui.home
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import com.jonecx.ibex.util.setIbexContent
 import org.junit.Before
@@ -56,11 +54,5 @@ class HomeScreenTest {
         composeTestRule.onNodeWithText("Cloud").assertIsDisplayed()
         composeTestRule.onNodeWithText("SMB/CIFS").assertIsDisplayed()
         composeTestRule.onNodeWithText("FTP").assertIsDisplayed()
-    }
-
-    @Test
-    fun testHomeScreenDisplaysComingSoonForRemoteSources() {
-        composeTestRule.onAllNodesWithText("Coming soon", useUnmergedTree = true)
-            .assertCountEquals(3)
     }
 }
