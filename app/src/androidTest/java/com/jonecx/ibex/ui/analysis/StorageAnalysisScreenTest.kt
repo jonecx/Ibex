@@ -1,73 +1,67 @@
 package com.jonecx.ibex.ui.analysis
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.fixtures.FakeStorageAnalyzer
-import com.jonecx.ibex.ui.components.PieChart
-import com.jonecx.ibex.ui.components.PieChartSegment
-import com.jonecx.ibex.ui.theme.GrayDark
-import com.jonecx.ibex.ui.theme.SourceImagesColor
-import com.jonecx.ibex.util.setIbexContent
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import javax.inject.Inject
 
+@HiltAndroidTest
 class StorageAnalysisScreenTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
 
-    private val sampleBreakdown = FakeStorageAnalyzer().let { analyzer ->
-        kotlinx.coroutines.runBlocking { analyzer.analyze() }
+    @get:Rule(order = 1)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Inject
+    lateinit var fakeAnalyzer: FakeStorageAnalyzer
+
+    @Before
+    fun setup() {
+        hiltRule.inject()
+        fakeAnalyzer.reset()
+    }
+
+    private fun navigateToAnalysis() {
+        composeTestRule.onNodeWithText("Analysis").performClick()
+        composeTestRule.waitForIdle()
     }
 
     @Test
-    fun testLoadingStateShowsProgress() {
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = true),
-                onNavigateBack = {},
-            )
-        }
+    fun displaysTitle() {
+        navigateToAnalysis()
 
         composeTestRule.onNodeWithText("Storage Analysis").assertIsDisplayed()
     }
 
     @Test
-    fun testSuccessStateShowsTotalStorage() {
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = false, breakdown = sampleBreakdown),
-                onNavigateBack = {},
-            )
-        }
+    fun successStateShowsTotalStorage() {
+        navigateToAnalysis()
 
         composeTestRule.onNodeWithText("Total Storage").assertIsDisplayed()
     }
 
     @Test
-    fun testSuccessStateShowsUsedAndFree() {
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = false, breakdown = sampleBreakdown),
-                onNavigateBack = {},
-            )
-        }
+    fun successStateShowsUsedAndFree() {
+        navigateToAnalysis()
 
         composeTestRule.onNodeWithText("Used:", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Free:", substring = true).assertIsDisplayed()
     }
 
     @Test
-    fun testSuccessStateShowsCategoryLabels() {
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = false, breakdown = sampleBreakdown),
-                onNavigateBack = {},
-            )
-        }
+    fun successStateShowsCategoryLabels() {
+        navigateToAnalysis()
 
         composeTestRule.onNodeWithText("Images", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Videos", substring = true).assertIsDisplayed()
@@ -79,61 +73,34 @@ class StorageAnalysisScreenTest {
     }
 
     @Test
-    fun testErrorStateShowsRetryButton() {
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = false, error = RuntimeException("Test error")),
-                onNavigateBack = {},
-                onRetry = {},
-            )
-        }
+    fun errorStateShowsRetryButton() {
+        fakeAnalyzer.shouldFail = true
+        navigateToAnalysis()
 
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
     }
 
     @Test
-    fun testErrorRetryCallsCallback() {
-        var retryCalled = false
+    fun retryAfterErrorShowsSuccess() {
+        fakeAnalyzer.shouldFail = true
+        navigateToAnalysis()
 
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = false, error = RuntimeException("Test error")),
-                onNavigateBack = {},
-                onRetry = { retryCalled = true },
-            )
-        }
+        composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
 
+        fakeAnalyzer.shouldFail = false
         composeTestRule.onNodeWithText("Retry").performClick()
-        assert(retryCalled) { "Expected onRetry to be called" }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Total Storage").assertIsDisplayed()
     }
 
     @Test
-    fun testBackButtonTriggersNavigation() {
-        var navigatedBack = false
-
-        composeTestRule.setIbexContent {
-            StorageAnalysisScreenContent(
-                uiState = StorageAnalysisUiState(isLoading = false, breakdown = sampleBreakdown),
-                onNavigateBack = { navigatedBack = true },
-            )
-        }
+    fun backButtonReturnsToHome() {
+        navigateToAnalysis()
 
         composeTestRule.onNodeWithContentDescription("Navigate up").performClick()
-        assert(navigatedBack) { "Expected onNavigateBack to be called" }
-    }
+        composeTestRule.waitForIdle()
 
-    @Test
-    fun testPieChartRendersSegments() {
-        composeTestRule.setIbexContent {
-            PieChart(
-                segments = listOf(
-                    PieChartSegment("Images (9.3 GB)", 10f, SourceImagesColor),
-                    PieChartSegment("Free Space (22.4 GB)", 24f, GrayDark),
-                ),
-            )
-        }
-
-        composeTestRule.onNodeWithText("Images (9.3 GB)").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Free Space (22.4 GB)").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Ibex").assertIsDisplayed()
     }
 }

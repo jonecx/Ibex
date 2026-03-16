@@ -43,6 +43,9 @@ class VideoPlayerIntegrationTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
+    // Uses createComposeRule() instead of createAndroidComposeRule<MainActivity>() because
+    // video player tests require setContent() to render composables in isolation with precise
+    // control over player state, clock, and navigation callbacks.
     @get:Rule(order = 1)
     val composeTestRule = createComposeRule()
 

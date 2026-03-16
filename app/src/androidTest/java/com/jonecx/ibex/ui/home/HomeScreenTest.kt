@@ -1,42 +1,46 @@
 package com.jonecx.ibex.ui.home
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import com.jonecx.ibex.util.setIbexContent
+import com.jonecx.ibex.MainActivity
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+@HiltAndroidTest
 class HomeScreenTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 1)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Before
     fun setup() {
-        composeTestRule.setIbexContent {
-            HomeScreen(onSourceSelected = {}, onSettingsClick = {})
-        }
+        hiltRule.inject()
     }
 
     @Test
-    fun testHomeScreenDisplaysAppName() {
+    fun displaysAppName() {
         composeTestRule.onNodeWithText("Ibex").assertIsDisplayed()
     }
 
     @Test
-    fun testHomeScreenDisplaysLocalSection() {
+    fun displaysLocalSection() {
         composeTestRule.onNodeWithText("Local").assertIsDisplayed()
     }
 
     @Test
-    fun testHomeScreenDisplaysRemoteSection() {
+    fun displaysRemoteSection() {
         composeTestRule.onNodeWithText("Remote").assertIsDisplayed()
     }
 
     @Test
-    fun testHomeScreenDisplaysAllLocalSourceTiles() {
+    fun displaysAllLocalSourceTiles() {
         composeTestRule.onNodeWithText("Storage").assertIsDisplayed()
         composeTestRule.onNodeWithText("Downloads").assertIsDisplayed()
         composeTestRule.onNodeWithText("Images").assertIsDisplayed()
@@ -50,7 +54,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun testHomeScreenDisplaysAllRemoteSourceTiles() {
+    fun displaysAllRemoteSourceTiles() {
         composeTestRule.onNodeWithText("Cloud").assertIsDisplayed()
         composeTestRule.onNodeWithText("SMB/CIFS").assertIsDisplayed()
         composeTestRule.onNodeWithText("FTP").assertIsDisplayed()
