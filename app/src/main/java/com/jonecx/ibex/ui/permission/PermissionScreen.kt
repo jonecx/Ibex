@@ -30,8 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.jonecx.ibex.R
 
 @Composable
 fun PermissionScreen(
@@ -82,7 +84,7 @@ fun PermissionScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Storage Permission Required",
+            text = stringResource(R.string.permission_title),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
@@ -90,7 +92,7 @@ fun PermissionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Ibex needs access to your storage to browse and manage files.",
+            text = stringResource(R.string.permission_description),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -115,7 +117,7 @@ fun PermissionScreen(
                 }
             },
         ) {
-            Text("Grant Permission")
+            Text(stringResource(R.string.grant_permission))
         }
     }
 }

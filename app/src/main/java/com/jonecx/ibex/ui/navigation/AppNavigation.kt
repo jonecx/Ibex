@@ -29,7 +29,7 @@ import com.jonecx.ibex.ui.network.AddNetworkConnectionScreen
 import com.jonecx.ibex.ui.network.NetworkConnectionsScreen
 import com.jonecx.ibex.ui.network.NetworkConnectionsViewModel
 import com.jonecx.ibex.ui.settings.SettingsScreen
-import com.jonecx.ibex.ui.viewer.MediaViewerArgs
+import com.jonecx.ibex.ui.viewer.LocalMediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerScreen
 import java.net.URLEncoder
 
@@ -63,10 +63,10 @@ object Routes {
 @Composable
 fun AppNavigation(
     analyticsManager: AnalyticsManager,
-    mediaViewerArgs: MediaViewerArgs,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    val mediaViewerArgs = LocalMediaViewerArgs.current
     var currentScreen by remember { mutableStateOf("") }
     var screenEntryTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
 

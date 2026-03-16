@@ -15,4 +15,9 @@ class SmbContextProvider @Inject constructor() {
     }
 
     fun get(host: String): CIFSContext? = contexts[host]
+
+    companion object {
+        fun smbCacheKey(path: String): String =
+            path.hashCode().and(Int.MAX_VALUE).toString()
+    }
 }

@@ -3,6 +3,7 @@ package com.jonecx.ibex.di
 import android.content.Context
 import coil.ImageLoader
 import coil.decode.VideoFrameDecoder
+import coil.disk.DiskCache
 import com.jonecx.ibex.data.repository.SmbContextProvider
 import com.jonecx.ibex.ui.explorer.components.SmbFetcherFactory
 import dagger.Module
@@ -30,9 +31,17 @@ object ImageLoaderModule {
                 add(SmbFetcherFactory(smbContextProvider, smbCacheDir))
                 add(VideoFrameDecoder.Factory())
             }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(context.cacheDir, COIL_DISK_CACHE_DIR))
+                    .maxSizeBytes(DISK_CACHE_MAX_SIZE_BYTES)
+                    .build()
+            }
             .crossfade(true)
             .build()
     }
 
     private const val SMB_THUMBNAIL_CACHE_DIR = "smb_thumbnails"
+    private const val COIL_DISK_CACHE_DIR = "coil_cache"
+    private const val DISK_CACHE_MAX_SIZE_BYTES = 50L * 1024 * 1024
 }

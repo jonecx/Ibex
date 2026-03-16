@@ -11,6 +11,9 @@ enum class FileType {
     ARCHIVE,
     APK,
     UNKNOWN,
+    ;
+
+    val isViewable: Boolean get() = this == IMAGE || this == VIDEO
 }
 
 data class FileItem(

@@ -1,6 +1,7 @@
 package com.jonecx.ibex.ui.player
 
 import android.net.Uri
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -84,13 +85,14 @@ class VideoPlayerIntegrationTest {
         onNext: (() -> Unit)? = null,
     ) {
         composeTestRule.setContent {
-            VideoPlayer(
-                fileItem = videoFileItems.first(),
-                isActive = isActive,
-                playerFactory = playerFactory,
-                onPrevious = onPrevious,
-                onNext = onNext,
-            )
+            CompositionLocalProvider(LocalPlayerFactory provides playerFactory) {
+                VideoPlayer(
+                    fileItem = videoFileItems.first(),
+                    isActive = isActive,
+                    onPrevious = onPrevious,
+                    onNext = onNext,
+                )
+            }
         }
     }
 
@@ -100,13 +102,14 @@ class VideoPlayerIntegrationTest {
         onDelete: (FileItem) -> Unit = {},
     ) {
         composeTestRule.setContent {
-            MediaViewerOverlay(
-                viewableFiles = viewableFiles,
-                initialIndex = initialIndex,
-                onDismiss = {},
-                onDelete = onDelete,
-                playerFactory = playerFactory,
-            )
+            CompositionLocalProvider(LocalPlayerFactory provides playerFactory) {
+                MediaViewerOverlay(
+                    viewableFiles = viewableFiles,
+                    initialIndex = initialIndex,
+                    onDismiss = {},
+                    onDelete = onDelete,
+                )
+            }
         }
     }
 
@@ -454,13 +457,14 @@ class VideoPlayerIntegrationTest {
     fun deleteConfirmRemovesFileFromPager() {
         var files by mutableStateOf(videoFileItems)
         composeTestRule.setContent {
-            MediaViewerOverlay(
-                viewableFiles = files,
-                initialIndex = 0,
-                onDismiss = {},
-                onDelete = { fileItem -> files = files.filterNot { it.path == fileItem.path } },
-                playerFactory = playerFactory,
-            )
+            CompositionLocalProvider(LocalPlayerFactory provides playerFactory) {
+                MediaViewerOverlay(
+                    viewableFiles = files,
+                    initialIndex = 0,
+                    onDismiss = {},
+                    onDelete = { fileItem -> files = files.filterNot { it.path == fileItem.path } },
+                )
+            }
         }
 
         composeTestRule.awaitText("1 / 2")

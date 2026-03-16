@@ -2,29 +2,39 @@ package com.jonecx.ibex.ui.viewer
 
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
+import com.jonecx.ibex.data.repository.SmbContextProvider
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakePlayerFactory
 import com.jonecx.ibex.fixtures.testImageFileItem
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class MediaViewerViewModelTest {
 
     private val playerFactory = FakePlayerFactory()
     private val trashManager = FakeFileTrashManager()
+    private val testDispatcher = StandardTestDispatcher()
 
     private fun createViewModel(
         files: List<com.jonecx.ibex.data.model.FileItem> = emptyList(),
         index: Int = 0,
     ): MediaViewerViewModel {
         val args = MediaViewerArgs().apply { if (files.isNotEmpty()) set(files, index) }
-        return MediaViewerViewModel(args, playerFactory, trashManager)
+        return MediaViewerViewModel(
+            args,
+            playerFactory,
+            trashManager,
+            SmbContextProvider(),
+            RuntimeEnvironment.getApplication(),
+            testDispatcher,
+        )
     }
 
     @Test
@@ -58,7 +68,14 @@ class MediaViewerViewModelTest {
     fun `onCleared clears the args`() {
         val files = listOf(testImageFileItem("photo.jpg"))
         val args = MediaViewerArgs().apply { set(files, 0) }
-        val viewModel = MediaViewerViewModel(args, playerFactory, trashManager)
+        val viewModel = MediaViewerViewModel(
+            args,
+            playerFactory,
+            trashManager,
+            SmbContextProvider(),
+            RuntimeEnvironment.getApplication(),
+            testDispatcher,
+        )
 
         val store = ViewModelStore()
         store.put("test", viewModel)
@@ -66,12 +83,6 @@ class MediaViewerViewModelTest {
 
         assertTrue(args.viewableFiles.isEmpty())
         assertEquals(0, args.initialIndex)
-    }
-
-    @Test
-    fun `playerFactory is the injected instance`() {
-        val viewModel = createViewModel()
-        assertSame(playerFactory, viewModel.playerFactory)
     }
 
     @Test

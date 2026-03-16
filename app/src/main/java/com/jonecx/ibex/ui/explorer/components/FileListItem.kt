@@ -19,10 +19,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.util.formatDate
 import com.jonecx.ibex.util.formatFileSize
 
@@ -44,13 +45,7 @@ fun FileListItem(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .background(
-                if (isSelected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
-            )
+            .background(selectionBackgroundColor(isSelected))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -60,8 +55,7 @@ fun FileListItem(
         }
 
         var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
-        val showThumbnail = !thumbnailFailed &&
-            (fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO)
+        val showThumbnail = !thumbnailFailed && fileItem.fileType.isViewable
         if (showThumbnail) {
             ThumbnailImage(
                 fileItem = fileItem,
@@ -83,21 +77,17 @@ fun FileListItem(
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color = selectionContentColor(isSelected),
             )
             Text(
                 text = if (fileItem.isDirectory) {
-                    "${fileItem.childCount ?: 0} items"
+                    stringResource(R.string.items_count, fileItem.childCount ?: 0)
                 } else {
                     "${formatFileSize(fileItem.size)} • ${formatDate(fileItem.lastModified)}"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    selectionContentColor(true).copy(alpha = 0.7f)
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },

@@ -45,13 +45,13 @@ import kotlinx.coroutines.delay
 fun VideoPlayer(
     fileItem: FileItem,
     isActive: Boolean,
-    playerFactory: PlayerFactory,
     modifier: Modifier = Modifier,
     controlsVisible: Boolean = true,
     onToggleControls: () -> Unit = {},
     onPrevious: (() -> Unit)? = null,
     onNext: (() -> Unit)? = null,
 ) {
+    val playerFactory = LocalPlayerFactory.current
     val player = remember(fileItem.path) {
         playerFactory.create().apply {
             setMediaItem(MediaItem.fromUri(fileItem.uri))

@@ -23,7 +23,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
 
 private val GridItemShape = RoundedCornerShape(2.dp)
 
@@ -45,17 +44,11 @@ fun FileGridItem(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .background(
-                if (isSelected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
-            )
+            .background(selectionBackgroundColor(isSelected))
             .padding(1.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val isMediaType = fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO
+        val isMediaType = fileItem.fileType.isViewable
         var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
 
         Box(
@@ -91,14 +84,10 @@ fun FileGridItem(
             Text(
                 text = fileItem.name,
                 style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color = selectionContentColor(isSelected),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 6.dp),

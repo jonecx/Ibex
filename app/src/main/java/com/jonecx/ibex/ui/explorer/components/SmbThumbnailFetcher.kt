@@ -38,20 +38,28 @@ class SmbThumbnailFetcher(
 
     private val smbUrl: String = uri.toString()
 
+    private val isFullSize: Boolean =
+        options.parameters.value<String>(DefaultFileImageRequestFactory.FULL_SIZE_KEY) ==
+            DefaultFileImageRequestFactory.FULL_SIZE_VALUE
+
     override suspend fun fetch(): FetchResult? = concurrencyLimiter.withPermit {
         val fileType = FileTypeUtils.getFileTypeFromName(smbUrl)
-        if (fileType != FileType.IMAGE && fileType != FileType.VIDEO) return@withPermit null
+        if (!fileType.isViewable) return@withPermit null
 
-        val cacheKey = smbUrl.hashCode().and(Int.MAX_VALUE).toString()
+        val host = uri.host ?: return@withPermit null
+        val cifsContext = smbContextProvider.get(host) ?: return@withPermit null
+
+        if (isFullSize && fileType == FileType.IMAGE) {
+            return@withPermit streamFullImage(cifsContext)
+        }
+
+        val cacheKey = SmbContextProvider.smbCacheKey(smbUrl)
         val cachedFile = File(cacheDir, "$cacheKey.jpg")
 
         if (cachedFile.exists() && cachedFile.length() > 0) {
             Log.d(TAG, "Cache hit: ${uri.lastPathSegment}")
             return@withPermit fileToResult(cachedFile)
         }
-
-        val host = uri.host ?: return@withPermit null
-        val cifsContext = smbContextProvider.get(host) ?: return@withPermit null
 
         val tempInput = File(cacheDir, "tmp_$cacheKey")
         try {
@@ -72,6 +80,28 @@ class SmbThumbnailFetcher(
         } finally {
             tempInput.delete()
         }
+    }
+
+    private fun streamFullImage(cifsContext: CIFSContext): FetchResult {
+        Log.d(TAG, "Full image stream: ${uri.lastPathSegment}")
+        val cacheKey = SmbContextProvider.smbCacheKey(smbUrl)
+        val tempFile = File(cacheDir, "full_$cacheKey")
+        val smbFile = SmbFile(smbUrl, cifsContext)
+        smbFile.inputStream.use { input ->
+            tempFile.outputStream().use { output ->
+                val buf = ByteArray(BUFFER_SIZE)
+                var bytesRead: Int
+                while (input.read(buf).also { bytesRead = it } != -1) {
+                    output.write(buf, 0, bytesRead)
+                }
+            }
+        }
+        val mimeType = FileTypeUtils.getMimeTypeFromName(smbUrl) ?: JPEG_MIME_TYPE
+        return SourceResult(
+            source = ImageSource(tempFile.source().buffer(), options.context),
+            mimeType = mimeType,
+            dataSource = DataSource.NETWORK,
+        )
     }
 
     private fun generateImageThumbnail(cifsContext: CIFSContext, tempInput: File, cachedFile: File) {
@@ -166,12 +196,14 @@ class SmbThumbnailFetcher(
                 if (type == MDAT_TYPE) {
                     val newSize = (raf.length() - position).toInt()
                     raf.seek(position)
-                    raf.write(byteArrayOf(
-                        (newSize shr 24 and 0xFF).toByte(),
-                        (newSize shr 16 and 0xFF).toByte(),
-                        (newSize shr 8 and 0xFF).toByte(),
-                        (newSize and 0xFF).toByte(),
-                    ))
+                    raf.write(
+                        byteArrayOf(
+                            (newSize shr 24 and 0xFF).toByte(),
+                            (newSize shr 16 and 0xFF).toByte(),
+                            (newSize shr 8 and 0xFF).toByte(),
+                            (newSize and 0xFF).toByte(),
+                        ),
+                    )
                     return
                 }
 
@@ -308,7 +340,7 @@ class SmbThumbnailFetcher(
         private const val EXIF_DOWNLOAD_LIMIT_BYTES = 256L * 1024
         private const val VIDEO_HEAD_BYTES = 1L * 1024 * 1024
         private const val MOOV_SEARCH_BYTES = 2L * 1024 * 1024
-        private const val BUFFER_SIZE = 8192
+        private const val BUFFER_SIZE = 64 * 1024
         private const val MAX_CONCURRENT_THUMBNAILS = 4
         private const val JPEG_QUALITY = 80
         private const val JPEG_MIME_TYPE = "image/jpeg"

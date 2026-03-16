@@ -35,7 +35,7 @@ fun ZoomableImage(
     var offsetY by remember { mutableFloatStateOf(0f) }
     val currentOnTap by rememberUpdatedState(onTap)
 
-    val imageRequest = remember(fileItem.path) { factory.create(context, fileItem) }
+    val imageRequest = remember(fileItem.path) { factory.create(context, fileItem, fullSize = true) }
 
     Box(
         modifier = modifier,
