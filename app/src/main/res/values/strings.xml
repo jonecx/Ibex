@@ -101,7 +101,7 @@
     <string name="network_delete_connection">Delete connection</string>
     <string name="network_edit_connection">Edit connection</string>
     <string name="network_delete_title">Delete connection?</string>
-    <string name="network_delete_message">"%1$s" will be removed.</string>
+    <string name="network_delete_message">\"%1$s\" will be removed.</string>
     <string name="network_delete_confirm">Delete</string>
     <!-- Add Network Connection -->
     <string name="add_connection_title">Add Connection</string>

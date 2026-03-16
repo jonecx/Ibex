@@ -145,7 +145,7 @@ fun NetworkConnectionsScreen(
 }
 
 @Composable
-private fun ProtocolSectionHeader(
+internal fun ProtocolSectionHeader(
     protocol: NetworkProtocol,
     modifier: Modifier = Modifier,
 ) {
@@ -171,7 +171,7 @@ private fun ProtocolSectionHeader(
 }
 
 @Composable
-private fun NetworkConnectionItem(
+internal fun NetworkConnectionItem(
     connection: NetworkConnection,
     onClick: () -> Unit,
     onEditClick: () -> Unit,
