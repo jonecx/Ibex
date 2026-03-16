@@ -1,38 +1,62 @@
 package com.jonecx.ibex.ui.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.data.model.ViewMode
-import com.jonecx.ibex.util.setSettingsContent
+import com.jonecx.ibex.fixtures.FakeSettingsPreferences
+import com.jonecx.ibex.util.runOnUiThreadBlocking
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import javax.inject.Inject
 
+@HiltAndroidTest
 class SettingsScreenTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 1)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Inject
+    lateinit var fakePreferences: FakeSettingsPreferences
+
+    @Before
+    fun setup() {
+        hiltRule.inject()
+        fakePreferences.reset()
+    }
+
+    private fun navigateToSettings() {
+        composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        composeTestRule.waitForIdle()
+    }
 
     @Test
-    fun testSettingsScreenDisplaysTitle() {
-        composeTestRule.setSettingsContent()
+    fun displaysTitle() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
     }
 
     @Test
-    fun testSettingsScreenDisplaysBackButton() {
-        composeTestRule.setSettingsContent()
+    fun displaysBackButton() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithContentDescription("Navigate up").assertIsDisplayed()
     }
 
     @Test
-    fun testSettingsScreenDisplaysAnalyticsToggle() {
-        composeTestRule.setSettingsContent()
+    fun displaysAnalyticsToggle() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Send Analytics").assertIsDisplayed()
         composeTestRule.onNodeWithText("Send anonymous usage data to help improve the app")
@@ -40,59 +64,48 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun testBackButtonTriggersNavigation() {
-        var navigatedBack = false
-
-        composeTestRule.setSettingsContent(
-            onNavigateBack = { navigatedBack = true },
-        )
+    fun backButtonReturnsToHome() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithContentDescription("Navigate up").performClick()
-        assert(navigatedBack) { "Expected onNavigateBack to be called" }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Ibex").assertIsDisplayed()
     }
 
     @Test
-    fun testAnalyticsToggleStartsOff() {
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(sendAnalyticsEnabled = false),
-        )
+    fun analyticsToggleStartsOff() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Send Analytics").assertIsDisplayed()
     }
 
     @Test
-    fun testAnalyticsToggleCanBeEnabled() {
-        var analyticsEnabled = false
-
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(sendAnalyticsEnabled = false),
-            onAnalyticsToggleChanged = { analyticsEnabled = it },
-        )
+    fun analyticsToggleCanBeEnabled() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Send Analytics").performClick()
         composeTestRule.waitForIdle()
 
-        assert(analyticsEnabled) { "Expected analytics to be enabled after click" }
+        assertEquals(true, fakePreferences.currentAnalyticsValue())
     }
 
     @Test
-    fun testAnalyticsToggleCanBeDisabled() {
-        var analyticsEnabled = true
-
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(sendAnalyticsEnabled = true),
-            onAnalyticsToggleChanged = { analyticsEnabled = it },
-        )
+    fun analyticsToggleCanBeDisabled() {
+        composeTestRule.runOnUiThreadBlocking {
+            fakePreferences.setSendAnalyticsEnabled(true)
+        }
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Send Analytics").performClick()
         composeTestRule.waitForIdle()
 
-        assert(!analyticsEnabled) { "Expected analytics to be disabled after click" }
+        assertEquals(false, fakePreferences.currentAnalyticsValue())
     }
 
     @Test
-    fun testViewModeRadioGroupIsDisplayed() {
-        composeTestRule.setSettingsContent()
+    fun viewModeRadioGroupIsDisplayed() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("View Mode").assertIsDisplayed()
         composeTestRule.onNodeWithText("List").assertIsDisplayed()
@@ -100,68 +113,59 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun testViewModeDefaultIsListSelected() {
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(viewMode = ViewMode.LIST),
-        )
+    fun viewModeDefaultIsListSelected() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("View Mode").assertIsDisplayed()
         composeTestRule.onNodeWithText("List").assertIsDisplayed()
     }
 
     @Test
-    fun testViewModeGridClickTriggersCallback() {
-        var selectedMode: ViewMode? = null
-
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(viewMode = ViewMode.LIST),
-            onViewModeChanged = { selectedMode = it },
-        )
+    fun viewModeGridClickUpdatesPreference() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Grid").performClick()
         composeTestRule.waitForIdle()
 
-        assertEquals(ViewMode.GRID, selectedMode)
+        assertEquals(ViewMode.GRID, fakePreferences.currentViewMode())
     }
 
     @Test
-    fun testViewModeListClickTriggersCallback() {
-        var selectedMode: ViewMode? = null
-
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(viewMode = ViewMode.GRID),
-            onViewModeChanged = { selectedMode = it },
-        )
+    fun viewModeListClickUpdatesPreference() {
+        composeTestRule.runOnUiThreadBlocking {
+            fakePreferences.setViewMode(ViewMode.GRID)
+        }
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("List").performClick()
         composeTestRule.waitForIdle()
 
-        assertEquals(ViewMode.LIST, selectedMode)
+        assertEquals(ViewMode.LIST, fakePreferences.currentViewMode())
     }
 
     @Test
-    fun testGridColumnsSliderHiddenInListMode() {
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(viewMode = ViewMode.LIST),
-        )
+    fun gridColumnsSliderHiddenInListMode() {
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Grid Columns").assertDoesNotExist()
     }
 
     @Test
-    fun testGridColumnsSliderShownInGridMode() {
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(viewMode = ViewMode.GRID),
-        )
+    fun gridColumnsSliderShownInGridMode() {
+        composeTestRule.runOnUiThreadBlocking {
+            fakePreferences.setViewMode(ViewMode.GRID)
+        }
+        navigateToSettings()
 
         composeTestRule.onNodeWithText("Grid Columns").assertIsDisplayed()
     }
 
     @Test
-    fun testGridColumnsSliderDisplaysAllStepLabels() {
-        composeTestRule.setSettingsContent(
-            uiState = SettingsUiState(viewMode = ViewMode.GRID),
-        )
+    fun gridColumnsSliderDisplaysAllStepLabels() {
+        composeTestRule.runOnUiThreadBlocking {
+            fakePreferences.setViewMode(ViewMode.GRID)
+        }
+        navigateToSettings()
 
         listOf("2", "3", "4", "5", "6").forEach {
             composeTestRule.onNodeWithText(it).assertIsDisplayed()
