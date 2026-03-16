@@ -131,6 +131,12 @@ dependencies {
 
     // Tink (encryption for credentials)
     implementation(libs.tink.android)
+
+    // SMB client
+    implementation(libs.jcifs.ng)
+
+    // FFmpeg (thumbnail generation for remote files)
+    implementation(libs.ffmpeg.kit)
     
     // Media3 (ExoPlayer + Compose UI)
     implementation(libs.media3.exoplayer)

@@ -1,5 +1,7 @@
 package com.jonecx.ibex.ui.explorer
 
+import android.content.Context
+import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
@@ -16,9 +18,13 @@ import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
+import com.jonecx.ibex.data.repository.SmbContextProvider
 import com.jonecx.ibex.di.FileRepositoryFactory
+import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.di.MainDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import jcifs.smb.SmbFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -29,6 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import java.net.URLDecoder
 import javax.inject.Inject
 
@@ -48,6 +55,9 @@ data class FileExplorerUiState(
     val isSelectionMode: Boolean = false,
     val selectedFiles: Set<String> = emptySet(),
     val clipboardOperation: ClipboardOperation? = null,
+    val isRemoteBrowsing: Boolean = false,
+    val isDownloading: Boolean = false,
+    val downloadedFile: FileItem? = null,
 )
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
@@ -59,14 +69,18 @@ class FileExplorerViewModel @Inject constructor(
     private val fileTrashManager: FileTrashManager,
     private val fileMoveManager: FileMoveManager,
     private val clipboardManager: FileClipboardManager,
+    private val smbContextProvider: SmbContextProvider,
+    @ApplicationContext private val appContext: Context,
     savedStateHandle: SavedStateHandle,
     @MainDispatcher private val dispatcher: CoroutineDispatcher,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     companion object {
         const val ARG_SOURCE_TYPE = "sourceType"
         const val ARG_ROOT_PATH = "rootPath"
         const val ARG_TITLE = "title"
+        const val ARG_CONNECTION_ID = "connectionId"
     }
 
     private val sourceType: FileSourceType = FileSourceType.valueOf(
@@ -74,13 +88,17 @@ class FileExplorerViewModel @Inject constructor(
     )
     private val initialPath: String? = savedStateHandle.decodedString(ARG_ROOT_PATH)
     private val title: String? = savedStateHandle.decodedString(ARG_TITLE)
+    private val connectionId: String? = savedStateHandle.decodedString(ARG_CONNECTION_ID)
 
     private val repository: FileRepository = createRepository(sourceType)
     private val allowFolderNavigation: Boolean = sourceType in listOf(
         FileSourceType.LOCAL_STORAGE,
         FileSourceType.LOCAL_DOWNLOADS,
+        FileSourceType.SMB,
     )
     private val startPath = initialPath ?: title ?: INTERNAL_STORAGE_PATH
+
+    private val isRemote: Boolean = sourceType == FileSourceType.SMB
 
     private val _uiState = MutableStateFlow(
         FileExplorerUiState(
@@ -88,6 +106,7 @@ class FileExplorerViewModel @Inject constructor(
             navigationStack = listOf(startPath),
             rootPath = startPath,
             allowFolderNavigation = allowFolderNavigation,
+            isRemoteBrowsing = isRemote,
         ),
     )
     val uiState: StateFlow<FileExplorerUiState> = _uiState.asStateFlow()
@@ -128,6 +147,9 @@ class FileExplorerViewModel @Inject constructor(
             FileSourceType.LOCAL_APPS -> repositoryFactory.createAppsRepository()
             FileSourceType.LOCAL_RECENT -> repositoryFactory.createRecentFilesRepository()
             FileSourceType.LOCAL_TRASH -> repositoryFactory.createTrashRepository()
+            FileSourceType.SMB -> repositoryFactory.createSmbFileRepository(
+                connectionId ?: error("connectionId required for SMB"),
+            )
             else -> repositoryFactory.createLocalFileRepository()
         }
     }
@@ -211,7 +233,7 @@ class FileExplorerViewModel @Inject constructor(
         val path = _uiState.value.currentPath
         return when {
             path == INTERNAL_STORAGE_PATH -> null
-            else -> path.substringAfterLast("/")
+            else -> path.trimEnd('/').substringAfterLast('/')
         }
     }
 
@@ -303,6 +325,38 @@ class FileExplorerViewModel @Inject constructor(
             clipboardManager.paste(destDir)
             refreshFiles()
         }
+    }
+
+    fun downloadRemoteFile(fileItem: FileItem) {
+        if (!isRemote) return
+        _uiState.update { it.copy(isDownloading = true) }
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                val host = Uri.parse(fileItem.path).host ?: return@launch
+                val cifsContext = smbContextProvider.get(host) ?: return@launch
+                val ext = fileItem.name.substringAfterLast('.', "")
+                val tempFile = File(appContext.cacheDir, "smb_media_${fileItem.path.hashCode().and(Int.MAX_VALUE)}.$ext")
+
+                SmbFile(fileItem.path, cifsContext).inputStream.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                val localFileItem = fileItem.copy(
+                    path = tempFile.absolutePath,
+                    uri = Uri.fromFile(tempFile),
+                    isRemote = false,
+                )
+                _uiState.update { it.copy(isDownloading = false, downloadedFile = localFileItem) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isDownloading = false, error = e) }
+            }
+        }
+    }
+
+    fun clearDownloadedFile() {
+        _uiState.update { it.copy(downloadedFile = null) }
     }
 }
 

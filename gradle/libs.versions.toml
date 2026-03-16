@@ -28,6 +28,8 @@ profileinstaller = "1.4.1"
 serialization = "1.7.3"
 tink = "1.20.0"
 uiautomator = "2.3.0"
+jcifsNg = "2.1.10"
+ffmpegKit = "6.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -71,6 +73,8 @@ profileinstaller = { group = "androidx.profileinstaller", name = "profileinstall
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 tink-android = { group = "com.google.crypto.tink", name = "tink-android", version.ref = "tink" }
 uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+jcifs-ng = { group = "eu.agno3.jcifs", name = "jcifs-ng", version.ref = "jcifsNg" }
+ffmpeg-kit = { group = "com.moizhassan.ffmpeg", name = "ffmpeg-kit-16kb", version.ref = "ffmpegKit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -23,4 +23,5 @@ data class FileItem(
     val fileType: FileType,
     val mimeType: String? = null,
     val childCount: Int? = null,
+    val isRemote: Boolean = false,
 )

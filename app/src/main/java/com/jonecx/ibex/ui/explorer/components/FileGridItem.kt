@@ -55,7 +55,7 @@ fun FileGridItem(
             .padding(1.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val hasThumbnail = fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO
+        val isMediaType = fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO
         var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
 
         Box(
@@ -64,13 +64,14 @@ fun FileGridItem(
                 .aspectRatio(1f),
             contentAlignment = Alignment.Center,
         ) {
-            when (fileItem.fileType) {
-                FileType.IMAGE, FileType.VIDEO -> ThumbnailImage(
+            if (isMediaType && !thumbnailFailed) {
+                ThumbnailImage(
                     fileItem = fileItem,
                     modifier = Modifier.matchParentSize(),
                     onError = { thumbnailFailed = true },
                 )
-                else -> FileIcon(
+            } else {
+                FileIcon(
                     fileItem = fileItem,
                     modifier = Modifier.fillMaxWidth(0.5f).aspectRatio(1f),
                 )
@@ -86,7 +87,7 @@ fun FileGridItem(
             }
         }
 
-        if (!hasThumbnail || thumbnailFailed) {
+        if (!isMediaType || thumbnailFailed) {
             Text(
                 text = fileItem.name,
                 style = MaterialTheme.typography.bodySmall,

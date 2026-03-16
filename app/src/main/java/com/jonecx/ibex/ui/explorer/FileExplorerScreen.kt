@@ -40,7 +40,9 @@ import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +55,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
@@ -89,6 +92,20 @@ fun FileExplorerScreen(
         }
     }
 
+    LaunchedEffect(uiState.downloadedFile) {
+        val downloaded = uiState.downloadedFile ?: return@LaunchedEffect
+        onOpenMediaViewer(listOf(downloaded), 0)
+        viewModel.clearDownloadedFile()
+    }
+
+    if (uiState.isDownloading) {
+        Dialog(onDismissRequest = {}) {
+            CircularProgressIndicator(
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+
     ListDetailPaneScaffold(
         modifier = modifier,
         directive = navigator.scaffoldDirective,
@@ -106,12 +123,16 @@ fun FileExplorerScreen(
                                 FileType.DIRECTORY -> viewModel.navigateTo(fileItem)
 
                                 FileType.IMAGE, FileType.VIDEO -> {
-                                    val viewableFiles = state.files.filter {
-                                        it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
-                                    }
-                                    val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
-                                    if (index >= 0) {
-                                        onOpenMediaViewer(viewableFiles, index)
+                                    if (fileItem.isRemote) {
+                                        viewModel.downloadRemoteFile(fileItem)
+                                    } else {
+                                        val viewableFiles = state.files.filter {
+                                            it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
+                                        }
+                                        val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
+                                        if (index >= 0) {
+                                            onOpenMediaViewer(viewableFiles, index)
+                                        }
                                     }
                                 }
 
@@ -125,10 +146,12 @@ fun FileExplorerScreen(
                         }
                     },
                     onFileLongClick = { fileItem ->
-                        if (!viewModel.uiState.value.isSelectionMode) {
-                            viewModel.enterSelectionMode(fileItem)
-                        } else {
-                            viewModel.toggleFileSelection(fileItem)
+                        if (!uiState.isRemoteBrowsing) {
+                            if (!viewModel.uiState.value.isSelectionMode) {
+                                viewModel.enterSelectionMode(fileItem)
+                            } else {
+                                viewModel.toggleFileSelection(fileItem)
+                            }
                         }
                     },
                     onCancelSelection = { viewModel.clearSelection() },
@@ -202,7 +225,7 @@ private fun FileListPane(
                             )
                         }
                     },
-                    actions = { CreateFolderAction(uiState.allowFolderNavigation) { showCreateFolderDialog = true } },
+                    actions = { CreateFolderAction(uiState.allowFolderNavigation && !uiState.isRemoteBrowsing) { showCreateFolderDialog = true } },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ),
@@ -225,7 +248,7 @@ private fun FileListPane(
                             }
                         }
                     },
-                    actions = { CreateFolderAction(uiState.allowFolderNavigation) { showCreateFolderDialog = true } },
+                    actions = { CreateFolderAction(uiState.allowFolderNavigation && !uiState.isRemoteBrowsing) { showCreateFolderDialog = true } },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                     ),

@@ -43,14 +43,20 @@ object Routes {
 
     fun networkConnections(protocol: NetworkProtocol): String =
         "$NETWORK_CONNECTIONS_BASE?${NetworkConnectionsViewModel.ARG_PROTOCOL}=${protocol.name}"
-    const val FILE_EXPLORER = "file_explorer/{${FileExplorerViewModel.ARG_SOURCE_TYPE}}?${FileExplorerViewModel.ARG_ROOT_PATH}={${FileExplorerViewModel.ARG_ROOT_PATH}}&${FileExplorerViewModel.ARG_TITLE}={${FileExplorerViewModel.ARG_TITLE}}"
+    const val FILE_EXPLORER = "file_explorer/{${FileExplorerViewModel.ARG_SOURCE_TYPE}}?${FileExplorerViewModel.ARG_ROOT_PATH}={${FileExplorerViewModel.ARG_ROOT_PATH}}&${FileExplorerViewModel.ARG_TITLE}={${FileExplorerViewModel.ARG_TITLE}}&${FileExplorerViewModel.ARG_CONNECTION_ID}={${FileExplorerViewModel.ARG_CONNECTION_ID}}"
     const val MEDIA_VIEWER = "media_viewer"
     const val KEY_REFRESH = "refresh"
 
-    fun fileExplorer(sourceType: FileSourceType, rootPath: String? = null, title: String? = null): String {
+    fun fileExplorer(
+        sourceType: FileSourceType,
+        rootPath: String? = null,
+        title: String? = null,
+        connectionId: String? = null,
+    ): String {
         val encodedPath = rootPath?.let { URLEncoder.encode(it, "UTF-8") } ?: ""
         val encodedTitle = title?.let { URLEncoder.encode(it, "UTF-8") } ?: ""
-        return "file_explorer/${sourceType.name}?${FileExplorerViewModel.ARG_ROOT_PATH}=$encodedPath&${FileExplorerViewModel.ARG_TITLE}=$encodedTitle"
+        val encodedConnectionId = connectionId?.let { URLEncoder.encode(it, "UTF-8") } ?: ""
+        return "file_explorer/${sourceType.name}?${FileExplorerViewModel.ARG_ROOT_PATH}=$encodedPath&${FileExplorerViewModel.ARG_TITLE}=$encodedTitle&${FileExplorerViewModel.ARG_CONNECTION_ID}=$encodedConnectionId"
     }
 }
 
@@ -150,6 +156,10 @@ fun AppNavigation(
                     type = NavType.StringType
                     defaultValue = ""
                 },
+                navArgument(FileExplorerViewModel.ARG_CONNECTION_ID) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
             ),
         ) {
             val viewModel: FileExplorerViewModel = hiltViewModel()
@@ -188,7 +198,13 @@ fun AppNavigation(
             NetworkConnectionsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onConnectionSelected = { connection ->
-                    // TODO: Browse network share
+                    navController.navigate(
+                        Routes.fileExplorer(
+                            sourceType = FileSourceType.SMB,
+                            title = connection.displayName,
+                            connectionId = connection.id,
+                        ),
+                    )
                 },
                 onAddConnection = {
                     viewModel.clearConnectionToEdit()

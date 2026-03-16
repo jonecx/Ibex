@@ -31,6 +31,17 @@ object FileTypeUtils {
         return getFileTypeFromMimeType(mimeType)
     }
 
+    fun getFileTypeFromName(name: String): FileType {
+        val mimeType = getMimeTypeFromName(name) ?: return FileType.UNKNOWN
+        return getFileTypeFromMimeType(mimeType)
+    }
+
+    fun getMimeTypeFromName(name: String): String? {
+        val extension = name.substringAfterLast('.', "").lowercase()
+        if (extension.isEmpty()) return null
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+    }
+
     private fun getFileTypeFromMimeType(mimeType: String): FileType {
         return when {
             mimeType.startsWith("image/") -> FileType.IMAGE

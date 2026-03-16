@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,12 +59,17 @@ fun FileListItem(
             Spacer(modifier = Modifier.width(12.dp))
         }
 
-        when (fileItem.fileType) {
-            FileType.IMAGE, FileType.VIDEO -> ThumbnailImage(
+        var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
+        val showThumbnail = !thumbnailFailed &&
+            (fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO)
+        if (showThumbnail) {
+            ThumbnailImage(
                 fileItem = fileItem,
                 modifier = Modifier.size(48.dp),
+                onError = { thumbnailFailed = true },
             )
-            else -> FileIcon(
+        } else {
+            FileIcon(
                 fileItem = fileItem,
                 modifier = Modifier.size(48.dp),
             )

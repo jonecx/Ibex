@@ -2,11 +2,13 @@ package com.jonecx.ibex.ui.explorer
 
 import android.os.Environment
 import androidx.lifecycle.SavedStateHandle
+import org.robolectric.RuntimeEnvironment
 import app.cash.turbine.test
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.repository.ClipboardOperation
+import com.jonecx.ibex.data.repository.SmbContextProvider
 import com.jonecx.ibex.fixtures.FakeFileClipboardManager
 import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepository
@@ -76,7 +78,18 @@ class FileExplorerViewModelTest {
                 FileExplorerViewModel.ARG_TITLE to title,
             ),
         )
-        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeMoveManager, fakeClipboardManager, savedStateHandle, testDispatcher)
+        return FileExplorerViewModel(
+            fakeFactory,
+            fakePreferences,
+            fakeTrashManager,
+            fakeMoveManager,
+            fakeClipboardManager,
+            SmbContextProvider(),
+            RuntimeEnvironment.getApplication(),
+            savedStateHandle,
+            testDispatcher,
+            testDispatcher,
+        )
     }
 
     private fun createViewModelWithFiles(vararg files: FileItem): FileExplorerViewModel {
