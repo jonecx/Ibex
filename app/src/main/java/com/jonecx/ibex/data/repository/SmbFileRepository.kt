@@ -22,7 +22,7 @@ class SmbFileRepository(
     private val connectionId: String,
     private val networkPreferences: NetworkConnectionsPreferencesContract,
     private val ioDispatcher: CoroutineDispatcher,
-    private val smbContextProvider: SmbContextProvider,
+    private val smbContextProvider: SmbContextProviderContract,
 ) : FileRepository {
 
     @Volatile

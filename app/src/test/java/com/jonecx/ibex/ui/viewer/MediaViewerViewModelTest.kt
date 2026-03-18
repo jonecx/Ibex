@@ -2,9 +2,9 @@ package com.jonecx.ibex.ui.viewer
 
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
-import com.jonecx.ibex.data.repository.SmbContextProvider
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakePlayerFactory
+import com.jonecx.ibex.fixtures.FakeSmbContextProvider
 import com.jonecx.ibex.fixtures.testImageFileItem
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -31,7 +31,7 @@ class MediaViewerViewModelTest {
             args,
             playerFactory,
             trashManager,
-            SmbContextProvider(),
+            FakeSmbContextProvider(),
             RuntimeEnvironment.getApplication(),
             testDispatcher,
         )
@@ -72,7 +72,7 @@ class MediaViewerViewModelTest {
             args,
             playerFactory,
             trashManager,
-            SmbContextProvider(),
+            FakeSmbContextProvider(),
             RuntimeEnvironment.getApplication(),
             testDispatcher,
         )

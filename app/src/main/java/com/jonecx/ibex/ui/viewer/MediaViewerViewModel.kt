@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.repository.FileTrashManager
-import com.jonecx.ibex.data.repository.SmbContextProvider
+import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.ui.player.PlayerFactory
 import com.jonecx.ibex.util.FileTypeUtils
@@ -34,7 +34,7 @@ class MediaViewerViewModel @Inject constructor(
     private val mediaViewerArgs: MediaViewerArgs,
     private val playerFactory: PlayerFactory,
     private val fileTrashManager: FileTrashManager,
-    private val smbContextProvider: SmbContextProvider,
+    private val smbContextProvider: SmbContextProviderContract,
     @ApplicationContext private val appContext: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -60,7 +60,7 @@ class MediaViewerViewModel @Inject constructor(
                 val ext = fileItem.name.substringAfterLast('.', "")
                 val tempFile = File(
                     appContext.cacheDir,
-                    "smb_media_${SmbContextProvider.smbCacheKey(fileItem.path)}.$ext",
+                    "smb_media_${SmbContextProviderContract.smbCacheKey(fileItem.path)}.$ext",
                 )
 
                 SmbFile(fileItem.path, cifsContext).inputStream.use { input ->

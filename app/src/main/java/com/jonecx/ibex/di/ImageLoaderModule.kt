@@ -4,7 +4,7 @@ import android.content.Context
 import coil.ImageLoader
 import coil.decode.VideoFrameDecoder
 import coil.disk.DiskCache
-import com.jonecx.ibex.data.repository.SmbContextProvider
+import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.ui.explorer.components.SmbFetcherFactory
 import dagger.Module
 import dagger.Provides
@@ -22,7 +22,7 @@ object ImageLoaderModule {
     @Singleton
     fun provideImageLoader(
         @ApplicationContext context: Context,
-        smbContextProvider: SmbContextProvider,
+        smbContextProvider: SmbContextProviderContract,
     ): ImageLoader {
         val smbCacheDir = File(context.cacheDir, SMB_THUMBNAIL_CACHE_DIR)
         smbCacheDir.mkdirs()

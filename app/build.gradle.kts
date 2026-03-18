@@ -134,6 +134,7 @@ dependencies {
 
     // SMB client
     implementation(libs.jcifs.ng)
+    testFixturesImplementation(libs.jcifs.ng)
 
     // Media3 (ExoPlayer + Compose UI)
     implementation(libs.media3.exoplayer)
