@@ -34,6 +34,9 @@ import java.net.URLDecoder
 import javax.inject.Inject
 
 @Immutable
+data class ScrollPosition(val firstVisibleItemIndex: Int = 0, val firstVisibleItemScrollOffset: Int = 0)
+
+@Immutable
 data class FileExplorerUiState(
     val currentPath: String = INTERNAL_STORAGE_PATH,
     val files: List<FileItem> = emptyList(),
@@ -50,6 +53,7 @@ data class FileExplorerUiState(
     val selectedFiles: Set<String> = emptySet(),
     val clipboardOperation: ClipboardOperation? = null,
     val isRemoteBrowsing: Boolean = false,
+    val restoredScrollPosition: ScrollPosition? = null,
 ) {
     val canCreateFolder: Boolean get() = allowFolderNavigation && !isRemoteBrowsing
 }
@@ -103,6 +107,7 @@ class FileExplorerViewModel @Inject constructor(
     val uiState: StateFlow<FileExplorerUiState> = _uiState.asStateFlow()
 
     private var loadFilesJob: Job? = null
+    private val scrollPositions = mutableMapOf<String, ScrollPosition>()
 
     init {
         if (!allowFolderNavigation && title != null) {
@@ -171,6 +176,11 @@ class FileExplorerViewModel @Inject constructor(
         }
     }
 
+    fun saveScrollPosition(firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int) {
+        val path = _uiState.value.currentPath
+        scrollPositions[path] = ScrollPosition(firstVisibleItemIndex, firstVisibleItemScrollOffset)
+    }
+
     fun navigateTo(fileItem: FileItem) {
         if (fileItem.isDirectory && allowFolderNavigation) {
             val newStack = _uiState.value.navigationStack + fileItem.path
@@ -178,6 +188,7 @@ class FileExplorerViewModel @Inject constructor(
                 it.copy(
                     navigationStack = newStack,
                     selectedFile = null,
+                    restoredScrollPosition = null,
                 )
             }
             loadFiles(fileItem.path)
@@ -191,10 +202,12 @@ class FileExplorerViewModel @Inject constructor(
         if (stack.size > 1) {
             val newStack = stack.dropLast(1)
             val parentPath = newStack.last()
+            val restored = scrollPositions.remove(parentPath)
             _uiState.update {
                 it.copy(
                     navigationStack = newStack,
                     selectedFile = null,
+                    restoredScrollPosition = restored,
                 )
             }
             loadFiles(parentPath)

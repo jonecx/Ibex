@@ -12,7 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Close
@@ -39,6 +41,7 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,6 +99,9 @@ fun FileExplorerScreen(
             AnimatedPane {
                 FileListPane(
                     uiState = uiState,
+                    onSaveScrollPosition = { index, offset ->
+                        viewModel.saveScrollPosition(index, offset)
+                    },
                     onFileClick = { fileItem ->
                         val state = viewModel.uiState.value
                         if (state.isSelectionMode) {
@@ -166,6 +172,7 @@ fun FileExplorerScreen(
 @Composable
 private fun FileListPane(
     uiState: FileExplorerUiState,
+    onSaveScrollPosition: (firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int) -> Unit,
     onFileClick: (FileItem) -> Unit,
     onFileLongClick: (FileItem) -> Unit,
     onCancelSelection: () -> Unit,
@@ -181,9 +188,40 @@ private fun FileListPane(
     currentDirectoryName: String,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
+
+    val saveCurrentScrollPosition = {
+        when (uiState.viewMode) {
+            ViewMode.LIST -> onSaveScrollPosition(
+                listState.firstVisibleItemIndex,
+                listState.firstVisibleItemScrollOffset,
+            )
+            ViewMode.GRID -> onSaveScrollPosition(
+                gridState.firstVisibleItemIndex,
+                gridState.firstVisibleItemScrollOffset,
+            )
+        }
+    }
+
+    LaunchedEffect(uiState.currentPath, uiState.isLoading) {
+        if (uiState.isLoading) return@LaunchedEffect
+        val pos = uiState.restoredScrollPosition
+        if (pos != null) {
+            when (uiState.viewMode) {
+                ViewMode.LIST -> listState.scrollToItem(pos.firstVisibleItemIndex, pos.firstVisibleItemScrollOffset)
+                ViewMode.GRID -> gridState.scrollToItem(pos.firstVisibleItemIndex, pos.firstVisibleItemScrollOffset)
+            }
+        } else {
+            when (uiState.viewMode) {
+                ViewMode.LIST -> listState.scrollToItem(0, 0)
+                ViewMode.GRID -> gridState.scrollToItem(0, 0)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -264,6 +302,7 @@ private fun FileListPane(
                 when (uiState.viewMode) {
                     ViewMode.LIST -> {
                         LazyColumn(
+                            state = listState,
                             modifier = Modifier.fillMaxSize().testTag("file_list"),
                             contentPadding = contentPadding,
                         ) {
@@ -275,7 +314,10 @@ private fun FileListPane(
                                 FileListItem(
                                     fileItem = fileItem,
                                     isSelected = selectedPath == fileItem.path,
-                                    onClick = { onFileClick(fileItem) },
+                                    onClick = {
+                                        if (fileItem.isDirectory) saveCurrentScrollPosition()
+                                        onFileClick(fileItem)
+                                    },
                                     isSelectionMode = uiState.isSelectionMode,
                                     isChecked = fileItem.path in uiState.selectedFiles,
                                     onLongClick = { onFileLongClick(fileItem) },
@@ -285,6 +327,7 @@ private fun FileListPane(
                     }
                     ViewMode.GRID -> {
                         LazyVerticalGrid(
+                            state = gridState,
                             columns = GridCells.Fixed(uiState.gridColumns),
                             modifier = Modifier.fillMaxSize().testTag("file_grid"),
                             contentPadding = contentPadding,
@@ -299,7 +342,10 @@ private fun FileListPane(
                                 FileGridItem(
                                     fileItem = fileItem,
                                     isSelected = selectedPath == fileItem.path,
-                                    onClick = { onFileClick(fileItem) },
+                                    onClick = {
+                                        if (fileItem.isDirectory) saveCurrentScrollPosition()
+                                        onFileClick(fileItem)
+                                    },
                                     isSelectionMode = uiState.isSelectionMode,
                                     isChecked = fileItem.path in uiState.selectedFiles,
                                     onLongClick = { onFileLongClick(fileItem) },
