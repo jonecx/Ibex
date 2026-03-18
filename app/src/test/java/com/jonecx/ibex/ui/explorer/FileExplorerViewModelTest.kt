@@ -5,6 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.data.model.SortDirection
+import com.jonecx.ibex.data.model.SortField
+import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import com.jonecx.ibex.fixtures.FakeFileClipboardManager
@@ -648,6 +651,134 @@ class FileExplorerViewModelTest {
         assertNotNull(restoredRoot)
         assertEquals(5, restoredRoot!!.firstVisibleItemIndex)
         assertEquals(10, restoredRoot.firstVisibleItemScrollOffset)
+    }
+
+    // Sort tests
+
+    @Test
+    fun `default sort is NAME ASCENDING`() = runTest {
+        val state = viewModel.uiState.value
+        assertEquals(SortOption.DEFAULT, state.sortOption)
+        assertEquals(SortField.NAME, state.sortOption.field)
+        assertEquals(SortDirection.ASCENDING, state.sortOption.direction)
+    }
+
+    @Test
+    fun `files sorted by name ascending by default`() = runTest {
+        val b = testFileItem("banana.txt", size = 300)
+        val a = testFileItem("apple.txt", size = 100)
+        val c = testFileItem("cherry.txt", size = 200)
+        createViewModelWithFiles(b, a, c)
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("apple.txt", "banana.txt", "cherry.txt"), names)
+    }
+
+    @Test
+    fun `directories always sort before files`() = runTest {
+        val file = testFileItem("aaa.txt", size = 100)
+        val dir = testDirectoryFileItem("zzz_folder")
+        createViewModelWithFiles(file, dir)
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("zzz_folder", "aaa.txt"), names)
+    }
+
+    @Test
+    fun `setSortOption changes sort and re-sorts files`() = runTest {
+        val small = testFileItem("big_name.txt", size = 10)
+        val large = testFileItem("aaa.txt", size = 9999)
+        createViewModelWithFiles(small, large)
+
+        assertEquals(listOf("aaa.txt", "big_name.txt"), viewModel.uiState.value.files.map { it.name })
+
+        viewModel.setSortOption(SortOption(SortField.SIZE, SortDirection.DESCENDING))
+
+        val sorted = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("aaa.txt", "big_name.txt"), sorted)
+        assertEquals(9999L, viewModel.uiState.value.files.first().size)
+    }
+
+    @Test
+    fun `sort by size ascending`() = runTest {
+        val big = testFileItem("big.txt", size = 9000)
+        val small = testFileItem("small.txt", size = 100)
+        val mid = testFileItem("mid.txt", size = 3000)
+        fakePreferences.setSortOption(SortOption(SortField.SIZE, SortDirection.ASCENDING))
+        createViewModelWithFiles(big, small, mid)
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("small.txt", "mid.txt", "big.txt"), names)
+    }
+
+    @Test
+    fun `sort by name descending`() = runTest {
+        val a = testFileItem("apple.txt")
+        val b = testFileItem("banana.txt")
+        val c = testFileItem("cherry.txt")
+        fakePreferences.setSortOption(SortOption(SortField.NAME, SortDirection.DESCENDING))
+        createViewModelWithFiles(a, b, c)
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("cherry.txt", "banana.txt", "apple.txt"), names)
+    }
+
+    @Test
+    fun `sort by date modified descending`() = runTest {
+        val old = testFileItem("old.txt").copy(lastModified = 1000L)
+        val recent = testFileItem("recent.txt").copy(lastModified = 9000L)
+        val mid = testFileItem("mid.txt").copy(lastModified = 5000L)
+        fakePreferences.setSortOption(SortOption(SortField.DATE_MODIFIED, SortDirection.DESCENDING))
+        fakeRepository.filesToReturn = listOf(old, recent, mid)
+        viewModel = createViewModel()
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("recent.txt", "mid.txt", "old.txt"), names)
+    }
+
+    @Test
+    fun `sort preference change persists via preferences`() = runTest {
+        val option = SortOption(SortField.SIZE, SortDirection.DESCENDING)
+        viewModel.setSortOption(option)
+
+        assertEquals(option, fakePreferences.currentSortOption())
+    }
+
+    @Test
+    fun `sort by date created ascending`() = runTest {
+        val newer = testFileItem("newer.txt").copy(createdAt = 8000L)
+        val older = testFileItem("older.txt").copy(createdAt = 2000L)
+        val mid = testFileItem("mid.txt").copy(createdAt = 5000L)
+        fakePreferences.setSortOption(SortOption(SortField.DATE_CREATED, SortDirection.ASCENDING))
+        fakeRepository.filesToReturn = listOf(newer, older, mid)
+        viewModel = createViewModel()
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("older.txt", "mid.txt", "newer.txt"), names)
+    }
+
+    @Test
+    fun `sort by date created descending`() = runTest {
+        val newer = testFileItem("newer.txt").copy(createdAt = 8000L)
+        val older = testFileItem("older.txt").copy(createdAt = 2000L)
+        val mid = testFileItem("mid.txt").copy(createdAt = 5000L)
+        fakePreferences.setSortOption(SortOption(SortField.DATE_CREATED, SortDirection.DESCENDING))
+        fakeRepository.filesToReturn = listOf(newer, older, mid)
+        viewModel = createViewModel()
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals(listOf("newer.txt", "mid.txt", "older.txt"), names)
+    }
+
+    @Test
+    fun `sort preserves directories first regardless of sort field`() = runTest {
+        val bigFile = testFileItem("big.txt", size = 99999)
+        val smallDir = testDirectoryFileItem("tiny_dir")
+        fakePreferences.setSortOption(SortOption(SortField.SIZE, SortDirection.DESCENDING))
+        createViewModelWithFiles(bigFile, smallDir)
+
+        val names = viewModel.uiState.value.files.map { it.name }
+        assertEquals("tiny_dir", names.first())
     }
 
     companion object {

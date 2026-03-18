@@ -121,4 +121,13 @@
     <string name="add_connection_protocol_ftp">FTP</string>
     <string name="add_connection_protocol_cloud">Cloud</string>
     <string name="add_connection_url">URL / Hostname</string>
+    <!-- Sort -->
+    <string name="sort">Sort</string>
+    <string name="sort_by">Sort By</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_size">Size</string>
+    <string name="sort_date_modified">Date Modified</string>
+    <string name="sort_date_created">Date Created</string>
+    <string name="sort_ascending">Ascending</string>
+    <string name="sort_descending">Descending</string>
 </resources>

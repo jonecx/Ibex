@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
+import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.components.EmptyView
@@ -66,6 +68,7 @@ import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.explorer.components.FileDetailPane
 import com.jonecx.ibex.ui.explorer.components.FileGridItem
 import com.jonecx.ibex.ui.explorer.components.FileListItem
+import com.jonecx.ibex.ui.explorer.components.SortBottomSheet
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
@@ -146,6 +149,7 @@ fun FileExplorerScreen(
                     onCreateFolder = { name -> viewModel.createFolder(name) },
                     onPaste = { viewModel.pasteFiles() },
                     onCancelClipboard = { viewModel.cancelClipboard() },
+                    onSortOptionSelected = { viewModel.setSortOption(it) },
                     onNavigateUp = {
                         if (viewModel.canNavigateUp()) {
                             viewModel.navigateUp()
@@ -183,6 +187,7 @@ private fun FileListPane(
     onCreateFolder: (String) -> Unit,
     onPaste: () -> Unit,
     onCancelClipboard: () -> Unit,
+    onSortOptionSelected: (SortOption) -> Unit,
     onNavigateUp: () -> Unit,
     showBackButton: Boolean,
     currentDirectoryName: String,
@@ -193,6 +198,7 @@ private fun FileListPane(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
+    var showSortSheet by remember { mutableStateOf(false) }
 
     val saveCurrentScrollPosition = {
         val (index, offset) = when (uiState.viewMode) {
@@ -229,7 +235,10 @@ private fun FileListPane(
                             )
                         }
                     },
-                    actions = { CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true } },
+                    actions = {
+                        SortAction { showSortSheet = true }
+                        CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ),
@@ -239,7 +248,10 @@ private fun FileListPane(
                     title = currentDirectoryName,
                     onNavigateBack = onNavigateUp,
                     showBackButton = showBackButton,
-                    actions = { CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true } },
+                    actions = {
+                        SortAction { showSortSheet = true }
+                        CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
+                    },
                 )
             }
         },
@@ -388,6 +400,24 @@ private fun FileListPane(
                 onDismiss = { showCreateFolderDialog = false },
             )
         }
+
+        if (showSortSheet) {
+            SortBottomSheet(
+                currentSortOption = uiState.sortOption,
+                onSortOptionSelected = onSortOptionSelected,
+                onDismiss = { showSortSheet = false },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SortAction(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Filled.FilterList,
+            contentDescription = stringResource(R.string.sort),
+        )
     }
 }
 

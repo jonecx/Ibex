@@ -41,6 +41,7 @@ class RecentFilesRepository(
             MediaStore.Files.FileColumns.DATA,
             MediaStore.Files.FileColumns.SIZE,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns.DATE_ADDED,
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
         )
@@ -58,6 +59,7 @@ class RecentFilesRepository(
             val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
             val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
             val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
             val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
             val mediaTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
@@ -67,6 +69,7 @@ class RecentFilesRepository(
                 val data = cursor.getString(dataColumn) ?: ""
                 val size = cursor.getLong(sizeColumn)
                 val date = cursor.getLong(dateColumn) * FileTypeUtils.SECONDS_TO_MILLIS
+                val dateAdded = cursor.getLong(dateAddedColumn) * FileTypeUtils.SECONDS_TO_MILLIS
                 val mime = cursor.getString(mimeColumn)
                 val mediaType = cursor.getInt(mediaTypeColumn)
 
@@ -92,6 +95,7 @@ class RecentFilesRepository(
                         uri = contentUri,
                         size = size,
                         lastModified = date,
+                        createdAt = dateAdded,
                         isDirectory = false,
                         fileType = fileType,
                         mimeType = mime,
