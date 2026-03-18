@@ -6,7 +6,7 @@ import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.ui.explorer.components.FileImageRequestFactory
 
 class FakeFileImageRequestFactory : FileImageRequestFactory {
-    override fun create(context: Context, fileItem: FileItem): ImageRequest {
+    override fun create(context: Context, fileItem: FileItem, fullSize: Boolean): ImageRequest {
         return ImageRequest.Builder(context)
             .data(fileItem.path)
             .build()

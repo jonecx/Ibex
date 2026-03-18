@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,9 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.ui.components.ConfirmationDialog
-import com.jonecx.ibex.ui.player.PlayerFactory
+import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.player.VideoPlayer
 import com.jonecx.ibex.ui.theme.Black
 import com.jonecx.ibex.ui.theme.ScrimDark
@@ -46,7 +46,9 @@ fun MediaViewerOverlay(
     viewableFiles: List<FileItem>,
     initialIndex: Int,
     onDismiss: () -> Unit,
-    playerFactory: PlayerFactory,
+    downloadingPaths: Set<String> = emptySet(),
+    resolvedFiles: Map<String, FileItem> = emptyMap(),
+    onDownloadRemoteVideo: (FileItem) -> Unit = {},
     modifier: Modifier = Modifier,
     onDelete: (FileItem) -> Unit = {},
 ) {
@@ -74,26 +76,43 @@ fun MediaViewerOverlay(
             key = { viewableFiles[it].path },
         ) { page ->
             val fileItem = viewableFiles[page]
-            when (fileItem.fileType) {
-                FileType.VIDEO -> {
-                    VideoPlayer(
-                        fileItem = fileItem,
-                        isActive = pagerState.settledPage == page,
-                        playerFactory = playerFactory,
-                        modifier = Modifier.fillMaxSize(),
-                        controlsVisible = controlsVisible,
-                        onToggleControls = toggleControls,
-                        onPrevious = if (page > 0) {
-                            { scope.launch { pagerState.animateScrollToPage(page - 1) } }
-                        } else {
-                            null
-                        },
-                        onNext = if (page < viewableFiles.size - 1) {
-                            { scope.launch { pagerState.animateScrollToPage(page + 1) } }
-                        } else {
-                            null
-                        },
-                    )
+            val onPrevious: (() -> Unit)? = remember(page) {
+                if (page > 0) {
+                    { scope.launch { pagerState.animateScrollToPage(page - 1) } }
+                } else {
+                    null
+                }
+            }
+            val onNext: (() -> Unit)? = remember(page, viewableFiles.size) {
+                if (page < viewableFiles.size - 1) {
+                    { scope.launch { pagerState.animateScrollToPage(page + 1) } }
+                } else {
+                    null
+                }
+            }
+            when {
+                fileItem.fileType.isVideo -> {
+                    val resolved = resolvedFiles[fileItem.path]
+                    val videoFile = resolved ?: fileItem
+                    if (fileItem.isRemote && resolved == null) {
+                        LaunchedEffect(fileItem.path) {
+                            onDownloadRemoteVideo(fileItem)
+                        }
+                        LoadingView(
+                            color = White,
+                            description = stringResource(R.string.video_loading),
+                        )
+                    } else {
+                        VideoPlayer(
+                            fileItem = videoFile,
+                            isActive = pagerState.settledPage == page,
+                            modifier = Modifier.fillMaxSize(),
+                            controlsVisible = controlsVisible,
+                            onToggleControls = toggleControls,
+                            onPrevious = onPrevious,
+                            onNext = onNext,
+                        )
+                    }
                 }
                 else -> {
                     ZoomableImage(

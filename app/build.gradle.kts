@@ -131,7 +131,10 @@ dependencies {
 
     // Tink (encryption for credentials)
     implementation(libs.tink.android)
-    
+
+    // SMB client
+    implementation(libs.jcifs.ng)
+
     // Media3 (ExoPlayer + Compose UI)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui.compose)

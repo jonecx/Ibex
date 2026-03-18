@@ -15,6 +15,11 @@ val SurfaceVariantDark = Color(0xFF2C2C2C)
 val WhiteSecondary = Color(0xB3FFFFFF) // White @ 70% alpha
 val ScrimDark = Color(0x80000000) // Black @ 50% alpha
 
+// Alpha levels
+const val AlphaDisabled = 0.5f
+const val AlphaSecondary = 0.7f
+const val AlphaTintBackground = 0.15f
+
 // File type icon colors
 val FileDirectoryColor = Color(0xFFFFB74D)
 val FileImageColor = Color(0xFF4CAF50)

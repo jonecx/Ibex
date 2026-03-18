@@ -30,6 +30,7 @@
     <string name="unknown_file">Unknown</string>
     <string name="failed_to_load_files">Failed to load files</string>
     <!-- Common UI -->
+    <string name="bullet_separator">" • "</string>
     <string name="unknown_error">Unknown error occurred</string>
     <string name="retry">Retry</string>
     <!-- File details -->

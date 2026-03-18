@@ -30,12 +30,12 @@ fun ZoomableImage(
 ) {
     val context = LocalContext.current
     val factory = LocalFileImageRequestFactory.current
-    var scale by remember { mutableFloatStateOf(1f) }
+    var scale by remember { mutableFloatStateOf(MIN_ZOOM) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     val currentOnTap by rememberUpdatedState(onTap)
 
-    val imageRequest = remember(fileItem.path) { factory.create(context, fileItem) }
+    val imageRequest = remember(fileItem.path) { factory.create(context, fileItem, fullSize = true) }
 
     Box(
         modifier = modifier,
@@ -53,11 +53,11 @@ fun ZoomableImage(
                             val event = awaitPointerEvent()
                             if (event.changes.size >= 2) {
                                 val zoom = event.calculateZoom()
-                                if (zoom != 1f) {
-                                    scale = (scale * zoom).coerceIn(1f, 5f)
+                                if (zoom != MIN_ZOOM) {
+                                    scale = (scale * zoom).coerceIn(MIN_ZOOM, MAX_ZOOM)
                                     event.changes.forEach { it.consume() }
                                 }
-                                if (scale > 1f) {
+                                if (scale > MIN_ZOOM) {
                                     val pan = event.calculatePan()
                                     offsetX += pan.x
                                     offsetY += pan.y
@@ -71,12 +71,12 @@ fun ZoomableImage(
                     detectTapGestures(
                         onTap = { currentOnTap() },
                         onDoubleTap = {
-                            if (scale > 1f) {
-                                scale = 1f
+                            if (scale > MIN_ZOOM) {
+                                scale = MIN_ZOOM
                                 offsetX = 0f
                                 offsetY = 0f
                             } else {
-                                scale = 2.5f
+                                scale = DOUBLE_TAP_ZOOM
                             }
                         },
                     )
@@ -91,3 +91,7 @@ fun ZoomableImage(
         )
     }
 }
+
+private const val MIN_ZOOM = 1f
+private const val MAX_ZOOM = 5f
+private const val DOUBLE_TAP_ZOOM = 2.5f

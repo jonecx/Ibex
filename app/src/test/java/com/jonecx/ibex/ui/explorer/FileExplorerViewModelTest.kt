@@ -76,7 +76,15 @@ class FileExplorerViewModelTest {
                 FileExplorerViewModel.ARG_TITLE to title,
             ),
         )
-        return FileExplorerViewModel(fakeFactory, fakePreferences, fakeTrashManager, fakeMoveManager, fakeClipboardManager, savedStateHandle, testDispatcher)
+        return FileExplorerViewModel(
+            fakeFactory,
+            fakePreferences,
+            fakeTrashManager,
+            fakeMoveManager,
+            fakeClipboardManager,
+            savedStateHandle,
+            testDispatcher,
+        )
     }
 
     private fun createViewModelWithFiles(vararg files: FileItem): FileExplorerViewModel {

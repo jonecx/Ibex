@@ -1,6 +1,7 @@
 package com.jonecx.ibex.ui.player
 
 import android.content.Context
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -9,6 +10,10 @@ import javax.inject.Singleton
 
 interface PlayerFactory {
     fun create(): Player
+}
+
+val LocalPlayerFactory = staticCompositionLocalOf<PlayerFactory> {
+    error("No PlayerFactory provided")
 }
 
 @Singleton

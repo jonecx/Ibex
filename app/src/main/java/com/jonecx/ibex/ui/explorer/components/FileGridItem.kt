@@ -23,7 +23,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
 
 private val GridItemShape = RoundedCornerShape(2.dp)
 
@@ -45,17 +44,11 @@ fun FileGridItem(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .background(
-                if (isSelected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
-            )
+            .background(selectionBackgroundColor(isSelected))
             .padding(1.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val hasThumbnail = fileItem.fileType == FileType.IMAGE || fileItem.fileType == FileType.VIDEO
+        val isMediaType = fileItem.fileType.isViewable
         var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
 
         Box(
@@ -64,13 +57,14 @@ fun FileGridItem(
                 .aspectRatio(1f),
             contentAlignment = Alignment.Center,
         ) {
-            when (fileItem.fileType) {
-                FileType.IMAGE, FileType.VIDEO -> ThumbnailImage(
+            if (isMediaType && !thumbnailFailed) {
+                ThumbnailImage(
                     fileItem = fileItem,
                     modifier = Modifier.matchParentSize(),
                     onError = { thumbnailFailed = true },
                 )
-                else -> FileIcon(
+            } else {
+                FileIcon(
                     fileItem = fileItem,
                     modifier = Modifier.fillMaxWidth(0.5f).aspectRatio(1f),
                 )
@@ -86,18 +80,14 @@ fun FileGridItem(
             }
         }
 
-        if (!hasThumbnail || thumbnailFailed) {
+        if (!isMediaType || thumbnailFailed) {
             Text(
                 text = fileItem.name,
                 style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color = selectionContentColor(isSelected),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 6.dp),
