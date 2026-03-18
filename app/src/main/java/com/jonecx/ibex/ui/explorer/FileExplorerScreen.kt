@@ -195,31 +195,19 @@ private fun FileListPane(
     var showCreateFolderDialog by remember { mutableStateOf(false) }
 
     val saveCurrentScrollPosition = {
-        when (uiState.viewMode) {
-            ViewMode.LIST -> onSaveScrollPosition(
-                listState.firstVisibleItemIndex,
-                listState.firstVisibleItemScrollOffset,
-            )
-            ViewMode.GRID -> onSaveScrollPosition(
-                gridState.firstVisibleItemIndex,
-                gridState.firstVisibleItemScrollOffset,
-            )
+        val (index, offset) = when (uiState.viewMode) {
+            ViewMode.LIST -> listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+            ViewMode.GRID -> gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
         }
+        onSaveScrollPosition(index, offset)
     }
 
     LaunchedEffect(uiState.currentPath, uiState.isLoading) {
         if (uiState.isLoading) return@LaunchedEffect
-        val pos = uiState.restoredScrollPosition
-        if (pos != null) {
-            when (uiState.viewMode) {
-                ViewMode.LIST -> listState.scrollToItem(pos.firstVisibleItemIndex, pos.firstVisibleItemScrollOffset)
-                ViewMode.GRID -> gridState.scrollToItem(pos.firstVisibleItemIndex, pos.firstVisibleItemScrollOffset)
-            }
-        } else {
-            when (uiState.viewMode) {
-                ViewMode.LIST -> listState.scrollToItem(0, 0)
-                ViewMode.GRID -> gridState.scrollToItem(0, 0)
-            }
+        val pos = uiState.restoredScrollPosition ?: ScrollPosition()
+        when (uiState.viewMode) {
+            ViewMode.LIST -> listState.scrollToItem(pos.firstVisibleItemIndex, pos.firstVisibleItemScrollOffset)
+            ViewMode.GRID -> gridState.scrollToItem(pos.firstVisibleItemIndex, pos.firstVisibleItemScrollOffset)
         }
     }
 
