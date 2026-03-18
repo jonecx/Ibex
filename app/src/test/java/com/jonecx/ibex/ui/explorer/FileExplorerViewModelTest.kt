@@ -15,6 +15,7 @@ import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
+import com.jonecx.ibex.fixtures.testRemoteDirectoryFileItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -68,12 +69,14 @@ class FileExplorerViewModelTest {
         sourceType: String = FileSourceType.LOCAL_STORAGE.name,
         rootPath: String = "",
         title: String = "",
+        connectionId: String = "",
     ): FileExplorerViewModel {
         val savedStateHandle = SavedStateHandle(
             mapOf(
                 FileExplorerViewModel.ARG_SOURCE_TYPE to sourceType,
                 FileExplorerViewModel.ARG_ROOT_PATH to rootPath,
                 FileExplorerViewModel.ARG_TITLE to title,
+                FileExplorerViewModel.ARG_CONNECTION_ID to connectionId,
             ),
         )
         return FileExplorerViewModel(
@@ -90,6 +93,13 @@ class FileExplorerViewModelTest {
     private fun createViewModelWithFiles(vararg files: FileItem): FileExplorerViewModel {
         fakeRepository.filesToReturn = files.toList()
         return createViewModel().also { viewModel = it }
+    }
+
+    private fun createSmbViewModel(): FileExplorerViewModel {
+        return createViewModel(
+            sourceType = FileSourceType.SMB.name,
+            connectionId = TEST_SMB_CONNECTION_ID,
+        ).also { viewModel = it }
     }
 
     private fun navigateToSubdir(name: String = "subdir") {
@@ -440,8 +450,12 @@ class FileExplorerViewModelTest {
         assertEquals(currentPath to "Notes", fakeMoveManager.createdFolders.first())
     }
 
-    private fun assertFolderNavigation(sourceType: FileSourceType, expected: Boolean) {
-        viewModel = createViewModel(sourceType = sourceType.name)
+    private fun assertFolderNavigation(
+        sourceType: FileSourceType,
+        expected: Boolean,
+        connectionId: String = "",
+    ) {
+        viewModel = createViewModel(sourceType = sourceType.name, connectionId = connectionId)
         assertEquals(expected, viewModel.uiState.value.allowFolderNavigation)
     }
 
@@ -483,6 +497,72 @@ class FileExplorerViewModelTest {
     @Test
     fun `allowFolderNavigation is false for trash`() = runTest {
         assertFolderNavigation(FileSourceType.LOCAL_TRASH, expected = false)
+    }
+
+    // SMB / Remote browsing tests
+
+    @Test
+    fun `SMB source sets isRemoteBrowsing true`() = runTest {
+        createSmbViewModel()
+        assertTrue(viewModel.uiState.value.isRemoteBrowsing)
+    }
+
+    @Test
+    fun `SMB source allows folder navigation`() = runTest {
+        createSmbViewModel()
+        assertTrue(viewModel.uiState.value.allowFolderNavigation)
+    }
+
+    @Test
+    fun `SMB source disables canCreateFolder`() = runTest {
+        createSmbViewModel()
+        assertFalse(viewModel.uiState.value.canCreateFolder)
+    }
+
+    @Test
+    fun `local source sets isRemoteBrowsing false`() = runTest {
+        assertFalse(viewModel.uiState.value.isRemoteBrowsing)
+    }
+
+    @Test
+    fun `local source allows canCreateFolder`() = runTest {
+        assertTrue(viewModel.uiState.value.canCreateFolder)
+    }
+
+    @Test
+    fun `SMB source navigates directories`() = runTest {
+        fakeRepository.filesToReturn = listOf(
+            testRemoteDirectoryFileItem("share1"),
+        )
+        createSmbViewModel()
+
+        val dir = testRemoteDirectoryFileItem("subfolder")
+        viewModel.navigateTo(dir)
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.navigationStack.size)
+        assertTrue(state.navigationStack.last().contains("subfolder"))
+    }
+
+    @Test
+    fun `SMB source navigateUp works`() = runTest {
+        createSmbViewModel()
+
+        val dir = testRemoteDirectoryFileItem("subfolder")
+        viewModel.navigateTo(dir)
+        assertTrue(viewModel.canNavigateUp())
+
+        viewModel.navigateUp()
+        assertFalse(viewModel.canNavigateUp())
+    }
+
+    @Test
+    fun `allowFolderNavigation is true for SMB`() = runTest {
+        assertFolderNavigation(FileSourceType.SMB, expected = true, connectionId = TEST_SMB_CONNECTION_ID)
+    }
+
+    companion object {
+        private const val TEST_SMB_CONNECTION_ID = "smb-1"
     }
 
     @Test
