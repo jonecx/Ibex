@@ -87,7 +87,7 @@ class MediaViewerViewModel @Inject constructor(
     }
 
     fun deleteFile(fileItem: FileItem) {
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
             val trashed = fileTrashManager.trashFile(fileItem)
             if (trashed) {
                 _uiState.update { state ->

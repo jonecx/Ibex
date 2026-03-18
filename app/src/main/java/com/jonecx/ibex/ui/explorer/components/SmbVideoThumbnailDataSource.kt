@@ -20,6 +20,7 @@ class SmbVideoThumbnailDataSource(
     private var randomAccess: SmbRandomAccessFile? = null
     private var fileSize: Long = -1
 
+    @Synchronized
     private fun ensureOpen() {
         if (randomAccess != null) return
 
@@ -46,6 +47,7 @@ class SmbVideoThumbnailDataSource(
         }
     }
 
+    @Synchronized
     override fun getSize(): Long {
         ensureOpen()
         return fileSize

@@ -144,8 +144,9 @@ class SmbThumbnailFetcher(
     private fun decodeFullImage(cifsContext: CIFSContext): Bitmap? {
         return try {
             val smbFile = SmbFile(smbUrl, cifsContext)
-            val fileSize = smbFile.length().toInt()
-            if (fileSize <= 0) return null
+            val fileSizeLong = smbFile.length()
+            if (fileSizeLong <= 0 || fileSizeLong > MAX_DECODE_FILE_SIZE) return null
+            val fileSize = fileSizeLong.toInt()
 
             Timber.d("Image file size: %s", formatFileSize(fileSize.toLong()))
 
@@ -306,6 +307,7 @@ class SmbThumbnailFetcher(
 
     companion object {
         private const val SAMPLE_SIZE_THRESHOLD_FACTOR = 2
+        private const val MAX_DECODE_FILE_SIZE = 50L * 1024 * 1024
         private const val MAX_CONCURRENT_THUMBNAILS = 4
         private val EXIF_HEADER_SIZES = listOf(64 * 1024, 128 * 1024, 256 * 1024)
         private val concurrencyLimiter = Semaphore(MAX_CONCURRENT_THUMBNAILS)
