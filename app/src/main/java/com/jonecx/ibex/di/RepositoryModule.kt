@@ -15,6 +15,7 @@ import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.data.repository.RecentFilesRepository
 import com.jonecx.ibex.data.repository.SmbContextProvider
+import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.data.repository.SmbFileRepository
 import com.jonecx.ibex.data.repository.TrashRepository
 import dagger.Binds
@@ -40,7 +41,7 @@ class RealFileRepositoryFactory @Inject constructor(
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val networkPreferences: NetworkConnectionsPreferencesContract,
-    private val smbContextProvider: SmbContextProvider,
+    private val smbContextProvider: SmbContextProviderContract,
 ) : FileRepositoryFactory {
     override fun createLocalFileRepository(): FileRepository = LocalFileRepository(context, ioDispatcher)
 
@@ -84,4 +85,10 @@ abstract class RepositoryModule {
     abstract fun bindFileClipboardManager(
         impl: DefaultFileClipboardManager,
     ): FileClipboardManager
+
+    @Binds
+    @Singleton
+    abstract fun bindSmbContextProvider(
+        impl: SmbContextProvider,
+    ): SmbContextProviderContract
 }

@@ -12,7 +12,7 @@ import coil.fetch.FetchResult
 import coil.fetch.Fetcher
 import coil.fetch.SourceResult
 import coil.request.Options
-import com.jonecx.ibex.data.repository.SmbContextProvider
+import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.formatFileSize
 import jcifs.CIFSContext
@@ -30,7 +30,7 @@ import java.io.IOException
 class SmbThumbnailFetcher(
     private val uri: Uri,
     private val options: Options,
-    private val smbContextProvider: SmbContextProvider,
+    private val smbContextProvider: SmbContextProviderContract,
     private val cacheDir: File,
 ) : Fetcher {
 
@@ -49,7 +49,7 @@ class SmbThumbnailFetcher(
             return@withPermit streamFullImage(cifsContext)
         }
 
-        val cacheKey = SmbContextProvider.smbCacheKey(smbUrl)
+        val cacheKey = SmbContextProviderContract.smbCacheKey(smbUrl)
         val cachedFile = File(cacheDir, "$cacheKey.jpg")
 
         if (cachedFile.isValidCache()) {
@@ -77,7 +77,7 @@ class SmbThumbnailFetcher(
 
     private fun streamFullImage(cifsContext: CIFSContext): FetchResult {
         Timber.d("Full image stream: %s", uri.lastPathSegment)
-        val cacheKey = SmbContextProvider.smbCacheKey(smbUrl)
+        val cacheKey = SmbContextProviderContract.smbCacheKey(smbUrl)
         val tempFile = File(cacheDir, "full_$cacheKey")
         val smbFile = SmbFile(smbUrl, cifsContext)
         smbFile.inputStream.use { input ->
@@ -313,7 +313,7 @@ class SmbThumbnailFetcher(
 }
 
 class SmbFetcherFactory(
-    private val smbContextProvider: SmbContextProvider,
+    private val smbContextProvider: SmbContextProviderContract,
     private val cacheDir: File,
 ) : Fetcher.Factory<Uri> {
     override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
