@@ -18,6 +18,7 @@ object MediaStoreUtils {
         MediaStore.MediaColumns.DATA,
         MediaStore.MediaColumns.SIZE,
         MediaStore.MediaColumns.DATE_MODIFIED,
+        MediaStore.MediaColumns.DATE_ADDED,
         MediaStore.MediaColumns.MIME_TYPE,
     )
 
@@ -76,6 +77,7 @@ object MediaStoreUtils {
         val dataCol = getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
         val sizeCol = getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
         val dateCol = getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)
+        val dateAddedCol = getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
         val mimeCol = getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
 
         while (moveToNext() && items.size < limit) {
@@ -90,6 +92,7 @@ object MediaStoreUtils {
                     uri = ContentUris.withAppendedId(collection, id),
                     size = getLong(sizeCol),
                     lastModified = getLong(dateCol) * FileTypeUtils.SECONDS_TO_MILLIS,
+                    createdAt = getLong(dateAddedCol) * FileTypeUtils.SECONDS_TO_MILLIS,
                     isDirectory = false,
                     fileType = fileType ?: resolveFileType(mimeType, name),
                     mimeType = mimeType,

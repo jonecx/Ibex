@@ -5,6 +5,8 @@ import androidx.core.net.toUri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 
 /**
  * Utility object for determining file types and mime types.
@@ -78,12 +80,16 @@ object FileTypeUtils {
 
     fun File.toFileItem(): FileItem {
         val fileType = getFileType(this)
+        val creationTime = runCatching {
+            Files.readAttributes(toPath(), BasicFileAttributes::class.java).creationTime().toMillis()
+        }.getOrDefault(lastModified())
         return FileItem(
             name = name,
             path = absolutePath,
             uri = toUri(),
             size = if (isFile) length() else 0,
             lastModified = lastModified(),
+            createdAt = creationTime,
             isDirectory = isDirectory,
             fileType = fileType,
             mimeType = if (isFile) getMimeType(this) else null,

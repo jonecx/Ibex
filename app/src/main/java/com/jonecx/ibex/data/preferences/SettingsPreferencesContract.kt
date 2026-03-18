@@ -1,5 +1,6 @@
 package com.jonecx.ibex.data.preferences
 
+import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +13,9 @@ interface SettingsPreferencesContract {
 
     val gridColumns: Flow<Int>
     suspend fun setGridColumns(columns: Int)
+
+    val sortOption: Flow<SortOption>
+    suspend fun setSortOption(option: SortOption)
 
     companion object {
         const val DEFAULT_GRID_COLUMNS = 4

@@ -30,7 +30,7 @@ class LocalFileRepository(
             val files = directory.listFiles()
                 ?.filter { file -> file.absolutePath !in trashedPaths }
                 ?.map { file -> file.toFileItem() }
-                ?.sortedWith(FileItem.DEFAULT_COMPARATOR) ?: emptyList()
+                ?: emptyList()
             emit(files)
         } else {
             emit(emptyList())

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
@@ -54,6 +55,7 @@ data class FileExplorerUiState(
     val clipboardOperation: ClipboardOperation? = null,
     val isRemoteBrowsing: Boolean = false,
     val restoredScrollPosition: ScrollPosition? = null,
+    val sortOption: SortOption = SortOption.DEFAULT,
 ) {
     val canCreateFolder: Boolean get() = allowFolderNavigation && !isRemoteBrowsing
 }
@@ -109,6 +111,10 @@ class FileExplorerViewModel @Inject constructor(
     private var loadFilesJob: Job? = null
     private val scrollPositions = mutableMapOf<String, ScrollPosition>()
 
+    private fun List<FileItem>.applySorting(
+        option: SortOption = _uiState.value.sortOption,
+    ): List<FileItem> = sortedWith(option.toComparator())
+
     init {
         if (!allowFolderNavigation && title != null) {
             _uiState.value = _uiState.value.copy(currentPath = title)
@@ -122,6 +128,14 @@ class FileExplorerViewModel @Inject constructor(
         }
         viewModelScope.launchCollect(clipboardManager.state, dispatcher) { clipboard ->
             _uiState.update { it.copy(clipboardOperation = clipboard.operation) }
+        }
+        viewModelScope.launchCollect(settingsPreferences.sortOption, dispatcher) { option ->
+            _uiState.update { state ->
+                state.copy(
+                    sortOption = option,
+                    files = state.files.applySorting(option),
+                )
+            }
         }
     }
 
@@ -166,7 +180,7 @@ class FileExplorerViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             currentPath = path,
-                            files = files,
+                            files = files.applySorting(it.sortOption),
                             isLoading = false,
                             error = null,
                             isAtInternalStorageRoot = isAtRoot,
@@ -214,6 +228,12 @@ class FileExplorerViewModel @Inject constructor(
             return true
         }
         return false
+    }
+
+    fun setSortOption(option: SortOption) {
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.setSortOption(option)
+        }
     }
 
     fun refreshFiles() {

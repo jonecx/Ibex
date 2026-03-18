@@ -66,9 +66,15 @@ class FakeFileRepository : FileRepository {
         createFileItem("OldPhoto.jpg", "/storage/emulated/0/OldPhoto.jpg", 3000000, fileType = FileType.IMAGE),
     )
 
-    private val dcimFiles = (1..14).map { i ->
+    private val dcimDirs = listOf("Camera", "Events", "Favorites", "Panoramas", "Screenshots").map { name ->
+        createFileItem(name, "/storage/emulated/0/DCIM/$name", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 3)
+    }
+
+    private val dcimImages = (1..15).map { i ->
         createFileItem("IMG_${i.toString().padStart(4, '0')}.jpg", "/storage/emulated/0/DCIM/IMG_${i.toString().padStart(4, '0')}.jpg", 2_500_000L * i, fileType = FileType.IMAGE)
-    } + createFileItem("Camera", "/storage/emulated/0/DCIM/Camera", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 5)
+    }
+
+    private val dcimFiles = dcimDirs + dcimImages
 
     override fun getFiles(path: String): Flow<List<FileItem>> {
         return when {

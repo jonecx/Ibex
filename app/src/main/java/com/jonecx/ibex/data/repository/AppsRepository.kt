@@ -50,8 +50,7 @@ class AppsRepository(
             }
         }
 
-        // Sort by app name
-        return apps.sortedBy { it.name.lowercase() }
+        return apps
     }
 
     private fun createFileItemFromApp(appInfo: ApplicationInfo): FileItem {

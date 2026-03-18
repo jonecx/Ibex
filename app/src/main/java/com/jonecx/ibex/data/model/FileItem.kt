@@ -26,15 +26,12 @@ data class FileItem(
     val uri: Uri,
     val size: Long,
     val lastModified: Long,
+    val createdAt: Long = 0L,
     val isDirectory: Boolean,
     val fileType: FileType,
     val mimeType: String? = null,
     val childCount: Int? = null,
     val isRemote: Boolean = false,
 ) {
-    companion object {
-        val DEFAULT_COMPARATOR: Comparator<FileItem> =
-            compareBy<FileItem> { !it.isDirectory }
-                .thenBy { it.name.lowercase() }
-    }
+    companion object
 }

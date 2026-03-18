@@ -49,7 +49,7 @@ class MediaViewerNavigationTest {
         tapFile("Sunset.jpg")
 
         composeTestRule.onNodeWithText("Sunset.jpg").assertIsDisplayed()
-        composeTestRule.onNodeWithText("1 / 3").assertIsDisplayed()
+        composeTestRule.onNodeWithText("3 / 3").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
     }
 
@@ -59,7 +59,7 @@ class MediaViewerNavigationTest {
         tapFile("Portrait.png")
 
         composeTestRule.onNodeWithText("Portrait.png").assertIsDisplayed()
-        composeTestRule.onNodeWithText("2 / 3").assertIsDisplayed()
+        composeTestRule.onNodeWithText("1 / 3").assertIsDisplayed()
     }
 
     @Test

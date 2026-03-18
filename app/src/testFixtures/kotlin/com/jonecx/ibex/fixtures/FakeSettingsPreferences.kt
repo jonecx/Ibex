@@ -1,5 +1,6 @@
 package com.jonecx.ibex.fixtures
 
+import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
@@ -28,13 +29,22 @@ class FakeSettingsPreferences : SettingsPreferencesContract {
         _gridColumns.value = columns
     }
 
+    private val _sortOption = MutableStateFlow(SortOption.DEFAULT)
+    override val sortOption: Flow<SortOption> = _sortOption
+
+    override suspend fun setSortOption(option: SortOption) {
+        _sortOption.value = option
+    }
+
     fun currentAnalyticsValue(): Boolean = _sendAnalyticsEnabled.value
     fun currentViewMode(): ViewMode = _viewMode.value
     fun currentGridColumns(): Int = _gridColumns.value
+    fun currentSortOption(): SortOption = _sortOption.value
 
     fun reset() {
         _sendAnalyticsEnabled.value = false
         _viewMode.value = ViewMode.LIST
         _gridColumns.value = DEFAULT_GRID_COLUMNS
+        _sortOption.value = SortOption.DEFAULT
     }
 }

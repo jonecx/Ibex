@@ -47,32 +47,35 @@ class ScrollRestorationTest {
     fun scrollPositionRestoredAfterNavigatingBackFromSubdirectory() {
         navigateToStorageDcim()
 
-        composeTestRule.onNodeWithText("IMG_0001.jpg").assertIsDisplayed()
-
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(14)
-        composeTestRule.waitForIdle()
-
         composeTestRule.onNodeWithText("Camera").assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Camera").performClick()
+        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(3)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Screenshots").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("Screenshots").performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithContentDescription("Navigate up").performClick()
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("Camera").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Screenshots").assertIsDisplayed()
     }
 
     @Test
     fun scrollPositionResetsWhenEnteringNewDirectory() {
         navigateToStorageDcim()
 
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(14)
+        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(15)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(0)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Camera").performClick()
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("IMG_0001.jpg").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Events").assertIsDisplayed()
     }
 }

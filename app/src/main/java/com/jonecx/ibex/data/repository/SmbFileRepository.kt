@@ -86,7 +86,6 @@ class SmbFileRepository(
         val smbFile = SmbFile(smbUrl, context)
         val files = smbFile.listFiles()
             .map { it.toFileItem() }
-            .sortedWith(FileItem.DEFAULT_COMPARATOR)
         emit(files)
     }.flowOn(ioDispatcher)
 
@@ -124,6 +123,7 @@ class SmbFileRepository(
             uri = Uri.parse(url.toString()),
             size = if (isDir) 0L else length(),
             lastModified = lastModified,
+            createdAt = createTime(),
             isDirectory = isDir,
             fileType = fileType,
             mimeType = mimeType,

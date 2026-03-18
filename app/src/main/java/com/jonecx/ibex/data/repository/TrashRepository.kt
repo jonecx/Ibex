@@ -23,7 +23,7 @@ class TrashRepository(
             trashedFiles.addAll(queryTrashedFiles())
         }
 
-        emit(trashedFiles.sortedByDescending { it.lastModified })
+        emit(trashedFiles)
     }.flowOn(ioDispatcher)
 
     override suspend fun getFileDetails(path: String): FileItem? = null
