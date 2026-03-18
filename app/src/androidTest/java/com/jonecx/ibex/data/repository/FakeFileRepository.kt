@@ -9,61 +9,61 @@ import kotlinx.coroutines.flow.flowOf
 class FakeFileRepository : FileRepository {
 
     private val storageFiles = listOf(
-        createFolder("Alarms", 0),
-        createFolder("Android", 3),
-        createFolder("Audiobooks", 0),
-        createFolder("DCIM", 0),
-        createFolder("Documents", 0),
-        createFolder("Download", 15),
+        createFileItem("Alarms", "/storage/emulated/0/Alarms", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 0),
+        createFileItem("Android", "/storage/emulated/0/Android", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 3),
+        createFileItem("Audiobooks", "/storage/emulated/0/Audiobooks", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 0),
+        createFileItem("DCIM", "/storage/emulated/0/DCIM", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 0),
+        createFileItem("Documents", "/storage/emulated/0/Documents", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 0),
+        createFileItem("Download", "/storage/emulated/0/Download", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 15),
     )
 
     private val downloadFiles = listOf(
-        createFile("Audio 1.mp3", 121651, FileType.AUDIO),
-        createFile("Audio Flac 1.zip", 16672358, FileType.ARCHIVE),
-        createFile("Coffee.jpg", 1677722, FileType.IMAGE),
-        createFile("CS201-DS.ppt", 1153434, FileType.DOCUMENT),
-        createFile("CS8391-DS.docx", 50585, FileType.DOCUMENT),
-        createFile("Headphone.mp4", 115343360, FileType.VIDEO),
-        createFile("PDF_DS.pdf", 173015, FileType.DOCUMENT),
+        createFileItem("Audio 1.mp3", "/storage/emulated/0/Download/Audio 1.mp3", 121651, fileType = FileType.AUDIO),
+        createFileItem("Audio Flac 1.zip", "/storage/emulated/0/Download/Audio Flac 1.zip", 16672358, fileType = FileType.ARCHIVE),
+        createFileItem("Coffee.jpg", "/storage/emulated/0/Download/Coffee.jpg", 1677722, fileType = FileType.IMAGE),
+        createFileItem("CS201-DS.ppt", "/storage/emulated/0/Download/CS201-DS.ppt", 1153434, fileType = FileType.DOCUMENT),
+        createFileItem("CS8391-DS.docx", "/storage/emulated/0/Download/CS8391-DS.docx", 50585, fileType = FileType.DOCUMENT),
+        createFileItem("Headphone.mp4", "/storage/emulated/0/Download/Headphone.mp4", 115343360, fileType = FileType.VIDEO),
+        createFileItem("PDF_DS.pdf", "/storage/emulated/0/Download/PDF_DS.pdf", 173015, fileType = FileType.DOCUMENT),
     )
 
     private val imageFiles = listOf(
-        createMediaFile("Sunset.jpg", 2500000, FileType.IMAGE),
-        createMediaFile("Portrait.png", 1800000, FileType.IMAGE),
-        createMediaFile("Screenshot_2024.png", 500000, FileType.IMAGE),
+        createFileItem("Sunset.jpg", "/storage/emulated/0/Sunset.jpg", 2500000, fileType = FileType.IMAGE),
+        createFileItem("Portrait.png", "/storage/emulated/0/Portrait.png", 1800000, fileType = FileType.IMAGE),
+        createFileItem("Screenshot_2024.png", "/storage/emulated/0/Screenshot_2024.png", 500000, fileType = FileType.IMAGE),
     )
 
     private val videoFiles = listOf(
-        createMediaFile("Birthday.mp4", 150000000, FileType.VIDEO),
-        createMediaFile("Tutorial.mkv", 80000000, FileType.VIDEO),
+        createFileItem("Birthday.mp4", "/storage/emulated/0/Birthday.mp4", 150000000, fileType = FileType.VIDEO),
+        createFileItem("Tutorial.mkv", "/storage/emulated/0/Tutorial.mkv", 80000000, fileType = FileType.VIDEO),
     )
 
     private val audioFiles = listOf(
-        createMediaFile("Song1.mp3", 5000000, FileType.AUDIO),
-        createMediaFile("Podcast.m4a", 25000000, FileType.AUDIO),
-        createMediaFile("Ringtone.ogg", 200000, FileType.AUDIO),
+        createFileItem("Song1.mp3", "/storage/emulated/0/Song1.mp3", 5000000, fileType = FileType.AUDIO),
+        createFileItem("Podcast.m4a", "/storage/emulated/0/Podcast.m4a", 25000000, fileType = FileType.AUDIO),
+        createFileItem("Ringtone.ogg", "/storage/emulated/0/Ringtone.ogg", 200000, fileType = FileType.AUDIO),
     )
 
     private val documentFiles = listOf(
-        createMediaFile("Report.pdf", 1500000, FileType.DOCUMENT),
-        createMediaFile("Notes.txt", 5000, FileType.DOCUMENT),
-        createMediaFile("Spreadsheet.xlsx", 250000, FileType.DOCUMENT),
+        createFileItem("Report.pdf", "/storage/emulated/0/Report.pdf", 1500000, fileType = FileType.DOCUMENT),
+        createFileItem("Notes.txt", "/storage/emulated/0/Notes.txt", 5000, fileType = FileType.DOCUMENT),
+        createFileItem("Spreadsheet.xlsx", "/storage/emulated/0/Spreadsheet.xlsx", 250000, fileType = FileType.DOCUMENT),
     )
 
     private val appFiles = listOf(
-        createAppFile("Calculator", "com.android.calculator"),
-        createAppFile("Camera", "com.android.camera"),
-        createAppFile("Settings", "com.android.settings"),
+        createFileItem("Calculator", "com.android.calculator", fileType = FileType.APK),
+        createFileItem("Camera", "com.android.camera", fileType = FileType.APK),
+        createFileItem("Settings", "com.android.settings", fileType = FileType.APK),
     )
 
     private val recentFiles = listOf(
-        createMediaFile("RecentDoc.pdf", 100000, FileType.DOCUMENT),
-        createMediaFile("RecentPhoto.jpg", 2000000, FileType.IMAGE),
+        createFileItem("RecentDoc.pdf", "/storage/emulated/0/RecentDoc.pdf", 100000, fileType = FileType.DOCUMENT),
+        createFileItem("RecentPhoto.jpg", "/storage/emulated/0/RecentPhoto.jpg", 2000000, fileType = FileType.IMAGE),
     )
 
     private val trashFiles = listOf(
-        createMediaFile("DeletedFile.txt", 1000, FileType.DOCUMENT),
-        createMediaFile("OldPhoto.jpg", 3000000, FileType.IMAGE),
+        createFileItem("DeletedFile.txt", "/storage/emulated/0/DeletedFile.txt", 1000, fileType = FileType.DOCUMENT),
+        createFileItem("OldPhoto.jpg", "/storage/emulated/0/OldPhoto.jpg", 3000000, fileType = FileType.IMAGE),
     )
 
     override fun getFiles(path: String): Flow<List<FileItem>> {
@@ -89,52 +89,21 @@ class FakeFileRepository : FileRepository {
             ?: downloadFiles.find { it.path == path }
     }
 
-    private fun createFolder(name: String, childCount: Int): FileItem {
-        return FileItem(
-            name = name,
-            path = "/storage/emulated/0/$name",
-            uri = Uri.parse("file:///storage/emulated/0/$name"),
-            size = 0,
-            lastModified = System.currentTimeMillis(),
-            isDirectory = true,
-            fileType = FileType.DIRECTORY,
-            childCount = childCount,
-        )
-    }
-
-    private fun createFile(name: String, size: Long, fileType: FileType): FileItem {
-        return FileItem(
-            name = name,
-            path = "/storage/emulated/0/Download/$name",
-            uri = Uri.parse("file:///storage/emulated/0/Download/$name"),
-            size = size,
-            lastModified = System.currentTimeMillis(),
-            isDirectory = false,
-            fileType = fileType,
-        )
-    }
-
-    private fun createMediaFile(name: String, size: Long, fileType: FileType): FileItem {
-        return FileItem(
-            name = name,
-            path = "/storage/emulated/0/$name",
-            uri = Uri.parse("file:///storage/emulated/0/$name"),
-            size = size,
-            lastModified = System.currentTimeMillis(),
-            isDirectory = false,
-            fileType = fileType,
-        )
-    }
-
-    private fun createAppFile(name: String, packageName: String): FileItem {
-        return FileItem(
-            name = name,
-            path = packageName,
-            uri = Uri.parse("package:$packageName"),
-            size = 0,
-            lastModified = System.currentTimeMillis(),
-            isDirectory = false,
-            fileType = FileType.APK,
-        )
-    }
+    private fun createFileItem(
+        name: String,
+        path: String,
+        size: Long = 0,
+        isDirectory: Boolean = false,
+        fileType: FileType = FileType.UNKNOWN,
+        childCount: Int? = null,
+    ): FileItem = FileItem(
+        name = name,
+        path = path,
+        uri = Uri.parse(if (path.startsWith("/")) "file://$path" else "package:$path"),
+        size = size,
+        lastModified = System.currentTimeMillis(),
+        isDirectory = isDirectory,
+        fileType = fileType,
+        childCount = childCount,
+    )
 }

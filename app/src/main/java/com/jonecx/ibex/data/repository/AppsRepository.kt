@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.util.FileTypeUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -21,10 +22,6 @@ class AppsRepository(
         val apps = getInstalledApps()
         emit(apps)
     }.flowOn(ioDispatcher)
-
-    override fun getStorageRoots(): Flow<List<FileItem>> = flow {
-        emit(emptyList())
-    }
 
     override suspend fun getFileDetails(path: String): FileItem? {
         return try {
@@ -70,7 +67,7 @@ class AppsRepository(
             lastModified = apkFile.lastModified(),
             isDirectory = false,
             fileType = FileType.APK,
-            mimeType = "application/vnd.android.package-archive",
+            mimeType = FileTypeUtils.APK_MIME_TYPE,
         )
     }
 }

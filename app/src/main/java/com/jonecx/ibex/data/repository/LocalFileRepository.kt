@@ -5,8 +5,10 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.net.toUri
+import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.util.FileTypeUtils
+import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,10 +30,7 @@ class LocalFileRepository(
             val files = directory.listFiles()
                 ?.filter { file -> file.absolutePath !in trashedPaths }
                 ?.map { file -> file.toFileItem() }
-                ?.sortedWith(
-                    compareBy<FileItem> { !it.isDirectory }
-                        .thenBy { it.name.lowercase() },
-                ) ?: emptyList()
+                ?.sortedWith(FileItem.DEFAULT_COMPARATOR) ?: emptyList()
             emit(files)
         } else {
             emit(emptyList())
@@ -83,40 +82,16 @@ class LocalFileRepository(
     override fun getStorageRoots(): Flow<List<FileItem>> = flow {
         val roots = mutableListOf<FileItem>()
 
-        // Internal storage
         val internalStorage = Environment.getExternalStorageDirectory()
         if (internalStorage.exists()) {
-            roots.add(
-                FileItem(
-                    name = "Internal Storage",
-                    path = internalStorage.absolutePath,
-                    uri = internalStorage.toUri(),
-                    size = internalStorage.totalSpace,
-                    lastModified = internalStorage.lastModified(),
-                    isDirectory = true,
-                    fileType = com.jonecx.ibex.data.model.FileType.DIRECTORY,
-                    childCount = internalStorage.listFiles()?.size,
-                ),
-            )
+            roots.add(internalStorage.toStorageRoot(context.getString(R.string.internal_storage)))
         }
 
-        // External SD cards
         context.getExternalFilesDirs(null).forEachIndexed { index, file ->
             if (index > 0 && file != null) {
                 val sdCardRoot = findSdCardRoot(file)
                 if (sdCardRoot != null && sdCardRoot.exists()) {
-                    roots.add(
-                        FileItem(
-                            name = "SD Card",
-                            path = sdCardRoot.absolutePath,
-                            uri = sdCardRoot.toUri(),
-                            size = sdCardRoot.totalSpace,
-                            lastModified = sdCardRoot.lastModified(),
-                            isDirectory = true,
-                            fileType = com.jonecx.ibex.data.model.FileType.DIRECTORY,
-                            childCount = sdCardRoot.listFiles()?.size,
-                        ),
-                    )
+                    roots.add(sdCardRoot.toStorageRoot(context.getString(R.string.sd_card)))
                 }
             }
         }
@@ -124,25 +99,16 @@ class LocalFileRepository(
         emit(roots)
     }.flowOn(ioDispatcher)
 
-    override suspend fun getFileDetails(path: String): FileItem? {
-        val file = File(path)
-        return if (file.exists()) file.toFileItem() else null
-    }
-
-    private fun File.toFileItem(): FileItem {
-        val fileType = FileTypeUtils.getFileType(this)
-        return FileItem(
-            name = name,
-            path = absolutePath,
-            uri = this.toUri(),
-            size = if (isFile) length() else 0,
-            lastModified = lastModified(),
-            isDirectory = isDirectory,
-            fileType = fileType,
-            mimeType = if (isFile) FileTypeUtils.getMimeType(this) else null,
-            childCount = if (isDirectory) listFiles()?.size else null,
-        )
-    }
+    private fun File.toStorageRoot(displayName: String): FileItem = FileItem(
+        name = displayName,
+        path = absolutePath,
+        uri = toUri(),
+        size = totalSpace,
+        lastModified = lastModified(),
+        isDirectory = true,
+        fileType = FileType.DIRECTORY,
+        childCount = listFiles()?.size,
+    )
 
     private fun findSdCardRoot(file: File): File? {
         var current = file
