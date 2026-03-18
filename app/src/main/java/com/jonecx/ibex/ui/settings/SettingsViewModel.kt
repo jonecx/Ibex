@@ -6,6 +6,7 @@ import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
 import com.jonecx.ibex.di.IoDispatcher
+import com.jonecx.ibex.util.launchCollect
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,20 +32,14 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch(dispatcher) {
-            settingsPreferences.sendAnalyticsEnabled.collect { enabled ->
-                _uiState.update { it.copy(sendAnalyticsEnabled = enabled) }
-            }
+        viewModelScope.launchCollect(settingsPreferences.sendAnalyticsEnabled, dispatcher) { enabled ->
+            _uiState.update { it.copy(sendAnalyticsEnabled = enabled) }
         }
-        viewModelScope.launch(dispatcher) {
-            settingsPreferences.viewMode.collect { mode ->
-                _uiState.update { it.copy(viewMode = mode) }
-            }
+        viewModelScope.launchCollect(settingsPreferences.viewMode, dispatcher) { mode ->
+            _uiState.update { it.copy(viewMode = mode) }
         }
-        viewModelScope.launch(dispatcher) {
-            settingsPreferences.gridColumns.collect { columns ->
-                _uiState.update { it.copy(gridColumns = columns) }
-            }
+        viewModelScope.launchCollect(settingsPreferences.gridColumns, dispatcher) { columns ->
+            _uiState.update { it.copy(gridColumns = columns) }
         }
     }
 

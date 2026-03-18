@@ -17,6 +17,7 @@ import com.jonecx.ibex.ui.theme.SourceImagesColor
 import com.jonecx.ibex.ui.theme.SourceStorageColor
 import com.jonecx.ibex.ui.theme.SourceVideosColor
 import com.jonecx.ibex.util.FileTypeUtils
+import com.jonecx.ibex.util.MediaStoreUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
@@ -78,42 +79,19 @@ class MediaStoreStorageAnalyzer @Inject constructor(
         )
     }
 
-    private fun queryTotalSize(collectionUri: android.net.Uri): Long {
-        var total = 0L
-        val projection = arrayOf(MediaStore.MediaColumns.SIZE)
-        val selection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            "${MediaStore.MediaColumns.IS_TRASHED} = 0"
-        } else {
-            null
-        }
-        context.contentResolver.query(collectionUri, projection, selection, null, null)?.use { cursor ->
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
-            while (cursor.moveToNext()) {
-                total += cursor.getLong(sizeColumn)
-            }
-        }
-        return total
-    }
+    private fun queryTotalSize(collectionUri: android.net.Uri): Long =
+        MediaStoreUtils.sumColumnSize(context, collectionUri, selection = MediaStoreUtils.trashFilter())
 
     private fun queryDocumentsSize(): Long {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return 0L
-        var total = 0L
-        val collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
-        val projection = arrayOf(MediaStore.Files.FileColumns.SIZE)
-        val trashFilter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            " AND ${MediaStore.Files.FileColumns.IS_TRASHED} = 0"
-        } else {
-            ""
-        }
-        val selection = "${MediaStore.Files.FileColumns.MIME_TYPE} IN (${FileTypeUtils.DOCUMENT_MIME_SELECTION_PLACEHOLDERS})$trashFilter"
-        val selectionArgs = FileTypeUtils.DOCUMENT_MIME_TYPES
-        context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-            while (cursor.moveToNext()) {
-                total += cursor.getLong(sizeColumn)
-            }
-        }
-        return total
+        return MediaStoreUtils.sumColumnSize(
+            context = context,
+            collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+            selection = MediaStoreUtils.appendTrashFilter(
+                "${MediaStore.Files.FileColumns.MIME_TYPE} IN (${FileTypeUtils.DOCUMENT_MIME_SELECTION_PLACEHOLDERS})",
+            ),
+            selectionArgs = FileTypeUtils.DOCUMENT_MIME_TYPES,
+        )
     }
 
     private fun queryAppsSize(): Long {
