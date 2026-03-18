@@ -74,9 +74,7 @@ object FileTypeUtils {
     /**
      * Gets mime type using Android's MimeTypeMap.
      */
-    fun getMimeType(file: File): String? {
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase())
-    }
+    fun getMimeType(file: File): String? = getMimeTypeFromName(file.name)
 
     fun File.toFileItem(): FileItem {
         val fileType = getFileType(this)
