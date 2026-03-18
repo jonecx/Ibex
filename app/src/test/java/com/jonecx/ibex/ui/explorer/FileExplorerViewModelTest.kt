@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -559,6 +560,94 @@ class FileExplorerViewModelTest {
     @Test
     fun `allowFolderNavigation is true for SMB`() = runTest {
         assertFolderNavigation(FileSourceType.SMB, expected = true, connectionId = TEST_SMB_CONNECTION_ID)
+    }
+
+    // Scroll position save/restore tests
+
+    @Test
+    fun `saveScrollPosition stores position for current path`() = runTest {
+        createViewModelWithFiles(testFileItem("file1.txt"))
+
+        viewModel.saveScrollPosition(10, 50)
+
+        val state = viewModel.uiState.value
+        assertNull(state.restoredScrollPosition)
+    }
+
+    @Test
+    fun `navigateUp restores saved scroll position`() = runTest {
+        createViewModelWithFiles(testDirectoryFileItem("subdir"))
+
+        viewModel.saveScrollPosition(10, 50)
+        navigateToSubdir()
+
+        viewModel.navigateUp()
+
+        val restored = viewModel.uiState.value.restoredScrollPosition
+        assertNotNull(restored)
+        assertEquals(10, restored!!.firstVisibleItemIndex)
+        assertEquals(50, restored.firstVisibleItemScrollOffset)
+    }
+
+    @Test
+    fun `navigateUp without saved position has null restoredScrollPosition`() = runTest {
+        createViewModelWithFiles(testDirectoryFileItem("subdir"))
+
+        navigateToSubdir()
+        viewModel.navigateUp()
+
+        assertNull(viewModel.uiState.value.restoredScrollPosition)
+    }
+
+    @Test
+    fun `navigateTo clears restoredScrollPosition`() = runTest {
+        createViewModelWithFiles(testDirectoryFileItem("subdir"))
+
+        viewModel.saveScrollPosition(5, 20)
+        navigateToSubdir()
+
+        assertNull(viewModel.uiState.value.restoredScrollPosition)
+    }
+
+    @Test
+    fun `scroll position restored only once per navigateUp`() = runTest {
+        createViewModelWithFiles(testDirectoryFileItem("subdir"))
+
+        viewModel.saveScrollPosition(10, 50)
+        navigateToSubdir()
+
+        viewModel.navigateUp()
+        assertNotNull(viewModel.uiState.value.restoredScrollPosition)
+
+        navigateToSubdir()
+        viewModel.navigateUp()
+        assertNull(viewModel.uiState.value.restoredScrollPosition)
+    }
+
+    @Test
+    fun `nested navigation restores correct scroll positions`() = runTest {
+        val subdir1 = testDirectoryFileItem("level1", path = "$storagePath/level1")
+        val subdir2 = testDirectoryFileItem("level2", path = "$storagePath/level1/level2")
+        fakeRepository.filesToReturn = listOf(subdir1)
+        viewModel = createViewModel()
+
+        viewModel.saveScrollPosition(5, 10)
+        viewModel.navigateTo(subdir1)
+
+        viewModel.saveScrollPosition(15, 30)
+        viewModel.navigateTo(subdir2)
+
+        viewModel.navigateUp()
+        val restoredLevel1 = viewModel.uiState.value.restoredScrollPosition
+        assertNotNull(restoredLevel1)
+        assertEquals(15, restoredLevel1!!.firstVisibleItemIndex)
+        assertEquals(30, restoredLevel1.firstVisibleItemScrollOffset)
+
+        viewModel.navigateUp()
+        val restoredRoot = viewModel.uiState.value.restoredScrollPosition
+        assertNotNull(restoredRoot)
+        assertEquals(5, restoredRoot!!.firstVisibleItemIndex)
+        assertEquals(10, restoredRoot.firstVisibleItemScrollOffset)
     }
 
     companion object {

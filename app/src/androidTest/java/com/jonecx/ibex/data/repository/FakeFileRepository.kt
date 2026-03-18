@@ -66,6 +66,10 @@ class FakeFileRepository : FileRepository {
         createFileItem("OldPhoto.jpg", "/storage/emulated/0/OldPhoto.jpg", 3000000, fileType = FileType.IMAGE),
     )
 
+    private val dcimFiles = (1..14).map { i ->
+        createFileItem("IMG_${i.toString().padStart(4, '0')}.jpg", "/storage/emulated/0/DCIM/IMG_${i.toString().padStart(4, '0')}.jpg", 2_500_000L * i, fileType = FileType.IMAGE)
+    } + createFileItem("Camera", "/storage/emulated/0/DCIM/Camera", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 5)
+
     override fun getFiles(path: String): Flow<List<FileItem>> {
         return when {
             path.contains("Download", ignoreCase = true) -> flowOf(downloadFiles)
@@ -76,6 +80,7 @@ class FakeFileRepository : FileRepository {
             path.contains("App", ignoreCase = true) -> flowOf(appFiles)
             path.contains("Recent", ignoreCase = true) -> flowOf(recentFiles)
             path.contains("Trash", ignoreCase = true) -> flowOf(trashFiles)
+            path.contains("DCIM", ignoreCase = true) -> flowOf(dcimFiles)
             else -> flowOf(storageFiles)
         }
     }
