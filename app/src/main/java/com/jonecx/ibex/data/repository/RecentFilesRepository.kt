@@ -4,10 +4,11 @@ import android.content.ContentUris
 import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
-import androidx.core.net.toUri
+import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.util.FileTypeUtils
+import com.jonecx.ibex.util.MediaStoreUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -24,28 +25,6 @@ class RecentFilesRepository(
         val recentFiles = queryRecentFiles()
         emit(recentFiles)
     }.flowOn(ioDispatcher)
-
-    override fun getStorageRoots(): Flow<List<FileItem>> = flow {
-        emit(emptyList())
-    }
-
-    override suspend fun getFileDetails(path: String): FileItem? {
-        val file = File(path)
-        return if (file.exists()) {
-            FileItem(
-                name = file.name,
-                path = file.absolutePath,
-                uri = file.toUri(),
-                size = file.length(),
-                lastModified = file.lastModified(),
-                isDirectory = false,
-                fileType = FileTypeUtils.getFileType(file),
-                mimeType = FileTypeUtils.getMimeType(file),
-            )
-        } else {
-            null
-        }
-    }
 
     private fun queryRecentFiles(): List<FileItem> {
         val recentFiles = mutableListOf<FileItem>()
@@ -66,13 +45,9 @@ class RecentFilesRepository(
             MediaStore.Files.FileColumns.MEDIA_TYPE,
         )
 
-        // Exclude directories and trashed files
-        val trashFilter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            " AND ${MediaStore.Files.FileColumns.IS_TRASHED} = 0"
-        } else {
-            ""
-        }
-        val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE} != ?$trashFilter"
+        val selection = MediaStoreUtils.appendTrashFilter(
+            "${MediaStore.Files.FileColumns.MEDIA_TYPE} != ?",
+        )
         val selectionArgs = arrayOf(MediaStore.Files.FileColumns.MEDIA_TYPE_NONE.toString())
 
         val sortOrder = "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
@@ -88,10 +63,10 @@ class RecentFilesRepository(
 
             while (cursor.moveToNext() && recentFiles.size < limit) {
                 val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn) ?: "Unknown"
+                val name = cursor.getString(nameColumn) ?: context.getString(R.string.unknown_file)
                 val data = cursor.getString(dataColumn) ?: ""
                 val size = cursor.getLong(sizeColumn)
-                val date = cursor.getLong(dateColumn) * 1000
+                val date = cursor.getLong(dateColumn) * FileTypeUtils.SECONDS_TO_MILLIS
                 val mime = cursor.getString(mimeColumn)
                 val mediaType = cursor.getInt(mediaTypeColumn)
 
