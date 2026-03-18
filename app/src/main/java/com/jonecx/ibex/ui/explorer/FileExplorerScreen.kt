@@ -14,14 +14,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
@@ -49,17 +47,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.ErrorView
+import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.explorer.components.FileDetailPane
 import com.jonecx.ibex.ui.explorer.components.FileGridItem
@@ -102,12 +101,12 @@ fun FileExplorerScreen(
                         if (state.isSelectionMode) {
                             viewModel.toggleFileSelection(fileItem)
                         } else {
-                            when (fileItem.fileType) {
-                                FileType.DIRECTORY -> viewModel.navigateTo(fileItem)
+                            when {
+                                fileItem.isDirectory -> viewModel.navigateTo(fileItem)
 
-                                FileType.IMAGE, FileType.VIDEO -> {
+                                fileItem.fileType.isViewable -> {
                                     val viewableFiles = state.files.filter {
-                                        it.fileType == FileType.IMAGE || it.fileType == FileType.VIDEO
+                                        it.fileType.isViewable
                                     }
                                     val index = viewableFiles.indexOfFirst { it.path == fileItem.path }
                                     if (index >= 0) {
@@ -125,10 +124,12 @@ fun FileExplorerScreen(
                         }
                     },
                     onFileLongClick = { fileItem ->
-                        if (!viewModel.uiState.value.isSelectionMode) {
-                            viewModel.enterSelectionMode(fileItem)
-                        } else {
-                            viewModel.toggleFileSelection(fileItem)
+                        if (!uiState.isRemoteBrowsing) {
+                            if (!viewModel.uiState.value.isSelectionMode) {
+                                viewModel.enterSelectionMode(fileItem)
+                            } else {
+                                viewModel.toggleFileSelection(fileItem)
+                            }
                         }
                     },
                     onCancelSelection = { viewModel.clearSelection() },
@@ -202,33 +203,17 @@ private fun FileListPane(
                             )
                         }
                     },
-                    actions = { CreateFolderAction(uiState.allowFolderNavigation) { showCreateFolderDialog = true } },
+                    actions = { CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true } },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ),
                 )
             } else {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = currentDirectoryName,
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                    },
-                    navigationIcon = {
-                        if (showBackButton) {
-                            IconButton(onClick = onNavigateUp) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = stringResource(R.string.navigate_up),
-                                )
-                            }
-                        }
-                    },
-                    actions = { CreateFolderAction(uiState.allowFolderNavigation) { showCreateFolderDialog = true } },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
+                IbexTopAppBar(
+                    title = currentDirectoryName,
+                    onNavigateBack = onNavigateUp,
+                    showBackButton = showBackButton,
+                    actions = { CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true } },
                 )
             }
         },
@@ -384,6 +369,13 @@ private fun CreateFolderAction(visible: Boolean, onClick: () -> Unit) {
     }
 }
 
+private data class ActionBarItem(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit,
+    val enabled: Boolean = true,
+)
+
 @Composable
 private fun SelectionActionBar(
     onCopy: () -> Unit,
@@ -392,36 +384,15 @@ private fun SelectionActionBar(
     onDelete: () -> Unit,
     singleSelection: Boolean,
 ) {
-    BottomAppBar(
+    EvenlySpacedActionBar(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-        ActionBarButton(
-            icon = Icons.Filled.ContentCopy,
-            label = stringResource(R.string.copy),
-            onClick = onCopy,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        ActionBarButton(
-            icon = Icons.AutoMirrored.Filled.DriveFileMove,
-            label = stringResource(R.string.move),
-            onClick = onMove,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        ActionBarButton(
-            icon = Icons.Filled.EditNote,
-            label = stringResource(R.string.rename),
-            onClick = onRename,
-            enabled = singleSelection,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        ActionBarButton(
-            icon = Icons.Filled.Delete,
-            label = stringResource(R.string.delete_selected),
-            onClick = onDelete,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-    }
+        actions = listOf(
+            ActionBarItem(Icons.Filled.ContentCopy, stringResource(R.string.copy), onCopy),
+            ActionBarItem(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move), onMove),
+            ActionBarItem(Icons.Filled.EditNote, stringResource(R.string.rename), onRename, enabled = singleSelection),
+            ActionBarItem(Icons.Filled.Delete, stringResource(R.string.delete_selected), onDelete),
+        ),
+    )
 }
 
 @Composable
@@ -429,45 +400,39 @@ private fun ClipboardPasteBar(
     onCancel: () -> Unit,
     onPaste: () -> Unit,
 ) {
-    BottomAppBar(
+    EvenlySpacedActionBar(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-        ActionBarButton(
-            icon = Icons.Filled.Close,
-            label = stringResource(R.string.cancel),
-            onClick = onCancel,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        ActionBarButton(
-            icon = Icons.Filled.ContentPaste,
-            label = stringResource(R.string.paste),
-            onClick = onPaste,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-    }
+        actions = listOf(
+            ActionBarItem(Icons.Filled.Close, stringResource(R.string.cancel), onCancel),
+            ActionBarItem(Icons.Filled.ContentPaste, stringResource(R.string.paste), onPaste),
+        ),
+    )
 }
 
 @Composable
-private fun ActionBarButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
+private fun EvenlySpacedActionBar(
+    containerColor: androidx.compose.ui.graphics.Color,
+    actions: List<ActionBarItem>,
 ) {
-    TextButton(onClick = onClick, enabled = enabled) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                modifier = Modifier.size(24.dp),
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center,
-            )
+    BottomAppBar(containerColor = containerColor) {
+        actions.forEach { action ->
+            Spacer(modifier = Modifier.weight(1f))
+            TextButton(onClick = action.onClick, enabled = action.enabled) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = action.icon,
+                        contentDescription = action.label,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = action.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 

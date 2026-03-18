@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
+import com.jonecx.ibex.ui.theme.AlphaSecondary
 
 @Composable
 fun ErrorView(
@@ -41,7 +42,7 @@ fun ErrorView(
                 imageVector = Icons.Filled.Error,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                tint = MaterialTheme.colorScheme.error.copy(alpha = AlphaSecondary),
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(

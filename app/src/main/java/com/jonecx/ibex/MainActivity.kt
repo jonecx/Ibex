@@ -18,7 +18,10 @@ import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
 import com.jonecx.ibex.ui.navigation.AppNavigation
 import com.jonecx.ibex.ui.permission.PermissionChecker
 import com.jonecx.ibex.ui.permission.PermissionScreen
+import com.jonecx.ibex.ui.player.LocalPlayerFactory
+import com.jonecx.ibex.ui.player.PlayerFactory
 import com.jonecx.ibex.ui.theme.IbexTheme
+import com.jonecx.ibex.ui.viewer.LocalMediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerArgs
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -38,12 +41,19 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var fileImageRequestFactory: FileImageRequestFactory
 
+    @Inject
+    lateinit var playerFactory: PlayerFactory
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
-            CompositionLocalProvider(LocalFileImageRequestFactory provides fileImageRequestFactory) {
+            CompositionLocalProvider(
+                LocalFileImageRequestFactory provides fileImageRequestFactory,
+                LocalPlayerFactory provides playerFactory,
+                LocalMediaViewerArgs provides mediaViewerArgs,
+            ) {
                 IbexTheme {
                     var hasPermission by remember { mutableStateOf(permissionChecker.hasStoragePermission()) }
 
@@ -51,7 +61,6 @@ class MainActivity : ComponentActivity() {
                         if (hasPermission) {
                             AppNavigation(
                                 analyticsManager = analyticsManager,
-                                mediaViewerArgs = mediaViewerArgs,
                             )
                         } else {
                             PermissionScreen(

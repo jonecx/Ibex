@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
+import com.jonecx.ibex.ui.theme.AlphaDisabled
 
 @Composable
 fun EmptyView(
@@ -41,7 +42,7 @@ fun EmptyView(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaDisabled),
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(

@@ -22,7 +22,9 @@ fun MediaViewerScreen(
             initialIndex = uiState.initialIndex,
             onDismiss = onNavigateBack,
             onDelete = { fileItem -> viewModel.deleteFile(fileItem) },
-            playerFactory = viewModel.playerFactory,
+            downloadingPaths = uiState.downloadingPaths,
+            resolvedFiles = uiState.resolvedFiles,
+            onDownloadRemoteVideo = { fileItem -> viewModel.downloadRemoteVideo(fileItem) },
             modifier = modifier,
         )
     } else {

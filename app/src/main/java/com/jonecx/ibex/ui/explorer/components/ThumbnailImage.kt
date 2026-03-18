@@ -16,19 +16,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.theme.AlphaSecondary
 import com.jonecx.ibex.ui.util.previewPlaceholder
 
 @Composable
 fun ThumbnailImage(
     fileItem: FileItem,
     modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    shape: Shape = RoundedCornerShape(2.dp),
+    showVideoIndicator: Boolean = true,
     onError: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -45,19 +49,19 @@ fun ThumbnailImage(
             contentDescription = fileItem.name,
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(2.dp))
+                .clip(shape)
                 .previewPlaceholder(fileItem.fileType),
-            contentScale = ContentScale.Crop,
+            contentScale = contentScale,
             onState = { state ->
                 if (state is AsyncImagePainter.State.Error) {
                     onError?.invoke()
                 }
             },
         )
-        if (fileItem.fileType == FileType.VIDEO) {
+        if (showVideoIndicator && fileItem.fileType.isVideo) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = AlphaSecondary),
                 modifier = Modifier.size(24.dp),
             ) {
                 Icon(

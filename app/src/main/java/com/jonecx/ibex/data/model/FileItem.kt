@@ -11,6 +11,11 @@ enum class FileType {
     ARCHIVE,
     APK,
     UNKNOWN,
+    ;
+
+    val isImage: Boolean get() = this == IMAGE
+    val isVideo: Boolean get() = this == VIDEO
+    val isViewable: Boolean get() = isImage || isVideo
 }
 
 data class FileItem(
@@ -23,4 +28,11 @@ data class FileItem(
     val fileType: FileType,
     val mimeType: String? = null,
     val childCount: Int? = null,
-)
+    val isRemote: Boolean = false,
+) {
+    companion object {
+        val DEFAULT_COMPARATOR: Comparator<FileItem> =
+            compareBy<FileItem> { !it.isDirectory }
+                .thenBy { it.name.lowercase() }
+    }
+}

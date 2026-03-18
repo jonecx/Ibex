@@ -10,16 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +31,7 @@ import com.jonecx.ibex.data.repository.StorageAnalyzer.Companion.CATEGORY_IMAGES
 import com.jonecx.ibex.data.repository.StorageAnalyzer.Companion.CATEGORY_OTHER
 import com.jonecx.ibex.data.repository.StorageAnalyzer.Companion.CATEGORY_VIDEOS
 import com.jonecx.ibex.ui.components.ErrorView
+import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.components.PieChart
 import com.jonecx.ibex.ui.components.PieChartSegment
@@ -69,24 +64,9 @@ internal fun StorageAnalysisScreenContent(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.analysis_title),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.navigate_up),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+            IbexTopAppBar(
+                title = stringResource(R.string.analysis_title),
+                onNavigateBack = onNavigateBack,
             )
         },
         modifier = modifier,
@@ -189,7 +169,7 @@ private fun StorageSummary(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "  •  ",
+                text = stringResource(R.string.bullet_separator),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

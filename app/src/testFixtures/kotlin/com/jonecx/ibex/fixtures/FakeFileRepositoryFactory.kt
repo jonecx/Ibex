@@ -12,4 +12,5 @@ class FakeFileRepositoryFactory(
     override fun createAppsRepository(): FileRepository = repository
     override fun createRecentFilesRepository(): FileRepository = repository
     override fun createTrashRepository(): FileRepository = repository
+    override fun createSmbFileRepository(connectionId: String): FileRepository = repository
 }

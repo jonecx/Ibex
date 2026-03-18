@@ -1,6 +1,7 @@
 package com.jonecx.ibex.di
 
 import android.content.Context
+import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.data.repository.AppsRepository
 import com.jonecx.ibex.data.repository.DefaultFileClipboardManager
 import com.jonecx.ibex.data.repository.FileClipboardManager
@@ -13,6 +14,8 @@ import com.jonecx.ibex.data.repository.MediaFileRepository
 import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.data.repository.RecentFilesRepository
+import com.jonecx.ibex.data.repository.SmbContextProvider
+import com.jonecx.ibex.data.repository.SmbFileRepository
 import com.jonecx.ibex.data.repository.TrashRepository
 import dagger.Binds
 import dagger.Module
@@ -29,12 +32,15 @@ interface FileRepositoryFactory {
     fun createAppsRepository(): FileRepository
     fun createRecentFilesRepository(): FileRepository
     fun createTrashRepository(): FileRepository
+    fun createSmbFileRepository(connectionId: String): FileRepository
 }
 
 @Singleton
 class RealFileRepositoryFactory @Inject constructor(
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val networkPreferences: NetworkConnectionsPreferencesContract,
+    private val smbContextProvider: SmbContextProvider,
 ) : FileRepositoryFactory {
     override fun createLocalFileRepository(): FileRepository = LocalFileRepository(context, ioDispatcher)
 
@@ -46,6 +52,9 @@ class RealFileRepositoryFactory @Inject constructor(
     override fun createRecentFilesRepository(): FileRepository = RecentFilesRepository(context, ioDispatcher)
 
     override fun createTrashRepository(): FileRepository = TrashRepository(context, ioDispatcher)
+
+    override fun createSmbFileRepository(connectionId: String): FileRepository =
+        SmbFileRepository(connectionId, networkPreferences, ioDispatcher, smbContextProvider)
 }
 
 @Module

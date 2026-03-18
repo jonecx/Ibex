@@ -20,18 +20,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.theme.AlphaDisabled
 import com.jonecx.ibex.util.formatDate
 import com.jonecx.ibex.util.formatFileSize
 
@@ -53,7 +49,7 @@ fun FileDetailPane(
                     imageVector = Icons.Filled.Info,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaDisabled),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -82,27 +78,19 @@ fun FileDetailPane(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    when (fileItem.fileType) {
-                        FileType.IMAGE,
-                        FileType.VIDEO,
-                        -> {
-                            val context = LocalContext.current
-                            val factory = LocalFileImageRequestFactory.current
-                            AsyncImage(
-                                model = remember(fileItem.path) { factory.create(context, fileItem) },
-                                contentDescription = fileItem.name,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(12.dp)),
-                                contentScale = ContentScale.Fit,
-                            )
-                        }
-                        else -> {
-                            FileIcon(
-                                fileItem = fileItem,
-                                modifier = Modifier.size(80.dp),
-                            )
-                        }
+                    if (fileItem.fileType.isViewable) {
+                        ThumbnailImage(
+                            fileItem = fileItem,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit,
+                            shape = RoundedCornerShape(12.dp),
+                            showVideoIndicator = false,
+                        )
+                    } else {
+                        FileIcon(
+                            fileItem = fileItem,
+                            modifier = Modifier.size(80.dp),
+                        )
                     }
                 }
             }

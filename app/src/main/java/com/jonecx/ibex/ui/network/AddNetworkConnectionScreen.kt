@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -30,8 +29,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -50,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.model.NetworkProtocol
+import com.jonecx.ibex.ui.components.IbexTopAppBar
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,24 +105,9 @@ fun AddNetworkConnectionScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(if (isEditMode) R.string.edit_connection_title else R.string.add_connection_title),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.navigate_up),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+            IbexTopAppBar(
+                title = stringResource(if (isEditMode) R.string.edit_connection_title else R.string.add_connection_title),
+                onNavigateBack = onNavigateBack,
             )
         },
         modifier = modifier,

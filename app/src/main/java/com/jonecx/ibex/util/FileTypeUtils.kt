@@ -1,6 +1,8 @@
 package com.jonecx.ibex.util
 
 import android.webkit.MimeTypeMap
+import androidx.core.net.toUri
+import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import java.io.File
 
@@ -9,6 +11,15 @@ import java.io.File
  * Uses Android's MimeTypeMap for mime type detection.
  */
 object FileTypeUtils {
+
+    const val THUMBNAIL_SIZE_PX = 300
+    const val JPEG_MIME_TYPE = "image/jpeg"
+    const val JPEG_QUALITY = 80
+    const val IO_BUFFER_SIZE = 64 * 1024
+    const val VIDEO_FRAME_TIME_MS = 1000L
+    const val VIDEO_FRAME_TIME_US = VIDEO_FRAME_TIME_MS * 1000
+    const val SECONDS_TO_MILLIS = 1000L
+    const val APK_MIME_TYPE = "application/vnd.android.package-archive"
 
     val DOCUMENT_MIME_TYPES = arrayOf(
         "application/pdf",
@@ -31,13 +42,24 @@ object FileTypeUtils {
         return getFileTypeFromMimeType(mimeType)
     }
 
-    private fun getFileTypeFromMimeType(mimeType: String): FileType {
+    fun getFileTypeFromName(name: String): FileType {
+        val mimeType = getMimeTypeFromName(name) ?: return FileType.UNKNOWN
+        return getFileTypeFromMimeType(mimeType)
+    }
+
+    fun getMimeTypeFromName(name: String): String? {
+        val extension = name.substringAfterLast('.', "").lowercase()
+        if (extension.isEmpty()) return null
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+    }
+
+    fun getFileTypeFromMimeType(mimeType: String): FileType {
         return when {
             mimeType.startsWith("image/") -> FileType.IMAGE
             mimeType.startsWith("video/") -> FileType.VIDEO
             mimeType.startsWith("audio/") -> FileType.AUDIO
             mimeType.startsWith("text/") -> FileType.DOCUMENT
-            mimeType == "application/vnd.android.package-archive" -> FileType.APK
+            mimeType == APK_MIME_TYPE -> FileType.APK
             mimeType.contains("zip") || mimeType.contains("tar") ||
                 mimeType.contains("rar") || mimeType.contains("compress") ||
                 mimeType.contains("archive") -> FileType.ARCHIVE
@@ -54,5 +76,20 @@ object FileTypeUtils {
      */
     fun getMimeType(file: File): String? {
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase())
+    }
+
+    fun File.toFileItem(): FileItem {
+        val fileType = getFileType(this)
+        return FileItem(
+            name = name,
+            path = absolutePath,
+            uri = toUri(),
+            size = if (isFile) length() else 0,
+            lastModified = lastModified(),
+            isDirectory = isDirectory,
+            fileType = fileType,
+            mimeType = if (isFile) getMimeType(this) else null,
+            childCount = if (isDirectory) listFiles()?.size else null,
+        )
     }
 }

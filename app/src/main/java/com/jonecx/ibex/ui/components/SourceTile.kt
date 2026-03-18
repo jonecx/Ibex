@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.data.model.FileSource
+import com.jonecx.ibex.ui.theme.AlphaDisabled
+import com.jonecx.ibex.ui.theme.AlphaTintBackground
 
 @Composable
 fun SourceTile(
@@ -41,7 +43,7 @@ fun SourceTile(
             containerColor = if (source.isEnabled) {
                 MaterialTheme.colorScheme.surfaceVariant
             } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = AlphaDisabled)
             },
         ),
         shape = RoundedCornerShape(16.dp),
@@ -57,14 +59,14 @@ fun SourceTile(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(source.iconTint.copy(alpha = 0.15f)),
+                    .background(source.iconTint.copy(alpha = AlphaTintBackground)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = source.icon,
                     contentDescription = source.name,
                     modifier = Modifier.size(28.dp),
-                    tint = if (source.isEnabled) source.iconTint else source.iconTint.copy(alpha = 0.5f),
+                    tint = if (source.isEnabled) source.iconTint else source.iconTint.copy(alpha = AlphaDisabled),
                 )
             }
 
@@ -76,7 +78,7 @@ fun SourceTile(
                 color = if (source.isEnabled) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaDisabled)
                 },
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -88,7 +90,7 @@ fun SourceTile(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (source.isEnabled) 1f else 0.5f,
+                        alpha = if (source.isEnabled) 1f else AlphaDisabled,
                     ),
                     textAlign = TextAlign.Center,
                     maxLines = 1,
