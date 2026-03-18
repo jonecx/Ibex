@@ -8,6 +8,7 @@ import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.di.IoDispatcher
+import com.jonecx.ibex.util.launchCollect
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,10 +40,8 @@ class NetworkConnectionsViewModel @Inject constructor(
     val uiState: StateFlow<NetworkConnectionsUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch(dispatcher) {
-            networkPreferences.connections.collect { connections ->
-                _uiState.update { it.copy(connections = connections) }
-            }
+        viewModelScope.launchCollect(networkPreferences.connections, dispatcher) { connections ->
+            _uiState.update { it.copy(connections = connections) }
         }
     }
 
