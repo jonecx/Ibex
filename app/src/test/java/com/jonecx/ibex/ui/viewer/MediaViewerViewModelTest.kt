@@ -6,7 +6,9 @@ import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakePlayerFactory
 import com.jonecx.ibex.fixtures.FakeSmbContextProvider
 import com.jonecx.ibex.fixtures.testImageFileItem
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -15,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class MediaViewerViewModelTest {
 
@@ -86,7 +89,7 @@ class MediaViewerViewModelTest {
     }
 
     @Test
-    fun `deleteFile removes file from state`() = runTest {
+    fun `deleteFile removes file from state`() = runTest(testDispatcher) {
         val files = listOf(
             testImageFileItem("photo1.jpg"),
             testImageFileItem("photo2.jpg"),
@@ -105,22 +108,19 @@ class MediaViewerViewModelTest {
     }
 
     @Test
-    fun `deleteFile calls trashManager`() = runTest {
+    fun `deleteFile calls trashManager`() = runTest(testDispatcher) {
         val files = listOf(testImageFileItem("photo.jpg"))
         val viewModel = createViewModel(files)
 
         viewModel.deleteFile(files[0])
+        advanceUntilIdle()
 
-        // Give coroutine time to complete
-        viewModel.uiState.test {
-            awaitItem() // final state
-        }
         assertEquals(1, trashManager.trashedFiles.size)
         assertEquals("photo.jpg", trashManager.trashedFiles[0].name)
     }
 
     @Test
-    fun `deleteFile does not remove on failure`() = runTest {
+    fun `deleteFile does not remove on failure`() = runTest(testDispatcher) {
         val files = listOf(testImageFileItem("photo.jpg"))
         trashManager.shouldSucceed = false
         val viewModel = createViewModel(files)

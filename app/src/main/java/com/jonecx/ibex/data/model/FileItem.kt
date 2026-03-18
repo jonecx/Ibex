@@ -1,6 +1,7 @@
 package com.jonecx.ibex.data.model
 
 import android.net.Uri
+import androidx.compose.runtime.Immutable
 
 enum class FileType {
     DIRECTORY,
@@ -18,6 +19,7 @@ enum class FileType {
     val isViewable: Boolean get() = isImage || isVideo
 }
 
+@Immutable
 data class FileItem(
     val name: String,
     val path: String,
