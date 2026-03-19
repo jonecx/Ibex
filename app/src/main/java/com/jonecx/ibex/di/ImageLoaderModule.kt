@@ -2,6 +2,7 @@ package com.jonecx.ibex.di
 
 import android.content.Context
 import coil.ImageLoader
+import coil.decode.ImageDecoderDecoder
 import coil.decode.VideoFrameDecoder
 import coil.disk.DiskCache
 import com.jonecx.ibex.data.repository.SmbContextProviderContract
@@ -29,6 +30,7 @@ object ImageLoaderModule {
         return ImageLoader.Builder(context)
             .components {
                 add(SmbFetcherFactory(smbContextProvider, smbCacheDir))
+                add(ImageDecoderDecoder.Factory())
                 add(VideoFrameDecoder.Factory())
             }
             .diskCache {

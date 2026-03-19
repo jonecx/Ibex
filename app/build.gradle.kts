@@ -111,8 +111,9 @@ dependencies {
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     
-    // Coil for image/video thumbnails
+    // Coil for image/video/gif thumbnails
     implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
     implementation(libs.coil.video)
     
     // Material Icons Extended
