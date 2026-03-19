@@ -781,6 +781,91 @@ class FileExplorerViewModelTest {
         assertEquals("tiny_dir", names.first())
     }
 
+    // Search tests
+
+    @Test
+    fun `activateSearch sets isSearchActive`() = runTest {
+        viewModel.activateSearch()
+        assertTrue(viewModel.uiState.value.isSearchActive)
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `setSearchQuery filters displayFiles by name`() = runTest {
+        val apple = testFileItem("apple.txt")
+        val banana = testFileItem("banana.txt")
+        val apricot = testFileItem("apricot.txt")
+        createViewModelWithFiles(apple, banana, apricot)
+
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("ap")
+
+        val display = viewModel.uiState.value.displayFiles.map { it.name }
+        assertEquals(listOf("apple.txt", "apricot.txt"), display)
+    }
+
+    @Test
+    fun `search is case insensitive`() = runTest {
+        val file = testFileItem("README.md")
+        createViewModelWithFiles(file)
+
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("readme")
+
+        assertEquals(1, viewModel.uiState.value.displayFiles.size)
+    }
+
+    @Test
+    fun `clearSearch resets isSearchActive and query`() = runTest {
+        val file = testFileItem("file.txt")
+        createViewModelWithFiles(file)
+
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("xyz")
+        assertTrue(viewModel.uiState.value.isSearchActive)
+
+        viewModel.clearSearch()
+        assertFalse(viewModel.uiState.value.isSearchActive)
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `displayFiles returns all files when search query is empty`() = runTest {
+        val a = testFileItem("a.txt")
+        val b = testFileItem("b.txt")
+        createViewModelWithFiles(a, b)
+
+        viewModel.activateSearch()
+        assertEquals(2, viewModel.uiState.value.displayFiles.size)
+    }
+
+    @Test
+    fun `navigateTo clears search`() = runTest {
+        val dir = testDirectoryFileItem("subdir")
+        createViewModelWithFiles(dir)
+
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("sub")
+        viewModel.navigateTo(dir)
+
+        assertFalse(viewModel.uiState.value.isSearchActive)
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `navigateUp clears search`() = runTest {
+        val dir = testDirectoryFileItem("subdir")
+        createViewModelWithFiles(dir)
+        viewModel.navigateTo(dir)
+
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("test")
+        viewModel.navigateUp()
+
+        assertFalse(viewModel.uiState.value.isSearchActive)
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
     companion object {
         private const val TEST_SMB_CONNECTION_ID = "smb-1"
     }
