@@ -121,6 +121,10 @@
     <string name="add_connection_protocol_ftp">FTP</string>
     <string name="add_connection_protocol_cloud">Cloud</string>
     <string name="add_connection_url">URL / Hostname</string>
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_hint">Search files…</string>
+    <string name="search_no_results">No results found</string>
     <!-- Sort -->
     <string name="sort">Sort</string>
     <string name="sort_by">Sort By</string>

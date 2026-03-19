@@ -56,8 +56,15 @@ data class FileExplorerUiState(
     val isRemoteBrowsing: Boolean = false,
     val restoredScrollPosition: ScrollPosition? = null,
     val sortOption: SortOption = SortOption.DEFAULT,
+    val isSearchActive: Boolean = false,
+    val searchQuery: String = "",
 ) {
     val canCreateFolder: Boolean get() = allowFolderNavigation && !isRemoteBrowsing
+    val displayFiles: List<FileItem> = if (searchQuery.isEmpty()) {
+        files
+    } else {
+        files.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
 }
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
@@ -203,7 +210,7 @@ class FileExplorerViewModel @Inject constructor(
                     navigationStack = newStack,
                     selectedFile = null,
                     restoredScrollPosition = null,
-                )
+                ).dismissSearch()
             }
             loadFiles(fileItem.path)
         } else {
@@ -222,7 +229,7 @@ class FileExplorerViewModel @Inject constructor(
                     navigationStack = newStack,
                     selectedFile = null,
                     restoredScrollPosition = restored,
-                )
+                ).dismissSearch()
             }
             loadFiles(parentPath)
             return true
@@ -234,6 +241,18 @@ class FileExplorerViewModel @Inject constructor(
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setSortOption(option)
         }
+    }
+
+    fun activateSearch() {
+        _uiState.update { it.copy(isSearchActive = true, searchQuery = "") }
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun clearSearch() {
+        _uiState.update { it.dismissSearch() }
     }
 
     fun refreshFiles() {
@@ -345,6 +364,11 @@ class FileExplorerViewModel @Inject constructor(
         }
     }
 }
+
+private fun FileExplorerUiState.dismissSearch() = copy(
+    isSearchActive = false,
+    searchQuery = "",
+)
 
 private fun FileExplorerUiState.exitSelectionMode() = copy(
     isSelectionMode = false,
