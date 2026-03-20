@@ -87,8 +87,6 @@ class FileOperationsIntegrationTest {
         assertEquals(expectedSize, renamed.length())
     }
 
-    // region Move
-
     @Test
     fun moveHtmlFileToExistingFolder() = runTest {
         val file = copyAssetToSource(HTML_ASSET)
@@ -140,10 +138,6 @@ class FileOperationsIntegrationTest {
 
         assertFalse(result)
     }
-
-    // endregion
-
-    // region Copy
 
     @Test
     fun copyHtmlFileToExistingFolder() = runTest {
@@ -197,10 +191,6 @@ class FileOperationsIntegrationTest {
         assertFalse(result)
     }
 
-    // endregion
-
-    // region Rename
-
     @Test
     fun renameHtmlFile() = runTest {
         val file = copyAssetToSource(HTML_ASSET)
@@ -236,10 +226,6 @@ class FileOperationsIntegrationTest {
 
         assertFalse(result)
     }
-
-    // endregion
-
-    // region Create Folder
 
     @Test
     fun createFolderCreatesNewDirectory() = runTest {
@@ -295,5 +281,35 @@ class FileOperationsIntegrationTest {
         assertEquals(rtfSize, File(targetDir, RTF_ASSET).length())
     }
 
-    // endregion
+    @Test
+    fun deleteFileRemovesFile() = runTest {
+        val file = copyAssetToSource(HTML_ASSET)
+        assertTrue(file.exists())
+
+        val result = moveManager.deleteFile(fileItemOf(file))
+
+        assertTrue(result)
+        assertFalse(file.exists())
+    }
+
+    @Test
+    fun deleteDirectoryRemovesRecursively() = runTest {
+        val subDir = File(sourceDir, "subdir").apply { mkdirs() }
+        val file = copyAssetToSource(HTML_ASSET)
+        val nestedFile = File(subDir, HTML_ASSET)
+        file.copyTo(nestedFile)
+
+        val result = moveManager.deleteFile(fileItemOf(subDir))
+
+        assertTrue(result)
+        assertFalse(subDir.exists())
+        assertFalse(nestedFile.exists())
+    }
+
+    @Test
+    fun deleteFileFailsWhenSourceMissing() = runTest {
+        val missing = File(sourceDir, "nonexistent.txt")
+        val result = moveManager.deleteFile(fileItemOf(missing))
+        assertFalse(result)
+    }
 }

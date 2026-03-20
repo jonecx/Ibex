@@ -141,12 +141,10 @@ fun FileExplorerScreen(
                         }
                     },
                     onFileLongClick = { fileItem ->
-                        if (!uiState.isRemoteBrowsing) {
-                            if (!viewModel.uiState.value.isSelectionMode) {
-                                viewModel.enterSelectionMode(fileItem)
-                            } else {
-                                viewModel.toggleFileSelection(fileItem)
-                            }
+                        if (!viewModel.uiState.value.isSelectionMode) {
+                            viewModel.enterSelectionMode(fileItem)
+                        } else {
+                            viewModel.toggleFileSelection(fileItem)
                         }
                     },
                     onCancelSelection = { viewModel.clearSelection() },

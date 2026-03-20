@@ -1,9 +1,11 @@
 package com.jonecx.ibex.util
 
+import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import jcifs.smb.SmbFile
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
@@ -22,6 +24,8 @@ object FileTypeUtils {
     const val VIDEO_FRAME_TIME_US = VIDEO_FRAME_TIME_MS * 1000
     const val SECONDS_TO_MILLIS = 1000L
     const val APK_MIME_TYPE = "application/vnd.android.package-archive"
+    const val SMB_SCHEME = "smb"
+    const val SMB_SCHEME_PREFIX = "$SMB_SCHEME://"
 
     val DOCUMENT_MIME_TYPES = arrayOf(
         "application/pdf",
@@ -78,11 +82,15 @@ object FileTypeUtils {
      */
     fun getMimeType(file: File): String? = getMimeTypeFromName(file.name)
 
-    fun File.toFileItem(): FileItem {
+    fun File.toFileItem(detailed: Boolean = true): FileItem {
         val fileType = getFileType(this)
-        val creationTime = runCatching {
-            Files.readAttributes(toPath(), BasicFileAttributes::class.java).creationTime().toMillis()
-        }.getOrDefault(lastModified())
+        val creationTime = if (detailed) {
+            runCatching {
+                Files.readAttributes(toPath(), BasicFileAttributes::class.java).creationTime().toMillis()
+            }.getOrDefault(lastModified())
+        } else {
+            lastModified()
+        }
         return FileItem(
             name = name,
             path = absolutePath,
@@ -93,7 +101,42 @@ object FileTypeUtils {
             isDirectory = isDirectory,
             fileType = fileType,
             mimeType = if (isFile) getMimeType(this) else null,
-            childCount = if (isDirectory) listFiles()?.size else null,
+            childCount = if (detailed && isDirectory) listFiles()?.size else null,
         )
+    }
+
+    fun SmbFile.toFileItem(): FileItem {
+        val fileName = name.trimEnd('/')
+        val isDir = isDirectory
+        val fileType = if (isDir) FileType.DIRECTORY else getFileTypeFromName(fileName)
+        val pathStr = url.toString()
+        return FileItem(
+            name = fileName,
+            path = pathStr,
+            uri = Uri.parse(pathStr),
+            size = if (isDir) 0L else length(),
+            lastModified = lastModified,
+            createdAt = createTime(),
+            isDirectory = isDir,
+            fileType = fileType,
+            mimeType = if (isDir) null else getMimeTypeFromName(fileName),
+            isRemote = true,
+        )
+    }
+
+    fun smbEnsureTrailingSlash(path: String, isDirectory: Boolean = true): String =
+        if (isDirectory && !path.endsWith("/")) "$path/" else path
+
+    fun smbBuildChildPath(parentDir: String, name: String, isDirectory: Boolean): String {
+        val base = "${parentDir.trimEnd('/')}/$name"
+        return if (isDirectory) smbEnsureTrailingSlash(base) else base
+    }
+
+    fun smbExtractHost(path: String): String? {
+        val schemeEnd = path.indexOf("://")
+        if (schemeEnd < 0) return null
+        val hostStart = schemeEnd + 3
+        val hostEnd = path.indexOfAny(charArrayOf('/', ':'), hostStart)
+        return if (hostEnd < 0) path.substring(hostStart) else path.substring(hostStart, hostEnd)
     }
 }

@@ -31,4 +31,11 @@ class FakeFileMoveManager : FileMoveManager {
         createdFolders.add(parentDir to name)
         return shouldSucceed
     }
+
+    val deletedFiles = mutableListOf<FileItem>()
+
+    override suspend fun deleteFile(fileItem: FileItem): Boolean {
+        deletedFiles.add(fileItem)
+        return shouldSucceed
+    }
 }
