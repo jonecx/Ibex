@@ -5,6 +5,7 @@ import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.FakeSmbContextProvider
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures
+import com.jonecx.ibex.util.FileTypeUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -51,7 +52,7 @@ class SmbFileRepositoryTest {
     fun `ensureTrailingSlash adds slash when missing`() {
         assertEquals(
             "smb://host/share/",
-            SmbFileRepository.ensureTrailingSlash("smb://host/share"),
+            FileTypeUtils.smbEnsureTrailingSlash("smb://host/share"),
         )
     }
 
@@ -59,7 +60,7 @@ class SmbFileRepositoryTest {
     fun `ensureTrailingSlash preserves existing slash`() {
         assertEquals(
             "smb://host/share/",
-            SmbFileRepository.ensureTrailingSlash("smb://host/share/"),
+            FileTypeUtils.smbEnsureTrailingSlash("smb://host/share/"),
         )
     }
 
@@ -67,7 +68,7 @@ class SmbFileRepositoryTest {
     fun `ensureTrailingSlash works with deep paths`() {
         assertEquals(
             "smb://host/share/folder/subfolder/",
-            SmbFileRepository.ensureTrailingSlash("smb://host/share/folder/subfolder"),
+            FileTypeUtils.smbEnsureTrailingSlash("smb://host/share/folder/subfolder"),
         )
     }
 

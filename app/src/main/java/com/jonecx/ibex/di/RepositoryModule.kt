@@ -3,6 +3,7 @@ package com.jonecx.ibex.di
 import android.content.Context
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.data.repository.AppsRepository
+import com.jonecx.ibex.data.repository.CompositeFileMoveManager
 import com.jonecx.ibex.data.repository.DefaultFileClipboardManager
 import com.jonecx.ibex.data.repository.FileClipboardManager
 import com.jonecx.ibex.data.repository.FileMoveManager
@@ -13,9 +14,11 @@ import com.jonecx.ibex.data.repository.LocalFileRepository
 import com.jonecx.ibex.data.repository.MediaFileRepository
 import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
+import com.jonecx.ibex.data.repository.ProtocolFileHandler
 import com.jonecx.ibex.data.repository.RecentFilesRepository
 import com.jonecx.ibex.data.repository.SmbContextProvider
 import com.jonecx.ibex.data.repository.SmbContextProviderContract
+import com.jonecx.ibex.data.repository.SmbFileMoveManager
 import com.jonecx.ibex.data.repository.SmbFileRepository
 import com.jonecx.ibex.data.repository.TrashRepository
 import dagger.Binds
@@ -23,6 +26,7 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -77,8 +81,20 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindFileMoveManager(
-        impl: FileSystemMoveManager,
+        impl: CompositeFileMoveManager,
     ): FileMoveManager
+
+    @Binds
+    @IntoSet
+    abstract fun bindLocalFileHandler(
+        impl: FileSystemMoveManager,
+    ): ProtocolFileHandler
+
+    @Binds
+    @IntoSet
+    abstract fun bindSmbFileHandler(
+        impl: SmbFileMoveManager,
+    ): ProtocolFileHandler
 
     @Binds
     @Singleton

@@ -59,7 +59,7 @@ data class FileExplorerUiState(
     val isSearchActive: Boolean = false,
     val searchQuery: String = "",
 ) {
-    val canCreateFolder: Boolean get() = allowFolderNavigation && !isRemoteBrowsing
+    val canCreateFolder: Boolean get() = allowFolderNavigation
     val displayFiles: List<FileItem> = if (searchQuery.isEmpty()) {
         files
     } else {
@@ -315,7 +315,15 @@ class FileExplorerViewModel @Inject constructor(
         if (filesToDelete.isEmpty()) return
 
         viewModelScope.launch(dispatcher) {
-            filesToDelete.map { file -> async { fileTrashManager.trashFile(file) } }.awaitAll()
+            filesToDelete.map { file ->
+                async {
+                    if (isRemote) {
+                        fileMoveManager.deleteFile(file)
+                    } else {
+                        fileTrashManager.trashFile(file)
+                    }
+                }
+            }.awaitAll()
             _uiState.update { it.exitSelectionMode() }
             refreshFiles()
         }

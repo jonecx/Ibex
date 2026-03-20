@@ -19,6 +19,7 @@ import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
 import com.jonecx.ibex.fixtures.testRemoteDirectoryFileItem
+import com.jonecx.ibex.fixtures.testRemoteFileItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -518,9 +519,9 @@ class FileExplorerViewModelTest {
     }
 
     @Test
-    fun `SMB source disables canCreateFolder`() = runTest {
+    fun `SMB source allows canCreateFolder`() = runTest {
         createSmbViewModel()
-        assertFalse(viewModel.uiState.value.canCreateFolder)
+        assertTrue(viewModel.uiState.value.canCreateFolder)
     }
 
     @Test
@@ -868,6 +869,45 @@ class FileExplorerViewModelTest {
 
     companion object {
         private const val TEST_SMB_CONNECTION_ID = "smb-1"
+    }
+
+    @Test
+    fun `deleteSelectedFiles uses trashManager for local files`() = runTest {
+        val file = testFileItem("local.txt")
+        createViewModelWithFiles(file)
+
+        viewModel.enterSelectionMode(file)
+        viewModel.deleteSelectedFiles()
+
+        assertEquals(1, fakeTrashManager.trashedFiles.size)
+        assertTrue(fakeMoveManager.deletedFiles.isEmpty())
+        assertFalse(viewModel.uiState.value.isSelectionMode)
+    }
+
+    @Test
+    fun `deleteSelectedFiles uses fileMoveManager for remote files`() = runTest {
+        val file = testRemoteFileItem("remote.txt")
+        fakeRepository.filesToReturn = listOf(file)
+        viewModel = createSmbViewModel()
+
+        viewModel.enterSelectionMode(file)
+        viewModel.deleteSelectedFiles()
+
+        assertEquals(1, fakeMoveManager.deletedFiles.size)
+        assertTrue(fakeTrashManager.trashedFiles.isEmpty())
+        assertFalse(viewModel.uiState.value.isSelectionMode)
+    }
+
+    @Test
+    fun `SMB createFolder calls fileMoveManager with remote path`() = runTest {
+        fakeRepository.filesToReturn = listOf(testRemoteFileItem("file.txt"))
+        createSmbViewModel()
+        val currentPath = viewModel.uiState.value.currentPath
+
+        viewModel.createFolder("Remote Folder")
+
+        assertEquals(1, fakeMoveManager.createdFolders.size)
+        assertEquals(currentPath to "Remote Folder", fakeMoveManager.createdFolders.first())
     }
 
     @Test

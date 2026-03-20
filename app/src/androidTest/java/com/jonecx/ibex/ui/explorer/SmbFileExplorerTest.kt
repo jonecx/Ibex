@@ -74,14 +74,14 @@ class SmbFileExplorerTest {
     }
 
     @Test
-    fun smbExplorerHidesCreateFolderButton() {
+    fun smbExplorerShowsCreateFolderButton() {
         addConnectionAndNavigateToExplorer()
 
-        composeTestRule.onNodeWithContentDescription("New folder").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("New folder").assertIsDisplayed()
     }
 
     @Test
-    fun smbExplorerLongPressDoesNotEnterSelectionMode() {
+    fun smbExplorerLongPressEntersSelectionMode() {
         addConnectionAndNavigateToExplorer()
 
         composeTestRule.onNodeWithText("Alarms").performTouchInput {
@@ -89,7 +89,7 @@ class SmbFileExplorerTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithContentDescription("Cancel selection").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Cancel selection").assertIsDisplayed()
     }
 
     @Test

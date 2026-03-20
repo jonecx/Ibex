@@ -1,11 +1,10 @@
 package com.jonecx.ibex.data.repository
 
-import android.net.Uri
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.util.FileTypeUtils
+import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import jcifs.CIFSContext
 import jcifs.config.PropertyConfiguration
 import jcifs.context.BaseContext
@@ -67,9 +66,9 @@ class SmbFileRepository(
 
     private fun buildRootUrl(connection: NetworkConnection): String {
         return if (connection.port == connection.protocol.defaultPort) {
-            "smb://${connection.host}/"
+            "${FileTypeUtils.SMB_SCHEME_PREFIX}${connection.host}/"
         } else {
-            "smb://${connection.host}:${connection.port}/"
+            "${FileTypeUtils.SMB_SCHEME_PREFIX}${connection.host}:${connection.port}/"
         }
     }
 
@@ -77,8 +76,8 @@ class SmbFileRepository(
         val connection = resolveConnection()
         val context = createSmbContext(connection)
 
-        val smbUrl = if (path.startsWith(SMB_SCHEME)) {
-            ensureTrailingSlash(path)
+        val smbUrl = if (path.startsWith(FileTypeUtils.SMB_SCHEME_PREFIX)) {
+            FileTypeUtils.smbEnsureTrailingSlash(path)
         } else {
             buildRootUrl(connection)
         }
@@ -105,40 +104,17 @@ class SmbFileRepository(
         return try {
             val connection = resolveConnection()
             val context = createSmbContext(connection)
-            val smbFile = SmbFile(ensureTrailingSlash(path), context)
+            val smbFile = SmbFile(FileTypeUtils.smbEnsureTrailingSlash(path), context)
             if (smbFile.exists()) smbFile.toFileItem() else null
         } catch (_: Exception) {
             null
         }
     }
 
-    private fun SmbFile.toFileItem(): FileItem {
-        val fileName = name.trimEnd('/')
-        val isDir = isDirectory
-        val fileType = if (isDir) FileType.DIRECTORY else FileTypeUtils.getFileTypeFromName(fileName)
-        val mimeType = if (isDir) null else FileTypeUtils.getMimeTypeFromName(fileName)
-        return FileItem(
-            name = fileName,
-            path = url.toString(),
-            uri = Uri.parse(url.toString()),
-            size = if (isDir) 0L else length(),
-            lastModified = lastModified,
-            createdAt = createTime(),
-            isDirectory = isDir,
-            fileType = fileType,
-            mimeType = mimeType,
-            isRemote = true,
-        )
-    }
-
     companion object {
-        private const val SMB_SCHEME = "smb://"
         private const val RESPONSE_TIMEOUT_MS = "30000"
         private const val SOCKET_TIMEOUT_MS = "35000"
         private const val SMB_MIN_VERSION = "SMB202"
         private const val SMB_MAX_VERSION = "SMB311"
-
-        fun ensureTrailingSlash(path: String): String =
-            if (path.endsWith("/")) path else "$path/"
     }
 }

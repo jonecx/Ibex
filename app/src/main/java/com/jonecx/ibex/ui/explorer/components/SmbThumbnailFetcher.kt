@@ -319,11 +319,7 @@ class SmbFetcherFactory(
     private val cacheDir: File,
 ) : Fetcher.Factory<Uri> {
     override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
-        if (data.scheme != SMB_SCHEME) return null
+        if (data.scheme != FileTypeUtils.SMB_SCHEME) return null
         return SmbThumbnailFetcher(data, options, smbContextProvider, cacheDir)
-    }
-
-    companion object {
-        private const val SMB_SCHEME = "smb"
     }
 }
