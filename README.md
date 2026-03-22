@@ -83,6 +83,9 @@ cp local.properties.example local.properties  # or create with empty PostHog key
 
 # Build and install
 ./gradlew installDebug
+
+# Run benchmarks (requires device)
+./gradlew perfCheck
 ```
 
 ## License

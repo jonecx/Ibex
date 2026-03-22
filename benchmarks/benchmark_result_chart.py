@@ -271,7 +271,45 @@ def main():
     generate_html(runs, output_path)
 
     if "--no-open" not in sys.argv:
-        subprocess.run(["open", str(output_path)])
+        report_url = f"file://{output_path.resolve()}"
+        subprocess.run([
+            "/usr/bin/osascript", "-e",
+            f'''
+            set reportURL to "{report_url}"
+            tell application "System Events"
+                set browserName to name of first application process whose frontmost is true
+            end tell
+            try
+                tell application id "com.google.Chrome"
+                    repeat with w in windows
+                        repeat with t in tabs of w
+                            if URL of t starts with reportURL then
+                                tell t to reload
+                                set active tab index of w to (index of t)
+                                activate
+                                return
+                            end if
+                        end repeat
+                    end repeat
+                end tell
+            end try
+            try
+                tell application "Safari"
+                    repeat with w in windows
+                        repeat with t in tabs of w
+                            if URL of t starts with reportURL then
+                                set current tab of w to t
+                                set URL of t to reportURL
+                                activate
+                                return
+                            end if
+                        end repeat
+                    end repeat
+                end tell
+            end try
+            do shell script "/usr/bin/open " & quoted form of ("{output_path.resolve()}")
+            ''',
+        ])
 
 
 if __name__ == "__main__":
