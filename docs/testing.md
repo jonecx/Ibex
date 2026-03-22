@@ -118,12 +118,36 @@ Compose Preview Screenshot Testing validates UI components against reference ima
 
 Reference images are stored in `app/src/screenshotTest/` and checked into source control. The `screenshot-tests.yml` CI workflow validates them on every push/PR to `main`.
 
+## Baseline Profile
+
+The baseline profile is **not a test** — it's a code path recorder. `BaselineProfileGenerator` (in `macrobenchmark/`) launches the app and exercises critical user journeys:
+
+1. **Cold start** — captures startup code paths
+2. **Grid view toggle** — captures settings + preference code paths
+3. **Scroll Images** — captures file explorer, Coil thumbnails, LazyVerticalGrid
+4. **Scroll Videos** — captures video thumbnail loading
+
+ART traces which classes and methods are touched and outputs a `.prof` file. When the app is installed on a user's device, ART uses this profile to **AOT-compile those hot paths ahead of time** instead of waiting for JIT. Result: faster startup and smoother scrolling on first launch.
+
+This is why `BaselineProfileGenerator` is **SKIPPED** during benchmark runs — it's only meant to run when generating/updating the profile, not measuring performance.
+
+```bash
+# Generate the baseline profile (requires connected device)
+./gradlew :app:generateBaselineProfile
+```
+
 ## Benchmarks
 
-The `macrobenchmark/` module measures startup and scroll performance:
+Two benchmark classes in `macrobenchmark/` measure real device performance:
 
-- **Startup**: cold start, warm start, compilationNone
-- **Scroll**: Images grid, Videos grid (with and without Baseline Profile)
+- **`StartupBenchmark`** — measures `timeToInitialDisplayMs` (how fast the app renders its first frame)
+  - `startupColdNoCompilation` — worst case: no AOT, no baseline profile, pure JIT
+  - `startupColdBaselineProfile` — with `CompilationMode.Partial()` (baseline profile applied)
+  - `startupWarm` — app process already exists, just creates a new Activity
+- **`ScrollBenchmark`** — measures `FrameTimingMetric` (frame count, duration, jank) while fling-scrolling the grid
+  - Images + Videos × `CompilationNone` vs `BaselineProfile`
+
+Each test runs multiple iterations for statistical reliability.
 
 ### Running Benchmarks
 
@@ -140,9 +164,20 @@ python benchmark_result_compare.py
 python benchmark_result_chart.py
 ```
 
-Results are stored in `benchmarks/results/` (FIFO-pruned to 25 runs). An HTML chart report is generated at `benchmarks/report.html`.
+Results are stored in `benchmarks/results/` (FIFO-pruned to 25 runs).
 
-> **Note:** Benchmarks require a physical device or emulator. They are not run on CI (no physical device available).
+> **Note:** Benchmarks require a physical device or emulator. They are not run on CI.
+
+### How the Chart Connects
+
+The chart at `benchmarks/report.html` plots **median values from each benchmark run over time**. Every time you run `./gradlew perfCheck`:
+
+1. Benchmarks execute → raw JSON results saved
+2. `benchmark_result_collect.sh` → copies results to `benchmarks/results/{timestamp}/`
+3. `benchmark_result_compare.py` → diffs latest vs previous run (shows % deltas)
+4. `benchmark_result_chart.py` → reads **all** stored runs and plots trend lines, then opens/refreshes the report in the browser
+
+The chart answers: **"Is the app getting faster or slower over time?"** The `CompilationNone` vs `BaselineProfile` pairs show exactly how much the profile helps — if those lines diverge, the profile is doing its job.
 
 ## CI
 
