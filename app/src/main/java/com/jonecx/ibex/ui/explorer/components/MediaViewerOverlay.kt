@@ -21,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.ui.components.ConfirmationDialog
-import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.player.VideoPlayer
 import com.jonecx.ibex.ui.theme.Black
 import com.jonecx.ibex.ui.theme.ScrimDark
@@ -46,9 +44,6 @@ fun MediaViewerOverlay(
     viewableFiles: List<FileItem>,
     initialIndex: Int,
     onDismiss: () -> Unit,
-    downloadingPaths: Set<String> = emptySet(),
-    resolvedFiles: Map<String, FileItem> = emptyMap(),
-    onDownloadRemoteVideo: (FileItem) -> Unit = {},
     modifier: Modifier = Modifier,
     onDelete: (FileItem) -> Unit = {},
 ) {
@@ -92,27 +87,15 @@ fun MediaViewerOverlay(
             }
             when {
                 fileItem.fileType.isVideo -> {
-                    val resolved = resolvedFiles[fileItem.path]
-                    val videoFile = resolved ?: fileItem
-                    if (fileItem.isRemote && resolved == null) {
-                        LaunchedEffect(fileItem.path) {
-                            onDownloadRemoteVideo(fileItem)
-                        }
-                        LoadingView(
-                            color = White,
-                            description = stringResource(R.string.video_loading),
-                        )
-                    } else {
-                        VideoPlayer(
-                            fileItem = videoFile,
-                            isActive = pagerState.settledPage == page,
-                            modifier = Modifier.fillMaxSize(),
-                            controlsVisible = controlsVisible,
-                            onToggleControls = toggleControls,
-                            onPrevious = onPrevious,
-                            onNext = onNext,
-                        )
-                    }
+                    VideoPlayer(
+                        fileItem = fileItem,
+                        isActive = pagerState.settledPage == page,
+                        modifier = Modifier.fillMaxSize(),
+                        controlsVisible = controlsVisible,
+                        onToggleControls = toggleControls,
+                        onPrevious = onPrevious,
+                        onNext = onNext,
+                    )
                 }
                 else -> {
                     ZoomableImage(

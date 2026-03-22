@@ -3,8 +3,6 @@ package com.jonecx.ibex.ui.viewer
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
-import com.jonecx.ibex.fixtures.FakePlayerFactory
-import com.jonecx.ibex.fixtures.FakeSmbContextProvider
 import com.jonecx.ibex.fixtures.testImageFileItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,13 +13,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class MediaViewerViewModelTest {
 
-    private val playerFactory = FakePlayerFactory()
     private val trashManager = FakeFileTrashManager()
     private val testDispatcher = StandardTestDispatcher()
 
@@ -32,10 +28,7 @@ class MediaViewerViewModelTest {
         val args = MediaViewerArgs().apply { if (files.isNotEmpty()) set(files, index) }
         return MediaViewerViewModel(
             args,
-            playerFactory,
             trashManager,
-            FakeSmbContextProvider(),
-            RuntimeEnvironment.getApplication(),
             testDispatcher,
         )
     }
@@ -73,10 +66,7 @@ class MediaViewerViewModelTest {
         val args = MediaViewerArgs().apply { set(files, 0) }
         val viewModel = MediaViewerViewModel(
             args,
-            playerFactory,
             trashManager,
-            FakeSmbContextProvider(),
-            RuntimeEnvironment.getApplication(),
             testDispatcher,
         )
 
