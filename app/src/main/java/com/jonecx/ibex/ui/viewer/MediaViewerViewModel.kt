@@ -1,41 +1,28 @@
 package com.jonecx.ibex.ui.viewer
 
-import android.content.Context
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.repository.FileTrashManager
-import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.di.IoDispatcher
-import com.jonecx.ibex.ui.player.PlayerFactory
-import com.jonecx.ibex.util.FileTypeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import jcifs.smb.SmbFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 
 data class MediaViewerUiState(
     val viewableFiles: List<FileItem> = emptyList(),
     val initialIndex: Int = 0,
-    val downloadingPaths: Set<String> = emptySet(),
-    val resolvedFiles: Map<String, FileItem> = emptyMap(),
 )
 
 @HiltViewModel
 class MediaViewerViewModel @Inject constructor(
     private val mediaViewerArgs: MediaViewerArgs,
-    private val playerFactory: PlayerFactory,
     private val fileTrashManager: FileTrashManager,
-    private val smbContextProvider: SmbContextProviderContract,
-    @ApplicationContext private val appContext: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -46,45 +33,6 @@ class MediaViewerViewModel @Inject constructor(
         ),
     )
     val uiState: StateFlow<MediaViewerUiState> = _uiState.asStateFlow()
-
-    fun downloadRemoteVideo(fileItem: FileItem) {
-        if (!fileItem.isRemote) return
-        if (_uiState.value.downloadingPaths.contains(fileItem.path)) return
-        if (_uiState.value.resolvedFiles.containsKey(fileItem.path)) return
-
-        _uiState.update { it.copy(downloadingPaths = it.downloadingPaths + fileItem.path) }
-        viewModelScope.launch(ioDispatcher) {
-            try {
-                val host = Uri.parse(fileItem.path).host ?: return@launch
-                val cifsContext = smbContextProvider.get(host) ?: return@launch
-                val ext = fileItem.name.substringAfterLast('.', "")
-                val tempFile = File(
-                    appContext.cacheDir,
-                    "smb_media_${SmbContextProviderContract.smbCacheKey(fileItem.path)}.$ext",
-                )
-
-                SmbFile(fileItem.path, cifsContext).inputStream.use { input ->
-                    tempFile.outputStream().use { output ->
-                        input.copyTo(output, bufferSize = FileTypeUtils.IO_BUFFER_SIZE)
-                    }
-                }
-
-                val localFileItem = fileItem.copy(
-                    path = tempFile.absolutePath,
-                    uri = Uri.fromFile(tempFile),
-                    isRemote = false,
-                )
-                _uiState.update { state ->
-                    state.copy(
-                        downloadingPaths = state.downloadingPaths - fileItem.path,
-                        resolvedFiles = state.resolvedFiles + (fileItem.path to localFileItem),
-                    )
-                }
-            } catch (_: Exception) {
-                _uiState.update { it.copy(downloadingPaths = it.downloadingPaths - fileItem.path) }
-            }
-        }
-    }
 
     fun deleteFile(fileItem: FileItem) {
         viewModelScope.launch(ioDispatcher) {
