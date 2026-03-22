@@ -18,7 +18,18 @@ tasks.register("sanityCheck") {
     dependsOn(":app:connectedDebugAndroidTest")
 }
 
+// Root-level alias for :macrobenchmark:benchmarkCheck — avoids the verbose
+// "connectedBenchmarkBenchmarkAndroidTest" naming caused by the android.test
+// plugin combining module + target build type names (both called "benchmark").
 gradle.projectsEvaluated {
+    project(":macrobenchmark").tasks.findByName("benchmarkCheck")?.let { task ->
+        tasks.register("perfCheck") {
+            description = "Runs macrobenchmarks, collects results, compares, and generates a chart report"
+            group = "verification"
+            dependsOn(task)
+        }
+    }
+
     val appTasks = project(":app").tasks
     appTasks.named("test") { mustRunAfter(rootProject.tasks.named("spotlessApply")) }
 

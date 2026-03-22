@@ -128,11 +128,11 @@ The `macrobenchmark/` module measures startup and scroll performance:
 ### Running Benchmarks
 
 ```bash
-# All-in-one: run benchmarks, collect results, compare with previous run, open HTML chart
-./gradlew benchmarkCheck
+# All-in-one: run benchmarks, collect results, compare with previous run, generate HTML chart
+./gradlew perfCheck
 
 # Or run individual steps:
-./gradlew :macrobenchmark:connectedBenchmarkAndroidTest
+./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest
 
 cd benchmarks
 ./benchmark_result_collect.sh
