@@ -7,8 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.data.model.RecentFolder
 import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
+import com.jonecx.ibex.data.preferences.RecentFoldersPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
 import com.jonecx.ibex.data.repository.ClipboardOperation
@@ -73,6 +75,7 @@ val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().ab
 class FileExplorerViewModel @Inject constructor(
     private val repositoryFactory: FileRepositoryFactory,
     private val settingsPreferences: SettingsPreferencesContract,
+    private val recentFoldersPreferences: RecentFoldersPreferencesContract,
     private val fileTrashManager: FileTrashManager,
     private val fileMoveManager: FileMoveManager,
     private val clipboardManager: FileClipboardManager,
@@ -115,6 +118,9 @@ class FileExplorerViewModel @Inject constructor(
     )
     val uiState: StateFlow<FileExplorerUiState> = _uiState.asStateFlow()
 
+    private val _recentFolders = MutableStateFlow<List<RecentFolder>>(emptyList())
+    val recentFolders: StateFlow<List<RecentFolder>> = _recentFolders.asStateFlow()
+
     private var loadFilesJob: Job? = null
     private val scrollPositions = mutableMapOf<String, ScrollPosition>()
 
@@ -135,6 +141,9 @@ class FileExplorerViewModel @Inject constructor(
         }
         viewModelScope.launchCollect(clipboardManager.state, dispatcher) { clipboard ->
             _uiState.update { it.copy(clipboardOperation = clipboard.operation) }
+        }
+        viewModelScope.launchCollect(recentFoldersPreferences.recentFolders, dispatcher) { folders ->
+            _recentFolders.value = folders
         }
         viewModelScope.launchCollect(settingsPreferences.sortOption, dispatcher) { option ->
             _uiState.update { state ->
@@ -212,6 +221,7 @@ class FileExplorerViewModel @Inject constructor(
                     restoredScrollPosition = null,
                 ).dismissSearch()
             }
+            trackRecentFolder(fileItem.path, fileItem.name)
             loadFiles(fileItem.path)
         } else {
             _uiState.update { it.copy(selectedFile = fileItem) }
@@ -369,6 +379,39 @@ class FileExplorerViewModel @Inject constructor(
         viewModelScope.launch(dispatcher) {
             clipboardManager.paste(destDir)
             refreshFiles()
+        }
+    }
+
+    fun navigateToPath(path: String) {
+        val displayName = path.trimEnd('/').substringAfterLast('/')
+        _uiState.update {
+            it.copy(
+                navigationStack = listOf(it.rootPath, path),
+                selectedFile = null,
+                restoredScrollPosition = null,
+            ).dismissSearch()
+        }
+        trackRecentFolder(path, displayName)
+        loadFiles(path)
+    }
+
+    fun clearRecentFolders() {
+        viewModelScope.launch(dispatcher) {
+            recentFoldersPreferences.clearRecentFolders()
+        }
+    }
+
+    private fun trackRecentFolder(path: String, displayName: String) {
+        viewModelScope.launch(dispatcher) {
+            recentFoldersPreferences.addRecentFolder(
+                RecentFolder(
+                    path = path,
+                    displayName = displayName,
+                    timestamp = System.currentTimeMillis(),
+                    sourceType = sourceType.name,
+                    connectionId = connectionId,
+                ),
+            )
         }
     }
 }
