@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
@@ -65,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
+import com.jonecx.ibex.data.model.RecentFolder
 import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.ui.components.ConfirmationDialog
@@ -75,7 +77,9 @@ import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.explorer.components.FileDetailPane
 import com.jonecx.ibex.ui.explorer.components.FileGridItem
 import com.jonecx.ibex.ui.explorer.components.FileListItem
+import com.jonecx.ibex.ui.explorer.components.RecentFoldersBottomSheet
 import com.jonecx.ibex.ui.explorer.components.SortBottomSheet
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
@@ -110,6 +114,7 @@ fun FileExplorerScreen(
             AnimatedPane {
                 FileListPane(
                     uiState = uiState,
+                    recentFoldersFlow = viewModel.recentFolders,
                     onSaveScrollPosition = { index, offset ->
                         viewModel.saveScrollPosition(index, offset)
                     },
@@ -156,6 +161,8 @@ fun FileExplorerScreen(
                     onPaste = { viewModel.pasteFiles() },
                     onCancelClipboard = { viewModel.cancelClipboard() },
                     onSortOptionSelected = { viewModel.setSortOption(it) },
+                    onRecentFolderClick = { path -> viewModel.navigateToPath(path) },
+                    onClearRecentFolders = { viewModel.clearRecentFolders() },
                     onActivateSearch = { viewModel.activateSearch() },
                     onSearchQueryChanged = { viewModel.setSearchQuery(it) },
                     onClearSearch = { viewModel.clearSearch() },
@@ -185,6 +192,7 @@ fun FileExplorerScreen(
 @Composable
 private fun FileListPane(
     uiState: FileExplorerUiState,
+    recentFoldersFlow: StateFlow<List<RecentFolder>>,
     onSaveScrollPosition: (firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int) -> Unit,
     onFileClick: (FileItem) -> Unit,
     onFileLongClick: (FileItem) -> Unit,
@@ -197,6 +205,8 @@ private fun FileListPane(
     onPaste: () -> Unit,
     onCancelClipboard: () -> Unit,
     onSortOptionSelected: (SortOption) -> Unit,
+    onRecentFolderClick: (String) -> Unit,
+    onClearRecentFolders: () -> Unit,
     onActivateSearch: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
@@ -211,6 +221,7 @@ private fun FileListPane(
     var showRenameDialog by remember { mutableStateOf(false) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var showSortSheet by remember { mutableStateOf(false) }
+    var showRecentsSheet by remember { mutableStateOf(false) }
 
     val saveCurrentScrollPosition = {
         val (index, offset) = when (uiState.viewMode) {
@@ -270,6 +281,7 @@ private fun FileListPane(
                         onNavigateBack = onNavigateUp,
                         showBackButton = showBackButton,
                         actions = {
+                            RecentsAction { showRecentsSheet = true }
                             SearchAction(onClick = onActivateSearch)
                             SortAction { showSortSheet = true }
                             CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
@@ -431,6 +443,21 @@ private fun FileListPane(
                 onDismiss = { showSortSheet = false },
             )
         }
+
+        if (showRecentsSheet) {
+            val recentFolders by recentFoldersFlow.collectAsState()
+            RecentFoldersBottomSheet(
+                recentFolders = recentFolders,
+                onFolderClick = { folder ->
+                    showRecentsSheet = false
+                    onRecentFolderClick(folder.path)
+                },
+                onClear = {
+                    onClearRecentFolders()
+                },
+                onDismiss = { showRecentsSheet = false },
+            )
+        }
     }
 }
 
@@ -482,6 +509,16 @@ private fun SearchTopBar(
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+}
+
+@Composable
+private fun RecentsAction(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Filled.History,
+            contentDescription = stringResource(R.string.recent_folders),
+        )
     }
 }
 

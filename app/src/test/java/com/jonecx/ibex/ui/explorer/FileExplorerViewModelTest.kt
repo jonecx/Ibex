@@ -15,6 +15,7 @@ import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepository
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
+import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
@@ -45,6 +46,7 @@ class FileExplorerViewModelTest {
     private lateinit var fakeRepository: FakeFileRepository
     private lateinit var fakeFactory: FakeFileRepositoryFactory
     private lateinit var fakePreferences: FakeSettingsPreferences
+    private lateinit var fakeRecentFolders: FakeRecentFoldersPreferences
     private lateinit var fakeTrashManager: FakeFileTrashManager
     private lateinit var fakeMoveManager: FakeFileMoveManager
     private lateinit var fakeClipboardManager: FakeFileClipboardManager
@@ -59,6 +61,7 @@ class FileExplorerViewModelTest {
         fakeRepository = FakeFileRepository()
         fakeFactory = FakeFileRepositoryFactory(fakeRepository)
         fakePreferences = FakeSettingsPreferences()
+        fakeRecentFolders = FakeRecentFoldersPreferences()
         fakeTrashManager = FakeFileTrashManager()
         fakeMoveManager = FakeFileMoveManager()
         fakeClipboardManager = FakeFileClipboardManager(fakeMoveManager)
@@ -87,6 +90,7 @@ class FileExplorerViewModelTest {
         return FileExplorerViewModel(
             fakeFactory,
             fakePreferences,
+            fakeRecentFolders,
             fakeTrashManager,
             fakeMoveManager,
             fakeClipboardManager,
@@ -923,5 +927,92 @@ class FileExplorerViewModelTest {
         assertTrue(fakeMoveManager.movedFiles.isEmpty())
         assertFalse(fakeClipboardManager.state.value.hasContent)
         assertNull(viewModel.uiState.value.clipboardOperation)
+    }
+
+    // Recent folders tests
+
+    @Test
+    fun `navigateTo directory tracks recent folder`() = runTest {
+        val dir = testDirectoryFileItem("Documents", path = "$storagePath/Documents")
+        viewModel.navigateTo(dir)
+
+        val recents = fakeRecentFolders.currentRecents()
+        assertEquals(1, recents.size)
+        assertEquals("$storagePath/Documents", recents.first().path)
+        assertEquals("Documents", recents.first().displayName)
+        assertEquals(FileSourceType.LOCAL_STORAGE.name, recents.first().sourceType)
+    }
+
+    @Test
+    fun `navigateTo file does not track recent folder`() = runTest {
+        val file = testFileItem("photo.jpg")
+        viewModel.navigateTo(file)
+
+        assertTrue(fakeRecentFolders.currentRecents().isEmpty())
+    }
+
+    @Test
+    fun `navigateToPath updates state and tracks recent`() = runTest {
+        val path = "$storagePath/Pictures/Vacation"
+        viewModel.navigateToPath(path)
+
+        val state = viewModel.uiState.value
+        assertEquals(path, state.navigationStack.last())
+        assertEquals(2, state.navigationStack.size)
+
+        val recents = fakeRecentFolders.currentRecents()
+        assertEquals(1, recents.size)
+        assertEquals(path, recents.first().path)
+        assertEquals("Vacation", recents.first().displayName)
+    }
+
+    @Test
+    fun `navigateToPath clears search`() = runTest {
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("test")
+
+        viewModel.navigateToPath("$storagePath/Downloads")
+
+        assertFalse(viewModel.uiState.value.isSearchActive)
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `clearRecentFolders clears preferences`() = runTest {
+        val dir = testDirectoryFileItem("Music", path = "$storagePath/Music")
+        viewModel.navigateTo(dir)
+        assertFalse(fakeRecentFolders.currentRecents().isEmpty())
+
+        viewModel.clearRecentFolders()
+
+        assertTrue(fakeRecentFolders.currentRecents().isEmpty())
+    }
+
+    @Test
+    fun `recentFolders flow reflects preferences`() = runTest {
+        viewModel.recentFolders.test {
+            assertEquals(emptyList<Any>(), awaitItem())
+
+            val dir = testDirectoryFileItem("DCIM", path = "$storagePath/DCIM")
+            viewModel.navigateTo(dir)
+
+            val recents = awaitItem()
+            assertEquals(1, recents.size)
+            assertEquals("DCIM", recents.first().displayName)
+        }
+    }
+
+    @Test
+    fun `SMB navigateTo tracks recent with connectionId`() = runTest {
+        fakeRepository.filesToReturn = listOf(testRemoteDirectoryFileItem("share1"))
+        createSmbViewModel()
+
+        val dir = testRemoteDirectoryFileItem("projects")
+        viewModel.navigateTo(dir)
+
+        val recents = fakeRecentFolders.currentRecents()
+        assertEquals(1, recents.size)
+        assertEquals(FileSourceType.SMB.name, recents.first().sourceType)
+        assertEquals(TEST_SMB_CONNECTION_ID, recents.first().connectionId)
     }
 }

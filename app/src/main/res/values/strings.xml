@@ -125,6 +125,10 @@
     <string name="search">Search</string>
     <string name="search_hint">Search files…</string>
     <string name="search_no_results">No results found</string>
+    <!-- Recent Folders -->
+    <string name="recent_folders">Recent Folders</string>
+    <string name="recent_folders_empty">No recent folders yet</string>
+    <string name="recent_folders_clear">Clear</string>
     <!-- Sort -->
     <string name="sort">Sort</string>
     <string name="sort_by">Sort By</string>

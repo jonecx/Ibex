@@ -1,8 +1,10 @@
 package com.jonecx.ibex.di
 
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
+import com.jonecx.ibex.data.preferences.RecentFoldersPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
+import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import dagger.Module
 import dagger.Provides
@@ -40,4 +42,16 @@ object FakePreferencesModule {
     fun provideNetworkConnectionsPreferencesContract(
         fake: FakeNetworkConnectionsPreferences,
     ): NetworkConnectionsPreferencesContract = fake
+
+    @Provides
+    @Singleton
+    fun provideFakeRecentFoldersPreferences(): FakeRecentFoldersPreferences {
+        return FakeRecentFoldersPreferences()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecentFoldersPreferencesContract(
+        fake: FakeRecentFoldersPreferences,
+    ): RecentFoldersPreferencesContract = fake
 }
