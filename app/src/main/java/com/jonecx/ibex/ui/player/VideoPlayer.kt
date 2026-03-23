@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,10 +53,14 @@ fun VideoPlayer(
     onNext: (() -> Unit)? = null,
 ) {
     val playerFactory = LocalPlayerFactory.current
+    var savedPosition by rememberSaveable(fileItem.path) { mutableLongStateOf(0L) }
+    var savedPlayWhenReady by rememberSaveable(fileItem.path) { mutableStateOf(true) }
     val player = remember(fileItem.path) {
         playerFactory.create().apply {
             setMediaItem(MediaItem.fromUri(fileItem.uri))
             prepare()
+            seekTo(savedPosition)
+            playWhenReady = savedPlayWhenReady
         }
     }
 
@@ -73,6 +78,7 @@ fun VideoPlayer(
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
             currentPosition = player.currentPosition.coerceAtLeast(0L)
+            savedPosition = currentPosition
             delay(POSITION_UPDATE_INTERVAL_MS)
         }
     }
@@ -95,6 +101,8 @@ fun VideoPlayer(
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
                 currentPosition = player.currentPosition.coerceAtLeast(0L)
+                savedPosition = currentPosition
+                savedPlayWhenReady = player.playWhenReady
             }
         }
         player.addListener(listener)
