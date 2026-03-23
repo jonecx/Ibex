@@ -454,6 +454,41 @@ class VideoPlayerIntegrationTest {
     }
 
     @Test
+    fun playbackPositionRestoredAfterRecomposition() {
+        var showPlayer by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalPlayerFactory provides playerFactory) {
+                if (showPlayer) {
+                    VideoPlayer(
+                        fileItem = videoFileItems.first(),
+                        isActive = true,
+                    )
+                }
+            }
+        }
+
+        fun awaitPlaybackProgress() {
+            composeTestRule.awaitNode("Pause")
+            composeTestRule.waitUntil(timeoutMillis = PLAYBACK_TIMEOUT_MS) {
+                composeTestRule.onAllNodes(hasText("0:00"))
+                    .fetchSemanticsNodes()
+                    .size < 2
+            }
+        }
+
+        awaitPlaybackProgress()
+
+        composeTestRule.runOnUiThread { showPlayer = false }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.runOnUiThread { showPlayer = true }
+        composeTestRule.waitForIdle()
+
+        awaitPlaybackProgress()
+    }
+
+    @Test
     fun deleteConfirmRemovesFileFromPager() {
         var files by mutableStateOf(videoFileItems)
         composeTestRule.setContent {
