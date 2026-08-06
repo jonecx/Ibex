@@ -3,6 +3,7 @@ package com.jonecx.ibex
 import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import com.jonecx.azmaree.player.AzmareePlayers
 import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.di.appModules
 import com.jonecx.ibex.logging.AppLogger
@@ -28,4 +29,12 @@ class IbexApplication : Application(), ImageLoaderFactory {
     }
 
     override fun newImageLoader(): ImageLoader = imageLoader
+
+    // Video is a side feature here; hand Azmaree's pooled decoders back when the UI is hidden.
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
+            AzmareePlayers.release()
+        }
+    }
 }

@@ -18,8 +18,6 @@ import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
 import com.jonecx.ibex.ui.navigation.AppNavigation
 import com.jonecx.ibex.ui.permission.PermissionChecker
 import com.jonecx.ibex.ui.permission.PermissionScreen
-import com.jonecx.ibex.ui.player.LocalPlayerFactory
-import com.jonecx.ibex.ui.player.PlayerFactory
 import com.jonecx.ibex.ui.theme.IbexTheme
 import com.jonecx.ibex.ui.viewer.LocalMediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerArgs
@@ -35,8 +33,6 @@ class MainActivity : ComponentActivity() {
 
     private val fileImageRequestFactory: FileImageRequestFactory by inject()
 
-    private val playerFactory: PlayerFactory by inject()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -44,7 +40,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(
                 LocalFileImageRequestFactory provides fileImageRequestFactory,
-                LocalPlayerFactory provides playerFactory,
                 LocalMediaViewerArgs provides mediaViewerArgs,
             ) {
                 IbexTheme {

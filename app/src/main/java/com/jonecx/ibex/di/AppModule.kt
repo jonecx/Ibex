@@ -16,7 +16,6 @@ val appModules = listOf(
     cryptoModule,
     loggerModule,
     permissionModule,
-    playerModule,
     preferencesModule,
     imageLoaderModule,
     imageRequestModule,

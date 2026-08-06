@@ -133,10 +133,9 @@ dependencies {
     implementation(libs.jcifs.ng)
     testFixturesImplementation(libs.jcifs.ng)
 
-    // Media3 (ExoPlayer + Compose UI)
-    implementation(libs.media3.exoplayer)
-    implementation(libs.media3.ui.compose)
-    implementation(libs.media3.ui.compose.material3)
+    // Azmaree video player SDK + its SMB byte source (brings the player core + jcifs-ng transitively)
+    implementation(libs.azmaree.player)
+    implementation(libs.azmaree.source.smb)
 
     // Baseline Profile
     implementation(libs.profileinstaller)
@@ -149,7 +148,6 @@ dependencies {
     testFixturesImplementation(platform(libs.androidx.compose.bom))
     testFixturesImplementation(libs.androidx.compose.ui)
     testFixturesImplementation(libs.coil.compose)
-    testFixturesImplementation(libs.media3.exoplayer)
     testFixturesImplementation(libs.kotlinx.coroutines.test)
     testImplementation(testFixtures(project(":app")))
     testImplementation(libs.junit)

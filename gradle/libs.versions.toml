@@ -20,7 +20,7 @@ coroutines = "1.8.1"
 turbine = "1.1.0"
 robolectric = "4.12.2"
 screenshot = "0.0.1-alpha13"
-media3 = "1.9.2"
+azmaree = "0.2.0"
 benchmarkMacro = "1.5.0-alpha03"
 profileinstaller = "1.4.1"
 serialization = "1.7.3"
@@ -63,9 +63,9 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
-media3-ui-compose = { group = "androidx.media3", name = "media3-ui-compose", version.ref = "media3" }
-media3-ui-compose-material3 = { group = "androidx.media3", name = "media3-ui-compose-material3", version.ref = "media3" }
+# Azmaree video player SDK (bundles Media3/ExoPlayer internally); source-smb pulls the core + jcifs-ng transitively.
+azmaree-player = { group = "com.jonecx.media", name = "azmaree", version.ref = "azmaree" }
+azmaree-source-smb = { group = "com.jonecx.media", name = "azmaree-source-smb", version.ref = "azmaree" }
 benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacro" }
 profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }

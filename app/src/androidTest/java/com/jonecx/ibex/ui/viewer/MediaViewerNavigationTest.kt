@@ -2,6 +2,8 @@ package com.jonecx.ibex.ui.viewer
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -72,7 +74,8 @@ class MediaViewerNavigationTest : KoinTest {
         navigateTo("Downloads")
         tapFile("Headphone.mp4")
 
-        composeTestRule.onNodeWithText("Headphone.mp4").assertIsDisplayed()
+        // The viewer's top bar shows the name and Azmaree's controls repeat it as the player title, so match either.
+        composeTestRule.onAllNodesWithText("Headphone.mp4").onFirst().assertIsDisplayed()
         composeTestRule.onNodeWithText("2 / 2").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Close").assertIsDisplayed()
     }
