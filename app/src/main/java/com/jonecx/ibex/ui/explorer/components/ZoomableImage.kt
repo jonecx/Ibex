@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import coil.compose.AsyncImage
+import com.jonecx.azmaree.image.AzmareeImage
 import com.jonecx.ibex.data.model.FileItem
 
 @Composable
@@ -41,7 +41,7 @@ fun ZoomableImage(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
+        AzmareeImage(
             model = imageRequest,
             contentDescription = fileItem.name,
             modifier = Modifier

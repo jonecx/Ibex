@@ -12,7 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.jonecx.azmaree.image.LocalAzmareeImageEngine
 import com.jonecx.ibex.analytics.AnalyticsManager
+import com.jonecx.ibex.ui.explorer.components.CoilImageEngine
 import com.jonecx.ibex.ui.explorer.components.FileImageRequestFactory
 import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
 import com.jonecx.ibex.ui.navigation.AppNavigation
@@ -38,8 +40,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+            val imageEngine = remember { CoilImageEngine() }
             CompositionLocalProvider(
                 LocalFileImageRequestFactory provides fileImageRequestFactory,
+                LocalAzmareeImageEngine provides imageEngine,
                 LocalMediaViewerArgs provides mediaViewerArgs,
             ) {
                 IbexTheme {

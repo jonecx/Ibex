@@ -66,6 +66,8 @@ screenshot-validation-api = { group = "com.android.tools.screenshot", name = "sc
 # Azmaree video player SDK (bundles Media3/ExoPlayer internally); source-smb pulls the core + jcifs-ng transitively.
 azmaree-player = { group = "com.jonecx.media", name = "azmaree", version.ref = "azmaree" }
 azmaree-source-smb = { group = "com.jonecx.media", name = "azmaree-source-smb", version.ref = "azmaree" }
+# Engine-agnostic Compose image viewer; the engine (Coil here) is wired app-side, see CoilImageEngine.
+azmaree-image = { group = "com.jonecx.media", name = "azmaree-image", version.ref = "azmaree" }
 benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacro" }
 profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }

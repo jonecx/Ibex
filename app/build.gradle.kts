@@ -136,6 +136,7 @@ dependencies {
     // Azmaree video player SDK + its SMB byte source (brings the player core + jcifs-ng transitively)
     implementation(libs.azmaree.player)
     implementation(libs.azmaree.source.smb)
+    implementation(libs.azmaree.image)
 
     // Baseline Profile
     implementation(libs.profileinstaller)

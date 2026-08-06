@@ -17,6 +17,8 @@ plugins {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // Azmaree SDK modules are consumed from mavenLocal until they publish to a public repo.
+        mavenLocal()
         google()
         mavenCentral()
     }

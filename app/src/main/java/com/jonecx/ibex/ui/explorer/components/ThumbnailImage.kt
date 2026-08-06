@@ -20,8 +20,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
+import com.jonecx.azmaree.image.AzmareeImage
+import com.jonecx.azmaree.image.model.AzmareeImageState
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.ui.theme.AlphaSecondary
 import com.jonecx.ibex.ui.util.previewPlaceholder
@@ -44,7 +44,7 @@ fun ThumbnailImage(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
+        AzmareeImage(
             model = imageRequest,
             contentDescription = fileItem.name,
             modifier = Modifier
@@ -53,7 +53,7 @@ fun ThumbnailImage(
                 .previewPlaceholder(fileItem.fileType),
             contentScale = contentScale,
             onState = { state ->
-                if (state is AsyncImagePainter.State.Error) {
+                if (state is AzmareeImageState.Error) {
                     onError?.invoke()
                 }
             },
