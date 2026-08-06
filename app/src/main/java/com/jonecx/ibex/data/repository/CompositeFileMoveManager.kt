@@ -1,18 +1,14 @@
 package com.jonecx.ibex.data.repository
 
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.util.FileTypeUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class CompositeFileMoveManager @Inject constructor(
+class CompositeFileMoveManager(
     private val handlers: Set<@JvmSuppressWildcards ProtocolFileHandler>,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : FileMoveManager {
 
     private fun handlerFor(path: String): ProtocolFileHandler =

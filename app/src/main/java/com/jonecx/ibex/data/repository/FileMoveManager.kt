@@ -1,7 +1,6 @@
 package com.jonecx.ibex.data.repository
 
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -10,8 +9,6 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 
 enum class ClipboardOperation {
     COPY,
@@ -33,9 +30,8 @@ interface ProtocolFileHandler : FileMoveManager {
     suspend fun listFiles(path: String): List<FileItem>
 }
 
-@Singleton
-class FileSystemMoveManager @Inject constructor(
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+class FileSystemMoveManager(
+    private val ioDispatcher: CoroutineDispatcher,
 ) : ProtocolFileHandler {
 
     override fun canHandle(path: String): Boolean = !path.contains("://")

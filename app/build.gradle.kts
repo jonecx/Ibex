@@ -3,8 +3,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.screenshot)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.baselineprofile)
@@ -32,7 +30,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "com.jonecx.ibex.HiltTestRunner"
+        testInstrumentationRunner = "com.jonecx.ibex.IbexTestRunner"
+        // Resets the process-global Koin fakes before each instrumented test.
+        testInstrumentationRunnerArguments["listener"] = "com.jonecx.ibex.FakeResetRunListener"
 
         buildConfigField("String", "POSTHOG_API_KEY", "\"${localProperties.getProperty("POSTHOG_API_KEY", localProperties.getProperty("posthog.apiKey", ""))}\"")
         buildConfigField("String", "POSTHOG_HOST", "\"${localProperties.getProperty("POSTHOG_HOST", localProperties.getProperty("posthog.host", "https://us.i.posthog.com"))}\"")
@@ -82,10 +82,6 @@ composeCompiler {
     stabilityConfigurationFile = project.layout.projectDirectory.file("compose-stability.conf")
 }
 
-ksp {
-    arg("correctErrorTypes", "true")
-}
-
 baselineProfile {
     dexLayoutOptimization = true
 }
@@ -119,11 +115,11 @@ dependencies {
     // Material Icons Extended
     implementation(libs.androidx.compose.material.icons.extended)
     
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.hilt.navigation.compose)
-    
+    // Koin
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+
     // DataStore
     implementation(libs.datastore.preferences)
 
@@ -165,9 +161,9 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(platform(libs.koin.bom))
+    androidTestImplementation(libs.koin.test.junit4)
     androidTestImplementation(libs.kotlinx.coroutines.test)
-    kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     screenshotTestImplementation(testFixtures(project(":app")))

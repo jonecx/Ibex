@@ -4,26 +4,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.repository.FileTrashManager
-import com.jonecx.ibex.di.IoDispatcher
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class MediaViewerUiState(
     val viewableFiles: List<FileItem> = emptyList(),
     val initialIndex: Int = 0,
 )
 
-@HiltViewModel
-class MediaViewerViewModel @Inject constructor(
+class MediaViewerViewModel(
     private val mediaViewerArgs: MediaViewerArgs,
     private val fileTrashManager: FileTrashManager,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(

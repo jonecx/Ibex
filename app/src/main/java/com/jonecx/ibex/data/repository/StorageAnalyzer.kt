@@ -9,7 +9,6 @@ import android.os.storage.StorageManager
 import android.provider.MediaStore
 import com.jonecx.ibex.data.model.StorageBreakdown
 import com.jonecx.ibex.data.model.StorageCategory
-import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.ui.theme.SourceAppsColor
 import com.jonecx.ibex.ui.theme.SourceAudioColor
 import com.jonecx.ibex.ui.theme.SourceDocumentsColor
@@ -18,13 +17,10 @@ import com.jonecx.ibex.ui.theme.SourceStorageColor
 import com.jonecx.ibex.ui.theme.SourceVideosColor
 import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.MediaStoreUtils
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 
 interface StorageAnalyzer {
     suspend fun analyze(): StorageBreakdown
@@ -39,10 +35,9 @@ interface StorageAnalyzer {
     }
 }
 
-@Singleton
-class MediaStoreStorageAnalyzer @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+class MediaStoreStorageAnalyzer(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : StorageAnalyzer {
 
     override suspend fun analyze(): StorageBreakdown = withContext(ioDispatcher) {

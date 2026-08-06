@@ -2,19 +2,9 @@ package com.jonecx.ibex.di
 
 import com.jonecx.ibex.data.crypto.CryptoManager
 import com.jonecx.ibex.data.crypto.TinkCryptoManager
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class CryptoModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindCryptoManager(
-        impl: TinkCryptoManager,
-    ): CryptoManager
+val cryptoModule = module {
+    single<CryptoManager> { TinkCryptoManager(androidContext()) }
 }

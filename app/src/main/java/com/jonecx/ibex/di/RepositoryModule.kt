@@ -21,15 +21,10 @@ import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.data.repository.SmbFileMoveManager
 import com.jonecx.ibex.data.repository.SmbFileRepository
 import com.jonecx.ibex.data.repository.TrashRepository
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import dagger.multibindings.IntoSet
 import kotlinx.coroutines.CoroutineDispatcher
-import javax.inject.Inject
-import javax.inject.Singleton
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.bind
+import org.koin.dsl.module
 
 interface FileRepositoryFactory {
     fun createLocalFileRepository(): FileRepository
@@ -40,10 +35,9 @@ interface FileRepositoryFactory {
     fun createSmbFileRepository(connectionId: String): FileRepository
 }
 
-@Singleton
-class RealFileRepositoryFactory @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+class RealFileRepositoryFactory(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
     private val networkPreferences: NetworkConnectionsPreferencesContract,
     private val smbContextProvider: SmbContextProviderContract,
 ) : FileRepositoryFactory {
@@ -62,49 +56,19 @@ class RealFileRepositoryFactory @Inject constructor(
         SmbFileRepository(connectionId, networkPreferences, ioDispatcher, smbContextProvider)
 }
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+val repositoryModule = module {
+    single<FileRepositoryFactory> {
+        RealFileRepositoryFactory(androidContext(), get(IoDispatcher), get(), get())
+    }
+    single<FileTrashManager> { MediaStoreFileTrashManager(androidContext(), get(IoDispatcher)) }
 
-    @Binds
-    @Singleton
-    abstract fun bindFileRepositoryFactory(
-        impl: RealFileRepositoryFactory,
-    ): FileRepositoryFactory
+    // ProtocolFileHandler multibinding: each handler is collected via getAll() below.
+    single { FileSystemMoveManager(get(IoDispatcher)) } bind ProtocolFileHandler::class
+    single { SmbFileMoveManager(get(), get(IoDispatcher)) } bind ProtocolFileHandler::class
+    single<FileMoveManager> {
+        CompositeFileMoveManager(getAll<ProtocolFileHandler>().toSet(), get(IoDispatcher))
+    }
 
-    @Binds
-    @Singleton
-    abstract fun bindFileTrashManager(
-        impl: MediaStoreFileTrashManager,
-    ): FileTrashManager
-
-    @Binds
-    @Singleton
-    abstract fun bindFileMoveManager(
-        impl: CompositeFileMoveManager,
-    ): FileMoveManager
-
-    @Binds
-    @IntoSet
-    abstract fun bindLocalFileHandler(
-        impl: FileSystemMoveManager,
-    ): ProtocolFileHandler
-
-    @Binds
-    @IntoSet
-    abstract fun bindSmbFileHandler(
-        impl: SmbFileMoveManager,
-    ): ProtocolFileHandler
-
-    @Binds
-    @Singleton
-    abstract fun bindFileClipboardManager(
-        impl: DefaultFileClipboardManager,
-    ): FileClipboardManager
-
-    @Binds
-    @Singleton
-    abstract fun bindSmbContextProvider(
-        impl: SmbContextProvider,
-    ): SmbContextProviderContract
+    single<FileClipboardManager> { DefaultFileClipboardManager(get()) }
+    single<SmbContextProviderContract> { SmbContextProvider() }
 }

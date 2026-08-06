@@ -5,21 +5,16 @@ import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.di.IoDispatcher
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 interface FileTrashManager {
     suspend fun trashFile(fileItem: FileItem): Boolean
 }
 
-@Singleton
-class MediaStoreFileTrashManager @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+class MediaStoreFileTrashManager(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : FileTrashManager {
 
     override suspend fun trashFile(fileItem: FileItem): Boolean = withContext(ioDispatcher) {

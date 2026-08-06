@@ -12,17 +12,13 @@ import com.jonecx.ibex.data.model.SortDirection
 import com.jonecx.ibex.data.model.SortField
 import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-@Singleton
-class SettingsPreferences @Inject constructor(
-    @ApplicationContext private val context: Context,
+class SettingsPreferences(
+    private val context: Context,
 ) : SettingsPreferencesContract {
     private val dataStore = context.dataStore
 

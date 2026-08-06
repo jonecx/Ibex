@@ -38,13 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.IbexTopAppBar
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +54,7 @@ fun NetworkConnectionsScreen(
     onAddConnection: () -> Unit,
     onEditConnection: (NetworkConnection) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: NetworkConnectionsViewModel = hiltViewModel(),
+    viewModel: NetworkConnectionsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var connectionToDelete by remember { mutableStateOf<NetworkConnection?>(null) }

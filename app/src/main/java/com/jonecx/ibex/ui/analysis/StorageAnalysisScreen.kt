@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.StorageBreakdown
 import com.jonecx.ibex.data.repository.StorageAnalyzer.Companion.CATEGORY_APPS
@@ -37,12 +36,13 @@ import com.jonecx.ibex.ui.components.PieChart
 import com.jonecx.ibex.ui.components.PieChartSegment
 import com.jonecx.ibex.ui.theme.GrayDark
 import com.jonecx.ibex.util.formatFileSize
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StorageAnalysisScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: StorageAnalysisViewModel = hiltViewModel(),
+    viewModel: StorageAnalysisViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

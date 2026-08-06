@@ -57,8 +57,7 @@ Dependencies are managed via a Gradle version catalog (`gradle/libs.versions.tom
 | Material 3 Adaptive | 1.1.0 | Adaptive layouts |
 | Navigation Compose | 2.8.4 | Screen navigation |
 | Lifecycle | 2.10.0 | ViewModel + lifecycle-aware components |
-| Hilt | 2.59.2 | Dependency injection |
-| KSP | 2.2.10-2.0.2 | Kotlin Symbol Processing (for Hilt) |
+| Koin | 4.1.0 | Dependency injection (`koin-android`, `koin-androidx-compose`; KMP-ready) |
 
 ### Media & Networking
 
@@ -93,7 +92,7 @@ Dependencies are managed via a Gradle version catalog (`gradle/libs.versions.tom
 | Coroutines Test | 1.8.1 | `TestDispatcher` + `runTest` |
 | Espresso | 3.7.0 | UI test assertions |
 | Compose UI Test | (BOM) | Compose test rules |
-| Hilt Testing | 2.59.2 | `@HiltAndroidTest` support |
+| Koin Test | 4.1.0 | `koin-test-junit4` for instrumented DI |
 
 ### Build Quality
 

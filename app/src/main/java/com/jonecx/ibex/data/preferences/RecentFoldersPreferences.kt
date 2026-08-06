@@ -7,13 +7,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.jonecx.ibex.data.model.RecentFolder
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
-import javax.inject.Singleton
 
 private val Context.recentFoldersDataStore: DataStore<Preferences> by preferencesDataStore(
     name = STORE_NAME,
@@ -21,9 +18,8 @@ private val Context.recentFoldersDataStore: DataStore<Preferences> by preference
 
 private const val STORE_NAME = "recent_folders"
 
-@Singleton
-class RecentFoldersPreferences @Inject constructor(
-    @ApplicationContext private val context: Context,
+class RecentFoldersPreferences(
+    private val context: Context,
 ) : RecentFoldersPreferencesContract {
 
     private val dataStore = context.recentFoldersDataStore

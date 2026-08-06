@@ -2,11 +2,8 @@ package com.jonecx.ibex.analytics
 
 import android.util.Log
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-open class AnalyticsTree @Inject constructor(
+open class AnalyticsTree(
     private val analyticsManager: AnalyticsManager,
 ) : Timber.Tree() {
 

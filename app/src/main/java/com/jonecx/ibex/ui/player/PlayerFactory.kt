@@ -13,9 +13,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.util.FileTypeUtils
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 interface PlayerFactory {
     fun create(): Player
@@ -25,9 +22,8 @@ val LocalPlayerFactory = staticCompositionLocalOf<PlayerFactory> {
     error("No PlayerFactory provided")
 }
 
-@Singleton
-class ExoPlayerFactory @Inject constructor(
-    @ApplicationContext private val context: Context,
+class ExoPlayerFactory(
+    private val context: Context,
     smbContextProvider: SmbContextProviderContract,
 ) : PlayerFactory {
 

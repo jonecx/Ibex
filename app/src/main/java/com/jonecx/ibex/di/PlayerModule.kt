@@ -2,19 +2,9 @@ package com.jonecx.ibex.di
 
 import com.jonecx.ibex.ui.player.ExoPlayerFactory
 import com.jonecx.ibex.ui.player.PlayerFactory
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class PlayerModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindPlayerFactory(
-        impl: ExoPlayerFactory,
-    ): PlayerFactory
+val playerModule = module {
+    single<PlayerFactory> { ExoPlayerFactory(androidContext(), get()) }
 }

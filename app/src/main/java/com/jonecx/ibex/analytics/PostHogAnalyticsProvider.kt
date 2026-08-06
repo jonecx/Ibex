@@ -3,21 +3,18 @@ package com.jonecx.ibex.analytics
 import android.content.Context
 import com.jonecx.ibex.BuildConfig
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
-import com.jonecx.ibex.di.ApplicationScope
 import com.jonecx.ibex.logging.AppLogger
 import com.posthog.PostHog
 import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.inject.Inject
 
-class PostHogAnalyticsProvider @Inject constructor(
-    @ApplicationContext private val context: Context,
+class PostHogAnalyticsProvider(
+    private val context: Context,
     private val settingsPreferences: SettingsPreferencesContract,
-    @ApplicationScope private val scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val logger: AppLogger,
 ) : AnalyticsProvider {
 

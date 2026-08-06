@@ -23,26 +23,19 @@ import com.jonecx.ibex.ui.player.PlayerFactory
 import com.jonecx.ibex.ui.theme.IbexTheme
 import com.jonecx.ibex.ui.viewer.LocalMediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerArgs
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var permissionChecker: PermissionChecker
+    private val permissionChecker: PermissionChecker by inject()
 
-    @Inject
-    lateinit var analyticsManager: AnalyticsManager
+    private val analyticsManager: AnalyticsManager by inject()
 
-    @Inject
-    lateinit var mediaViewerArgs: MediaViewerArgs
+    private val mediaViewerArgs: MediaViewerArgs by inject()
 
-    @Inject
-    lateinit var fileImageRequestFactory: FileImageRequestFactory
+    private val fileImageRequestFactory: FileImageRequestFactory by inject()
 
-    @Inject
-    lateinit var playerFactory: PlayerFactory
+    private val playerFactory: PlayerFactory by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

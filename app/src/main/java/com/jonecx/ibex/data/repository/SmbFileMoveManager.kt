@@ -1,7 +1,6 @@
 package com.jonecx.ibex.data.repository
 
 import com.jonecx.ibex.data.model.FileItem
-import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import jcifs.smb.SmbFile
@@ -11,14 +10,11 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.InputStream
 import java.io.OutputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.coroutines.coroutineContext
 
-@Singleton
-class SmbFileMoveManager @Inject constructor(
+class SmbFileMoveManager(
     private val smbContextProvider: SmbContextProviderContract,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : ProtocolFileHandler {
 
     override fun canHandle(path: String): Boolean = path.startsWith(FileTypeUtils.SMB_SCHEME_PREFIX)

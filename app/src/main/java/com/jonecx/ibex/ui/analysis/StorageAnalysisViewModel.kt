@@ -4,15 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.StorageBreakdown
 import com.jonecx.ibex.data.repository.StorageAnalyzer
-import com.jonecx.ibex.di.MainDispatcher
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class StorageAnalysisUiState(
     val isLoading: Boolean = true,
@@ -20,10 +17,9 @@ data class StorageAnalysisUiState(
     val error: Throwable? = null,
 )
 
-@HiltViewModel
-class StorageAnalysisViewModel @Inject constructor(
+class StorageAnalysisViewModel(
     private val storageAnalyzer: StorageAnalyzer,
-    @MainDispatcher private val dispatcher: CoroutineDispatcher,
+    private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StorageAnalysisUiState())

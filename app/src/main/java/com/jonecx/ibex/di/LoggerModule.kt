@@ -2,17 +2,9 @@ package com.jonecx.ibex.di
 
 import com.jonecx.ibex.logging.AppLogger
 import com.jonecx.ibex.logging.TimberLogger
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class LoggerModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindAppLogger(impl: TimberLogger): AppLogger
+val loggerModule = module {
+    // Lazy tree resolution breaks the logger <-> analytics cycle at construction time.
+    single<AppLogger> { TimberLogger { get() } }
 }

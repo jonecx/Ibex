@@ -9,13 +9,12 @@ import coil.request.videoFrameMillis
 import coil.size.Size
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.util.FileTypeUtils
-import javax.inject.Inject
 
 interface FileImageRequestFactory {
     fun create(context: Context, fileItem: FileItem, fullSize: Boolean = false): ImageRequest
 }
 
-class DefaultFileImageRequestFactory @Inject constructor() : FileImageRequestFactory {
+class DefaultFileImageRequestFactory() : FileImageRequestFactory {
     override fun create(context: Context, fileItem: FileItem, fullSize: Boolean): ImageRequest {
         return ImageRequest.Builder(context)
             .data(fileItem.path)

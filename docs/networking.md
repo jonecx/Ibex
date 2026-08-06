@@ -63,8 +63,7 @@ The architecture is designed so new protocols (FTP, WebDAV, etc.) can be added w
 ### 1. Implement `ProtocolFileHandler`
 
 ```kotlin
-@Singleton
-class FtpFileMoveManager @Inject constructor(
+class FtpFileMoveManager(
     // ... FTP-specific dependencies
 ) : ProtocolFileHandler {
     override fun canHandle(path: String): Boolean = path.startsWith("ftp://")
@@ -82,13 +81,12 @@ class FtpFileMoveManager @Inject constructor(
 ### 2. Register in `RepositoryModule`
 
 ```kotlin
-@Binds @IntoSet
-abstract fun bindFtpHandler(impl: FtpFileMoveManager): ProtocolFileHandler
+single { FtpFileMoveManager(/* ... */) } bind ProtocolFileHandler::class
 ```
 
 ### 3. Done
 
-`CompositeFileMoveManager` automatically discovers the new handler via Dagger multibindings. Cross-protocol transfers (e.g., FTP to SMB) work immediately through the streaming bridge.
+`CompositeFileMoveManager` automatically discovers the new handler via Koin's `getAll<ProtocolFileHandler>()`. Cross-protocol transfers (e.g., FTP to SMB) work immediately through the streaming bridge.
 
 ### Optional: Video Streaming
 

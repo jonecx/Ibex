@@ -20,9 +20,7 @@ import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.di.FileRepositoryFactory
-import com.jonecx.ibex.di.MainDispatcher
 import com.jonecx.ibex.util.launchCollect
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -34,7 +32,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
-import javax.inject.Inject
 
 @Immutable
 data class ScrollPosition(val firstVisibleItemIndex: Int = 0, val firstVisibleItemScrollOffset: Int = 0)
@@ -71,8 +68,7 @@ data class FileExplorerUiState(
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
 
-@HiltViewModel
-class FileExplorerViewModel @Inject constructor(
+class FileExplorerViewModel(
     private val repositoryFactory: FileRepositoryFactory,
     private val settingsPreferences: SettingsPreferencesContract,
     private val recentFoldersPreferences: RecentFoldersPreferencesContract,
@@ -80,7 +76,7 @@ class FileExplorerViewModel @Inject constructor(
     private val fileMoveManager: FileMoveManager,
     private val clipboardManager: FileClipboardManager,
     savedStateHandle: SavedStateHandle,
-    @MainDispatcher private val dispatcher: CoroutineDispatcher,
+    private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     companion object {

@@ -7,28 +7,20 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.fixtures.FakeStorageAnalyzer
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import javax.inject.Inject
+import org.koin.test.KoinTest
+import org.koin.test.inject
 
-@HiltAndroidTest
-class StorageAnalysisScreenTest {
+class StorageAnalysisScreenTest : KoinTest {
 
-    @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-    @Inject
-    lateinit var fakeAnalyzer: FakeStorageAnalyzer
+    private val fakeAnalyzer: FakeStorageAnalyzer by inject()
 
     @Before
     fun setup() {
-        hiltRule.inject()
         fakeAnalyzer.reset()
     }
 

@@ -2,19 +2,8 @@ package com.jonecx.ibex.di
 
 import com.jonecx.ibex.ui.permission.PermissionChecker
 import com.jonecx.ibex.ui.permission.RealPermissionChecker
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class PermissionModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindPermissionChecker(
-        impl: RealPermissionChecker,
-    ): PermissionChecker
+val permissionModule = module {
+    single<PermissionChecker> { RealPermissionChecker() }
 }

@@ -12,28 +12,20 @@ import com.jonecx.ibex.fixtures.NetworkConnectionFixtures.cloudConnection
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures.ftpConnection
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures.smbConnection
 import com.jonecx.ibex.util.runOnUiThreadBlocking
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import javax.inject.Inject
+import org.koin.test.KoinTest
+import org.koin.test.inject
 
-@HiltAndroidTest
-class NetworkConnectionsScreenTest {
+class NetworkConnectionsScreenTest : KoinTest {
 
-    @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-    @Inject
-    lateinit var fakePreferences: FakeNetworkConnectionsPreferences
+    private val fakePreferences: FakeNetworkConnectionsPreferences by inject()
 
     @Before
     fun setup() {
-        hiltRule.inject()
         fakePreferences.reset()
     }
 

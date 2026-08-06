@@ -52,7 +52,7 @@ JVM-based tests using JUnit 4, Robolectric (for Android framework APIs), Turbine
 
 ## Instrumented Tests (`app/src/androidTest/`)
 
-On-device tests using Compose Test Rules, Hilt testing, and Espresso.
+On-device tests using Compose Test Rules, Koin test (`koin-test-junit4`), and Espresso.
 
 ### Test Coverage
 
@@ -69,9 +69,9 @@ On-device tests using Compose Test Rules, Hilt testing, and Espresso.
 | `data/repository/` | `FileOperationsIntegrationTest` (move, copy, rename, create folder, delete with real filesystem)              |
 | `util/`            | `FormatUtilsInstrumentedTest`, `MediaStoreUtilsInstrumentedTest`                                              |
 
-### Hilt Test Configuration
+### Koin Test Configuration
 
-Instrumented tests use `HiltTestRunner` (configured in `build.gradle.kts` as `testInstrumentationRunner`). Fake modules in `app/src/androidTest/java/com/jonecx/ibex/di/` replace production bindings with test doubles.
+`IbexTestRunner` (set as `testInstrumentationRunner` in `build.gradle.kts`) swaps in `IbexTestApplication`, which starts one process-wide Koin graph from `testModules` — the production `appModules` plus `testOverridesModule`, whose fake definitions override real bindings. Test classes implement `KoinTest` and resolve fakes with `by inject()`. Because that graph is process-global (unlike Hilt's per-test component), `FakeResetRunListener` resets the mutable fakes before every test to keep them isolated.
 
 ## Test Fixtures (`app/src/testFixtures/`)
 

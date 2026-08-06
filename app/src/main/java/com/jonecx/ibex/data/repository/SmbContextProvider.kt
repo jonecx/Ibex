@@ -2,8 +2,6 @@ package com.jonecx.ibex.data.repository
 
 import jcifs.CIFSContext
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
-import javax.inject.Singleton
 
 interface SmbContextProviderContract {
     fun register(host: String, context: CIFSContext)
@@ -15,8 +13,7 @@ interface SmbContextProviderContract {
     }
 }
 
-@Singleton
-class SmbContextProvider @Inject constructor() : SmbContextProviderContract {
+class SmbContextProvider() : SmbContextProviderContract {
 
     private val contexts = ConcurrentHashMap<String, CIFSContext>()
 

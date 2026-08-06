@@ -8,28 +8,20 @@ import androidx.compose.ui.test.performClick
 import coil.Coil
 import coil.ImageLoader
 import com.jonecx.ibex.MainActivity
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import javax.inject.Inject
+import org.koin.test.KoinTest
+import org.koin.test.inject
 
-@HiltAndroidTest
-class MediaViewerNavigationTest {
+class MediaViewerNavigationTest : KoinTest {
 
-    @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-    @Inject
-    lateinit var imageLoader: ImageLoader
+    private val imageLoader: ImageLoader by inject()
 
     @Before
     fun setup() {
-        hiltRule.inject()
         Coil.setImageLoader(imageLoader)
     }
 

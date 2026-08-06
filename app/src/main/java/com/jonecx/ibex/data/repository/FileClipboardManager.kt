@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import javax.inject.Inject
-import javax.inject.Singleton
 
 data class ClipboardState(
     val files: List<FileItem> = emptyList(),
@@ -25,8 +23,7 @@ interface FileClipboardManager {
     suspend fun paste(destinationDir: String): Boolean
 }
 
-@Singleton
-open class DefaultFileClipboardManager @Inject constructor(
+open class DefaultFileClipboardManager(
     private val fileMoveManager: FileMoveManager,
 ) : FileClipboardManager {
 

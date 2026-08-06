@@ -3,14 +3,10 @@ package com.jonecx.ibex.analytics
 import android.content.Context
 import androidx.core.content.edit
 import com.jonecx.ibex.logging.AppLogger
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class AnalyticsManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+class AnalyticsManager(
+    private val context: Context,
     private val analyticsProvider: AnalyticsProvider,
     private val logger: AppLogger,
 ) {

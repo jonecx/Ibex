@@ -2,15 +2,13 @@ package com.jonecx.ibex.logging
 
 import com.jonecx.ibex.analytics.AnalyticsTree
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Provider
 
-class TimberLogger @Inject constructor(
-    private val analyticsTree: Provider<AnalyticsTree>,
+class TimberLogger(
+    private val analyticsTree: () -> AnalyticsTree,
 ) : AppLogger {
 
     override fun initialize() {
-        Timber.plant(analyticsTree.get())
+        Timber.plant(analyticsTree())
     }
 
     override fun d(message: String) = Timber.d(message)

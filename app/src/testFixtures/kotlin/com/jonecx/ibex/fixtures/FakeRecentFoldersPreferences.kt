@@ -22,4 +22,8 @@ class FakeRecentFoldersPreferences : RecentFoldersPreferencesContract {
     }
 
     fun currentRecents(): List<RecentFolder> = _recentFolders.value
+
+    fun reset() {
+        _recentFolders.value = emptyList()
+    }
 }

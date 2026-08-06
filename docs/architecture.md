@@ -1,6 +1,6 @@
 # Architecture
 
-Ibex follows **MVVM** with a clean separation between UI, ViewModel, and data layers. All cross-cutting concerns are managed through **Dagger Hilt** constructor injection.
+Ibex follows **MVVM** with a clean separation between UI, ViewModel, and data layers. All cross-cutting concerns are managed through **Koin** constructor injection (chosen over Hilt for Kotlin Multiplatform readiness).
 
 ## Layers
 
@@ -15,8 +15,8 @@ Ibex follows **MVVM** with a clean separation between UI, ViewModel, and data la
 │  Data Layer                                 │
 │  Repositories, Preferences, Crypto          │
 ├─────────────────────────────────────────────┤
-│  DI Layer (Hilt Modules)                    │
-│  11 modules binding interfaces to impls     │
+│  DI Layer (Koin Modules)                    │
+│  13 modules binding interfaces to impls     │
 └─────────────────────────────────────────────┘
 ```
 
@@ -34,7 +34,7 @@ Key screens:
 
 ### ViewModel Layer
 
-Each screen has a dedicated `@HiltViewModel`. ViewModels expose `StateFlow<UiState>` and accept user actions as function calls.
+Each screen has a dedicated ViewModel wired via Koin's `viewModel { }` DSL (resolved with `koinViewModel()` at the call site, with `SavedStateHandle` injected automatically). ViewModels expose `StateFlow<UiState>` and accept user actions as function calls.
 
 | ViewModel | Responsibilities |
 |---|---|
@@ -73,32 +73,38 @@ Each screen has a dedicated `@HiltViewModel`. ViewModels expose `StateFlow<UiSta
 
 ## Dependency Injection
 
-11 Hilt modules in `di/`:
+13 Koin modules in `di/`, aggregated into the `appModules` list and started in `IbexApplication.onCreate` via `startKoin`:
 
-| Module | Bindings |
+| Module | Definitions |
 |---|---|
-| `RepositoryModule` | File repositories, move managers (multibindings), clipboard, trash |
+| `RepositoryModule` | File repositories, move managers (multibinding), clipboard, trash |
+| `ViewModelModule` | The 5 screen ViewModels (`viewModel { }`, SavedStateHandle-aware) |
 | `PlayerModule` | `PlayerFactory` -> `ExoPlayerFactory` |
 | `ImageLoaderModule` | Coil `ImageLoader` with SMB fetcher |
 | `ImageRequestModule` | `FileImageRequestFactory` |
 | `PreferencesModule` | Settings + network connection preferences |
 | `CryptoModule` | `CryptoManager` -> `TinkCryptoManager` |
-| `DispatcherModule` | `@IoDispatcher`, `@DefaultDispatcher`, `@MainDispatcher` |
-| `AnalyticsModule` | `AnalyticsProvider` -> `PostHogAnalyticsProvider` |
+| `DispatcherModule` | IO / Main / Default dispatchers + application scope (named qualifiers) |
+| `AnalyticsModule` | `AnalyticsProvider` -> `PostHogAnalyticsProvider`, `AnalyticsManager`, `AnalyticsTree` |
 | `LoggerModule` | `AppLogger` -> `TimberLogger` |
 | `PermissionModule` | `PermissionChecker` |
 | `StorageAnalyzerModule` | `StorageAnalyzer` -> `MediaStoreStorageAnalyzer` |
+| `AppModule` | Shared `MediaViewerArgs` holder + the `appModules` aggregate |
 
 ### Protocol Handler Multibindings
 
-`ProtocolFileHandler` implementations are registered via `@Binds @IntoSet`:
+`ProtocolFileHandler` implementations are each bound to the `ProtocolFileHandler` type and collected with `getAll()`:
 
 ```kotlin
-@Binds @IntoSet fun bindFileSystem(impl: FileSystemMoveManager): ProtocolFileHandler
-@Binds @IntoSet fun bindSmb(impl: SmbFileMoveManager): ProtocolFileHandler
+single { FileSystemMoveManager(get(IoDispatcher)) } bind ProtocolFileHandler::class
+single { SmbFileMoveManager(get(), get(IoDispatcher)) } bind ProtocolFileHandler::class
+
+single<FileMoveManager> {
+    CompositeFileMoveManager(getAll<ProtocolFileHandler>().toSet(), get(IoDispatcher))
+}
 ```
 
-`CompositeFileMoveManager` receives `Set<ProtocolFileHandler>` and routes operations by calling `canHandle(path)` on each handler. Cross-protocol transfers (e.g., SMB to local) are handled via streaming.
+`CompositeFileMoveManager` receives the full `Set<ProtocolFileHandler>` (via `getAll()`) and routes operations by calling `canHandle(path)` on each handler. Cross-protocol transfers (e.g., SMB to local) are handled via streaming.
 
 ## Navigation
 

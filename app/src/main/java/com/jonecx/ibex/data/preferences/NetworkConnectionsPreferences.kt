@@ -8,21 +8,17 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.jonecx.ibex.data.crypto.CryptoManager
 import com.jonecx.ibex.data.model.NetworkConnection
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
-import javax.inject.Singleton
 
 private val Context.networkDataStore: DataStore<Preferences> by preferencesDataStore(
     name = NetworkConnectionsPreferences.STORE_NAME,
 )
 
-@Singleton
-class NetworkConnectionsPreferences @Inject constructor(
-    @ApplicationContext private val context: Context,
+class NetworkConnectionsPreferences(
+    private val context: Context,
     private val cryptoManager: CryptoManager,
 ) : NetworkConnectionsPreferencesContract {
     private val dataStore = context.networkDataStore

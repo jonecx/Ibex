@@ -1,52 +1,23 @@
 package com.jonecx.ibex.di
 
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import javax.inject.Qualifier
-import javax.inject.Singleton
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class IoDispatcher
+// Koin qualifiers replacing the former Dagger @Qualifier annotations.
+val IoDispatcher = named("IoDispatcher")
+val MainDispatcher = named("MainDispatcher")
+val DefaultDispatcher = named("DefaultDispatcher")
+val ApplicationScope = named("ApplicationScope")
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MainDispatcher
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultDispatcher
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class ApplicationScope
-
-@Module
-@InstallIn(SingletonComponent::class)
-object DispatcherModule {
-
-    @IoDispatcher
-    @Provides
-    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
-
-    @MainDispatcher
-    @Provides
-    fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
-
-    @DefaultDispatcher
-    @Provides
-    fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
-
-    @ApplicationScope
-    @Singleton
-    @Provides
-    fun provideApplicationScope(
-        @DefaultDispatcher dispatcher: CoroutineDispatcher,
-    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+val dispatcherModule = module {
+    single<CoroutineDispatcher>(IoDispatcher) { Dispatchers.IO }
+    single<CoroutineDispatcher>(MainDispatcher) { Dispatchers.Main }
+    single<CoroutineDispatcher>(DefaultDispatcher) { Dispatchers.Default }
+    single<CoroutineScope>(ApplicationScope) {
+        CoroutineScope(SupervisorJob() + get<CoroutineDispatcher>(DefaultDispatcher))
+    }
 }

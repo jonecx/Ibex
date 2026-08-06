@@ -7,16 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
-import com.jonecx.ibex.di.IoDispatcher
 import com.jonecx.ibex.util.launchCollect
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @Immutable
 data class NetworkConnectionsUiState(
@@ -25,11 +22,10 @@ data class NetworkConnectionsUiState(
     val defaultProtocol: NetworkProtocol = NetworkProtocol.SMB,
 )
 
-@HiltViewModel
-class NetworkConnectionsViewModel @Inject constructor(
+class NetworkConnectionsViewModel(
     savedStateHandle: SavedStateHandle,
     private val networkPreferences: NetworkConnectionsPreferencesContract,
-    @IoDispatcher private val dispatcher: CoroutineDispatcher,
+    private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val defaultProtocol: NetworkProtocol = savedStateHandle.get<String>(ARG_PROTOCOL)

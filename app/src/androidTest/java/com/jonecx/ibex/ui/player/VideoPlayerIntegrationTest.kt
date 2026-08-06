@@ -24,41 +24,31 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.ui.explorer.components.MediaViewerOverlay
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.koin.test.KoinTest
+import org.koin.test.inject
 import java.io.File
-import javax.inject.Inject
 
 private const val TEST_VIDEO_ASSET_1 = "earth_MP4_480_1_5MG.mp4"
 private const val TEST_VIDEO_ASSET_2 = "15764815-hd_1080_1920_60fps.mp4"
 private const val PLAYBACK_TIMEOUT_MS = 5_000L
 
-@HiltAndroidTest
-class VideoPlayerIntegrationTest {
-
-    @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+class VideoPlayerIntegrationTest : KoinTest {
 
     // Uses createComposeRule() instead of createAndroidComposeRule<MainActivity>() because
     // video player tests require setContent() to render composables in isolation with precise
     // control over player state, clock, and navigation callbacks.
-    @get:Rule(order = 1)
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    @Inject
-    lateinit var playerFactory: PlayerFactory
-
+    private val playerFactory: PlayerFactory by inject()
     private lateinit var videoFileItems: List<FileItem>
 
     @Before
     fun setup() {
-        hiltRule.inject()
-
         videoFileItems = listOf(TEST_VIDEO_ASSET_1, TEST_VIDEO_ASSET_2).map { assetName ->
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val videoFile = File(instrumentation.targetContext.cacheDir, assetName)

@@ -13,31 +13,21 @@ import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.util.runOnUiThreadBlocking
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import javax.inject.Inject
+import org.koin.test.KoinTest
+import org.koin.test.inject
 
-@HiltAndroidTest
-class FileExplorerViewModeTest {
+class FileExplorerViewModeTest : KoinTest {
 
-    @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-    @Inject
-    lateinit var fakePreferences: FakeSettingsPreferences
-
-    @Inject
-    lateinit var imageLoader: ImageLoader
+    private val fakePreferences: FakeSettingsPreferences by inject()
+    private val imageLoader: ImageLoader by inject()
 
     @Before
     fun setup() {
-        hiltRule.inject()
         fakePreferences.reset()
         Coil.setImageLoader(imageLoader)
     }

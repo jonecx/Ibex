@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -31,6 +30,7 @@ import com.jonecx.ibex.ui.network.NetworkConnectionsViewModel
 import com.jonecx.ibex.ui.settings.SettingsScreen
 import com.jonecx.ibex.ui.viewer.LocalMediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerScreen
+import org.koin.androidx.compose.koinViewModel
 import java.net.URLEncoder
 
 object Routes {
@@ -162,7 +162,7 @@ fun AppNavigation(
                 },
             ),
         ) {
-            val viewModel: FileExplorerViewModel = hiltViewModel()
+            val viewModel: FileExplorerViewModel = koinViewModel()
 
             val shouldRefresh by it.savedStateHandle
                 .getStateFlow(Routes.KEY_REFRESH, false)
@@ -194,7 +194,7 @@ fun AppNavigation(
                 },
             ),
         ) {
-            val viewModel: NetworkConnectionsViewModel = hiltViewModel()
+            val viewModel: NetworkConnectionsViewModel = koinViewModel()
             NetworkConnectionsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onConnectionSelected = { connection ->
@@ -222,7 +222,7 @@ fun AppNavigation(
             val parentEntry = remember(it) {
                 navController.getBackStackEntry(Routes.NETWORK_CONNECTIONS)
             }
-            val viewModel: NetworkConnectionsViewModel = hiltViewModel(parentEntry)
+            val viewModel: NetworkConnectionsViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
             val uiState = viewModel.uiState.collectAsState().value
             AddNetworkConnectionScreen(
                 onNavigateBack = {

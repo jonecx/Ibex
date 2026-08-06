@@ -5,14 +5,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.jonecx.ibex.ui.explorer.components.MediaViewerOverlay
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun MediaViewerScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MediaViewerViewModel = hiltViewModel(),
+    viewModel: MediaViewerViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
