@@ -12,10 +12,10 @@
         <path
             android:fillColor="@android:color/transparent"
             android:pathData="M256,61 C363.7,61 451,148.3 451,256 C451,363.7 363.7,451 256,451 C148.3,451 61,363.7 61,256 C61,148.3 148.3,61 256,61 Z"
-            android:strokeColor="@color/ic_launcher_mark"
+            android:strokeColor="#FFFFFFFF"
             android:strokeWidth="18" />
         <path
-            android:fillColor="@color/ic_launcher_mark"
+            android:fillColor="#FFFFFFFF"
             android:fillType="evenOdd"
             android:pathData="M326,81 C300,91 281,115 270,140 L265,148 260,147 256,153 262,159 258,166 252,164 249,171 L255,177 251,185 244,183 241,191 248,196 243,207 236,205 L231,224 224,238 192,279 164,306 Q159,312 165,319 L181,336 Q187,342 196,336 Q214,333 216,351 Q218,363 212,377 Q230,367 231,337 Q262,325 289,349 Q311,371 330,432 Q374,413 404,375 Q432,335 444,274 Q410,254 376,247 Q355,230 318,219 Q324,198 319,168 Q304,188 290,211 C282,171 294,122 326,81 Z M238,247 C244,244 251,247 254,252 C250,258 241,259 236,253 C236,250 237,248 238,247 Z" />
     </group>

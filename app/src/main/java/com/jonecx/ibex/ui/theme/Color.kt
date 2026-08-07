@@ -2,6 +2,9 @@ package com.jonecx.ibex.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// Ibex brand accent, matches the launcher icon background
+val IbexAccent = Color(0xFFEF4545)
+
 // NYT-style minimalist color palette
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
