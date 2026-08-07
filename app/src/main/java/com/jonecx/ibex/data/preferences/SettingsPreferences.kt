@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.jonecx.ibex.data.model.SortDirection
 import com.jonecx.ibex.data.model.SortField
 import com.jonecx.ibex.data.model.SortOption
+import com.jonecx.ibex.data.model.ThemeMode
 import com.jonecx.ibex.data.model.ViewMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -21,6 +22,16 @@ class SettingsPreferences(
     private val context: Context,
 ) : SettingsPreferencesContract {
     private val dataStore = context.dataStore
+
+    override val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
+        ThemeMode.fromName(preferences[THEME_MODE])
+    }
+
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { preferences ->
+            preferences[THEME_MODE] = mode.name
+        }
+    }
 
     override val sendAnalyticsEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
         preferences[SEND_ANALYTICS_ENABLED] ?: false
@@ -69,6 +80,7 @@ class SettingsPreferences(
     }
 
     companion object {
+        private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val SEND_ANALYTICS_ENABLED = booleanPreferencesKey("send_analytics_enabled")
         private val VIEW_MODE = stringPreferencesKey("view_mode")
         private val GRID_COLUMNS = intPreferencesKey("grid_columns")

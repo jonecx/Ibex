@@ -1,6 +1,7 @@
 package com.jonecx.ibex.fixtures
 
 import com.jonecx.ibex.data.model.SortOption
+import com.jonecx.ibex.data.model.ThemeMode
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
@@ -8,6 +9,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class FakeSettingsPreferences : SettingsPreferencesContract {
+    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
+    override val themeMode: Flow<ThemeMode> = _themeMode
+
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        _themeMode.value = mode
+    }
+
     private val _sendAnalyticsEnabled = MutableStateFlow(false)
     override val sendAnalyticsEnabled: Flow<Boolean> = _sendAnalyticsEnabled
 
@@ -36,12 +44,14 @@ class FakeSettingsPreferences : SettingsPreferencesContract {
         _sortOption.value = option
     }
 
+    fun currentThemeMode(): ThemeMode = _themeMode.value
     fun currentAnalyticsValue(): Boolean = _sendAnalyticsEnabled.value
     fun currentViewMode(): ViewMode = _viewMode.value
     fun currentGridColumns(): Int = _gridColumns.value
     fun currentSortOption(): SortOption = _sortOption.value
 
     fun reset() {
+        _themeMode.value = ThemeMode.SYSTEM
         _sendAnalyticsEnabled.value = false
         _viewMode.value = ViewMode.LIST
         _gridColumns.value = DEFAULT_GRID_COLUMNS

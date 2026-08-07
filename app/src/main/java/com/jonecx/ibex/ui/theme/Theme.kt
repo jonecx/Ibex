@@ -6,36 +6,40 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-// NYT-style minimalist dark theme
-private val DarkColorScheme = darkColorScheme(
-    primary = White,
-    secondary = GrayDark,
-    tertiary = IbexAccent,
-    onTertiary = White,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
-    onPrimary = Black,
-    onSecondary = Black,
-    onBackground = White,
-    onSurface = White,
-    onSurfaceVariant = GrayDark,
+// The neutral roles are pinned too: Material3's baseline containers are purple-tinted.
+private val LightColorScheme = lightColorScheme(
+    primary = BrandRed,
+    onPrimary = Snow,
+    background = PaperLight,
+    onBackground = Ink,
+    surface = PaperLight,
+    onSurface = Ink,
+    surfaceVariant = MistLight,
+    onSurfaceVariant = Slate,
+    secondaryContainer = MistLight,
+    onSecondaryContainer = Ink,
+    surfaceContainer = MistLight,
+    surfaceContainerHigh = MistLight,
+    surfaceContainerHighest = MistLight,
+    outline = Steel,
 )
 
-// NYT-style minimalist light theme
-private val LightColorScheme = lightColorScheme(
-    primary = Black,
-    secondary = GrayLight,
-    tertiary = IbexAccent,
-    onTertiary = White,
-    background = White,
-    surface = SurfaceLight,
-    surfaceVariant = SurfaceVariantLight,
-    onPrimary = White,
-    onSecondary = White,
-    onBackground = Black,
-    onSurface = Black,
-    onSurfaceVariant = GrayLight,
+private val DarkColorScheme = darkColorScheme(
+    primary = BrandRed,
+    onPrimary = Snow,
+    background = PaperDark,
+    onBackground = Snow,
+    surface = PaperDark,
+    onSurface = Snow,
+    surfaceVariant = MistDark,
+    onSurfaceVariant = Silver,
+    secondaryContainer = MistDark,
+    onSecondaryContainer = Snow,
+    // Bars and sheets stay pure black; only interactive containers get the grey.
+    surfaceContainer = PaperDark,
+    surfaceContainerHigh = MistDark,
+    surfaceContainerHighest = MistDark,
+    outline = Steel,
 )
 
 @Composable
@@ -43,10 +47,8 @@ fun IbexTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
         typography = Typography,
         content = content,
     )

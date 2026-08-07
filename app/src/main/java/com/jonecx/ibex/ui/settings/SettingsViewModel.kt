@@ -2,6 +2,7 @@ package com.jonecx.ibex.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jonecx.ibex.data.model.ThemeMode
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract.Companion.DEFAULT_GRID_COLUMNS
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val sendAnalyticsEnabled: Boolean = false,
     val viewMode: ViewMode = ViewMode.LIST,
     val gridColumns: Int = DEFAULT_GRID_COLUMNS,
@@ -28,6 +30,9 @@ class SettingsViewModel(
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launchCollect(settingsPreferences.themeMode, dispatcher) { mode ->
+            _uiState.update { it.copy(themeMode = mode) }
+        }
         viewModelScope.launchCollect(settingsPreferences.sendAnalyticsEnabled, dispatcher) { enabled ->
             _uiState.update { it.copy(sendAnalyticsEnabled = enabled) }
         }
@@ -36,6 +41,12 @@ class SettingsViewModel(
         }
         viewModelScope.launchCollect(settingsPreferences.gridColumns, dispatcher) { columns ->
             _uiState.update { it.copy(gridColumns = columns) }
+        }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.setThemeMode(mode)
         }
     }
 

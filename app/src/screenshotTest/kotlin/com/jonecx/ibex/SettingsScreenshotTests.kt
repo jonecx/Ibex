@@ -14,9 +14,11 @@ private fun SettingsPreview(
     SettingsScreenContent(
         uiState = uiState,
         onNavigateBack = {},
+        onThemeModeChanged = {},
         onAnalyticsToggleChanged = {},
         onViewModeChanged = {},
         onGridColumnsChanged = {},
+        onNavigateToPlayerSettings = {},
     )
 }
 

@@ -150,6 +150,7 @@ dependencies {
     testFixturesImplementation(libs.androidx.compose.ui)
     testFixturesImplementation(libs.coil.compose)
     testFixturesImplementation(libs.kotlinx.coroutines.test)
+    testFixturesImplementation(libs.azmaree.player)
     testImplementation(testFixtures(project(":app")))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

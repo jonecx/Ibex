@@ -2,28 +2,25 @@ package com.jonecx.ibex.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Ibex brand accent, matches the launcher icon background
-val IbexAccent = Color(0xFFEF4545)
+// Monochrome video-first palette, shared with the Azmaree player so both look identical.
+val BrandRed = Color(0xFFEF4545) // Matches ic_launcher_background.
+val Ink = Color(0xFF1A1A1A)
+val Snow = Color(0xFFF2F2F2)
+val PaperLight = Color(0xFFFAFAFA)
+val PaperDark = Color(0xFF000000)
+val MistLight = Color(0xFFE4E4E4)
+val MistDark = Color(0xFF2C2C2C)
+val Steel = Color(0xFF7A7A7A)
+val Slate = Color(0xFF4A4A4A)
+val Silver = Color(0xFFC6C6C6)
 
-// NYT-style minimalist color palette
-val White = Color(0xFFFFFFFF)
-val Black = Color(0xFF000000)
-val GrayLight = Color(0xFF666666)
-val GrayDark = Color(0xFF9E9E9E)
-val SurfaceLight = Color(0xFFF5F5F5)
-val SurfaceDark = Color(0xFF1E1E1E)
-val BackgroundDark = Color(0xFF121212)
-val SurfaceVariantLight = Color(0xFFEEEEEE)
-val SurfaceVariantDark = Color(0xFF2C2C2C)
-val WhiteSecondary = Color(0xB3FFFFFF) // White @ 70% alpha
-val ScrimDark = Color(0x80000000) // Black @ 50% alpha
-
-// Alpha levels
+// Alpha levels (scalars, not colors) reused across composables.
 const val AlphaDisabled = 0.5f
 const val AlphaSecondary = 0.7f
 const val AlphaTintBackground = 0.15f
 
-// File type icon colors
+// Per-category icon accents. Kept vivid and distinct on purpose: file-type and source-tile icons
+// stay colour-coded for quick scanning, independent of the monochrome chrome above.
 val FileDirectoryColor = Color(0xFFFFB74D)
 val FileImageColor = Color(0xFF4CAF50)
 val FileVideoColor = Color(0xFFE91E63)
@@ -31,7 +28,6 @@ val FileAudioColor = Color(0xFF9C27B0)
 val FileDocumentColor = Color(0xFF2196F3)
 val FileArchiveColor = Color(0xFF795548)
 
-// Source tile icon colors
 val SourceStorageColor = Color(0xFF546E7A)
 val SourceDownloadsColor = Color(0xFFF57C00)
 val SourceImagesColor = Color(0xFFAB47BC)

@@ -1,19 +1,27 @@
 package com.jonecx.ibex
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import com.jonecx.azmaree.image.LocalAzmareeImageEngine
 import com.jonecx.ibex.analytics.AnalyticsManager
+import com.jonecx.ibex.data.model.ThemeMode
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.ui.explorer.components.CoilImageEngine
 import com.jonecx.ibex.ui.explorer.components.FileImageRequestFactory
 import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
@@ -35,18 +43,40 @@ class MainActivity : ComponentActivity() {
 
     private val fileImageRequestFactory: FileImageRequestFactory by inject()
 
+    private val settingsPreferences: SettingsPreferencesContract by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
             val imageEngine = remember { CoilImageEngine() }
+            val themeMode by settingsPreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            // Keep the status/nav bar icons legible against the chosen theme, re-running on config
+            // changes (which otherwise re-derive the bar style from the window theme).
+            val configuration = LocalConfiguration.current
+            DisposableEffect(darkTheme, configuration) {
+                val style = if (darkTheme) {
+                    SystemBarStyle.dark(Color.TRANSPARENT)
+                } else {
+                    SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                }
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                onDispose {}
+            }
+
             CompositionLocalProvider(
                 LocalFileImageRequestFactory provides fileImageRequestFactory,
                 LocalAzmareeImageEngine provides imageEngine,
                 LocalMediaViewerArgs provides mediaViewerArgs,
             ) {
-                IbexTheme {
+                IbexTheme(darkTheme = darkTheme) {
                     var hasPermission by remember { mutableStateOf(permissionChecker.hasStoragePermission()) }
 
                     Surface(modifier = Modifier.fillMaxSize()) {

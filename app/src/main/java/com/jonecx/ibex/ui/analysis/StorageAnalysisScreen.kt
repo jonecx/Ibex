@@ -34,7 +34,6 @@ import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.components.PieChart
 import com.jonecx.ibex.ui.components.PieChartSegment
-import com.jonecx.ibex.ui.theme.GrayDark
 import com.jonecx.ibex.util.formatFileSize
 import org.koin.androidx.compose.koinViewModel
 
@@ -116,7 +115,7 @@ private fun StorageAnalysisContent(
             PieChartSegment(
                 label = "${stringResource(R.string.analysis_category_free)} (${formatFileSize(freeBytes)})",
                 value = freeBytes.toFloat(),
-                color = GrayDark,
+                color = MaterialTheme.colorScheme.outline,
             ),
         )
     } else {

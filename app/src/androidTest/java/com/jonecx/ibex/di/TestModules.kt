@@ -3,6 +3,7 @@ package com.jonecx.ibex.di
 import coil.ImageLoader
 import com.jonecx.ibex.analytics.AnalyticsProvider
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
+import com.jonecx.ibex.data.preferences.PlayerSettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.RecentFoldersPreferencesContract
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.repository.FakeFileRepository
@@ -19,6 +20,7 @@ import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
+import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeSmbContextProvider
@@ -53,6 +55,8 @@ val testOverridesModule = module {
 
     single { FakeSettingsPreferences() }
     single<SettingsPreferencesContract> { get<FakeSettingsPreferences>() }
+    single { FakePlayerSettingsPreferences() }
+    single<PlayerSettingsPreferencesContract> { get<FakePlayerSettingsPreferences>() }
     single { FakeNetworkConnectionsPreferences() }
     single<NetworkConnectionsPreferencesContract> { get<FakeNetworkConnectionsPreferences>() }
     single { FakeRecentFoldersPreferences() }

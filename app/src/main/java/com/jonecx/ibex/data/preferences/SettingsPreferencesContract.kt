@@ -1,10 +1,14 @@
 package com.jonecx.ibex.data.preferences
 
 import com.jonecx.ibex.data.model.SortOption
+import com.jonecx.ibex.data.model.ThemeMode
 import com.jonecx.ibex.data.model.ViewMode
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsPreferencesContract {
+    val themeMode: Flow<ThemeMode>
+    suspend fun setThemeMode(mode: ThemeMode)
+
     val sendAnalyticsEnabled: Flow<Boolean>
     suspend fun setSendAnalyticsEnabled(enabled: Boolean)
 

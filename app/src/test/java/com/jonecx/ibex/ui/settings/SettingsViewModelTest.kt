@@ -1,6 +1,7 @@
 package com.jonecx.ibex.ui.settings
 
 import app.cash.turbine.test
+import com.jonecx.ibex.data.model.ThemeMode
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,5 +90,31 @@ class SettingsViewModelTest {
 
         viewModel.setViewMode(ViewMode.LIST)
         assertEquals(ViewMode.LIST, fakePreferences.currentViewMode())
+    }
+
+    @Test
+    fun `initial state follows system theme`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(ThemeMode.SYSTEM, awaitItem().themeMode)
+        }
+    }
+
+    @Test
+    fun `uiState reflects theme mode change`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(ThemeMode.SYSTEM, awaitItem().themeMode)
+
+            fakePreferences.setThemeMode(ThemeMode.DARK)
+            assertEquals(ThemeMode.DARK, awaitItem().themeMode)
+        }
+    }
+
+    @Test
+    fun `setThemeMode updates preferences`() = runTest {
+        viewModel.setThemeMode(ThemeMode.LIGHT)
+        assertEquals(ThemeMode.LIGHT, fakePreferences.currentThemeMode())
+
+        viewModel.setThemeMode(ThemeMode.DARK)
+        assertEquals(ThemeMode.DARK, fakePreferences.currentThemeMode())
     }
 }

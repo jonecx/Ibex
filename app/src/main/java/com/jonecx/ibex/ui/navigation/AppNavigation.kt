@@ -27,6 +27,7 @@ import com.jonecx.ibex.ui.home.HomeScreen
 import com.jonecx.ibex.ui.network.AddNetworkConnectionScreen
 import com.jonecx.ibex.ui.network.NetworkConnectionsScreen
 import com.jonecx.ibex.ui.network.NetworkConnectionsViewModel
+import com.jonecx.ibex.ui.settings.PlayerSettingsScreen
 import com.jonecx.ibex.ui.settings.SettingsScreen
 import com.jonecx.ibex.ui.viewer.LocalMediaViewerArgs
 import com.jonecx.ibex.ui.viewer.MediaViewerScreen
@@ -36,6 +37,7 @@ import java.net.URLEncoder
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val PLAYER_SETTINGS = "player_settings"
     const val STORAGE_ANALYSIS = "storage_analysis"
     private const val NETWORK_CONNECTIONS_BASE = "network_connections"
     const val NETWORK_CONNECTIONS = "$NETWORK_CONNECTIONS_BASE?${NetworkConnectionsViewModel.ARG_PROTOCOL}={${NetworkConnectionsViewModel.ARG_PROTOCOL}}"
@@ -134,6 +136,13 @@ fun AppNavigation(
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPlayerSettings = { navController.navigate(Routes.PLAYER_SETTINGS) },
+            )
+        }
+
+        composable(Routes.PLAYER_SETTINGS) {
+            PlayerSettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
             )
         }

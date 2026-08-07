@@ -1,6 +1,7 @@
 package com.jonecx.ibex
 
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
+import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeStorageAnalyzer
@@ -15,6 +16,7 @@ class FakeResetRunListener : RunListener() {
     override fun testStarted(description: Description) {
         val koin = GlobalContext.getOrNull() ?: return
         koin.get<FakeSettingsPreferences>().reset()
+        koin.get<FakePlayerSettingsPreferences>().reset()
         koin.get<FakeNetworkConnectionsPreferences>().reset()
         koin.get<FakeRecentFoldersPreferences>().reset()
         koin.get<FakeStorageAnalyzer>().reset()

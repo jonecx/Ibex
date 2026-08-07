@@ -32,10 +32,10 @@ import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.player.VideoPlayer
-import com.jonecx.ibex.ui.theme.Black
-import com.jonecx.ibex.ui.theme.ScrimDark
-import com.jonecx.ibex.ui.theme.White
-import com.jonecx.ibex.ui.theme.WhiteSecondary
+import com.jonecx.ibex.ui.theme.AlphaDisabled
+import com.jonecx.ibex.ui.theme.AlphaSecondary
+import com.jonecx.ibex.ui.theme.PaperDark
+import com.jonecx.ibex.ui.theme.Snow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +54,7 @@ fun MediaViewerOverlay(
 
     val currentFile = viewableFiles.getOrNull(pagerState.settledPage)
     val scope = rememberCoroutineScope()
-    val overlayBarColors = TopAppBarDefaults.topAppBarColors(containerColor = ScrimDark)
+    val overlayBarColors = TopAppBarDefaults.topAppBarColors(containerColor = PaperDark.copy(alpha = AlphaDisabled))
     var controlsVisible by remember { mutableStateOf(true) }
     val toggleControls = { controlsVisible = !controlsVisible }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -62,7 +62,7 @@ fun MediaViewerOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Black)
+            .background(PaperDark)
             .systemBarsPadding(),
     ) {
         HorizontalPager(
@@ -118,13 +118,13 @@ fun MediaViewerOverlay(
                         Text(
                             text = currentFile?.name ?: "",
                             style = MaterialTheme.typography.titleMedium,
-                            color = White,
+                            color = Snow,
                             maxLines = 1,
                         )
                         Text(
                             text = "${pagerState.settledPage + 1} / ${viewableFiles.size}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = WhiteSecondary,
+                            color = Snow.copy(alpha = AlphaSecondary),
                         )
                     }
                 },
@@ -133,7 +133,7 @@ fun MediaViewerOverlay(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.close_viewer),
-                            tint = White,
+                            tint = Snow,
                         )
                     }
                 },
@@ -142,7 +142,7 @@ fun MediaViewerOverlay(
                         Icon(
                             imageVector = Icons.Filled.Delete,
                             contentDescription = stringResource(R.string.delete_file),
-                            tint = White,
+                            tint = Snow,
                         )
                     }
                 },
