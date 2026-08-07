@@ -9,9 +9,8 @@ import org.junit.runner.Description
 import org.junit.runner.notification.RunListener
 import org.koin.core.context.GlobalContext
 
-// The Koin graph is process-global, so its fake singletons persist across tests. Hilt gave each
-// test a fresh component; this restores that isolation by resetting the mutable fakes before
-// every test, ahead of the compose rule launching the activity.
+// The Koin graph is process-global, so its fake singletons persist across tests. Reset the mutable
+// fakes before every test, ahead of the compose rule launching the activity, to isolate each run.
 class FakeResetRunListener : RunListener() {
     override fun testStarted(description: Description) {
         val koin = GlobalContext.getOrNull() ?: return

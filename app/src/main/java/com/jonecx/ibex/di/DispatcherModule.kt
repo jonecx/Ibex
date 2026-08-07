@@ -7,7 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-// Koin qualifiers replacing the former Dagger @Qualifier annotations.
+// Koin qualifiers distinguishing the coroutine dispatchers.
 val IoDispatcher = named("IoDispatcher")
 val MainDispatcher = named("MainDispatcher")
 val DefaultDispatcher = named("DefaultDispatcher")

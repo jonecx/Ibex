@@ -23,7 +23,7 @@ class PlayerSettingsMappingTest {
 
     @Test
     fun `min buffer is coerced above the playback thresholds`() {
-        // 1s min is below the 5s after-rebuffer default, so it must clamp up to keep ExoPlayer's ordering.
+        // 1s min is below the 5s after-rebuffer default, so it must clamp up to keep the load-control ordering.
         val prefs = mutablePreferencesOf(PlayerSettingsKeys.MIN_BUFFER_MS to 1_000)
 
         val buffer = prefs.toPlayerSettings().playback.buffer
