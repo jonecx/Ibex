@@ -2,6 +2,8 @@ package com.jonecx.ibex.di
 
 import coil.ImageLoader
 import com.jonecx.ibex.analytics.AnalyticsProvider
+import com.jonecx.ibex.analytics.CrashReporter
+import com.jonecx.ibex.analytics.MetricsProvider
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.data.preferences.PlayerSettingsPreferencesContract
 import com.jonecx.ibex.data.preferences.RecentFoldersPreferencesContract
@@ -14,11 +16,13 @@ import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.data.repository.StorageAnalyzer
 import com.jonecx.ibex.fixtures.FakeAnalyticsProvider
 import com.jonecx.ibex.fixtures.FakeAppLogger
+import com.jonecx.ibex.fixtures.FakeCrashReporter
 import com.jonecx.ibex.fixtures.FakeFileClipboardManager
 import com.jonecx.ibex.fixtures.FakeFileImageRequestFactory
 import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
+import com.jonecx.ibex.fixtures.FakeMetricsProvider
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
@@ -48,6 +52,8 @@ val testOverridesModule = module {
     single<CoroutineDispatcher>(DefaultDispatcher) { UnconfinedTestDispatcher() }
 
     single<AnalyticsProvider> { FakeAnalyticsProvider() }
+    single<MetricsProvider> { FakeMetricsProvider() }
+    single<CrashReporter> { FakeCrashReporter() }
     single<AppLogger> { FakeAppLogger() }
     single<PermissionChecker> { FakePermissionChecker() }
     single<ImageLoader> { FakeImageLoader(androidContext()) }

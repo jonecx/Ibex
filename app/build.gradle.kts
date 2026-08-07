@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.screenshot)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.baselineprofile)
+    alias(libs.plugins.sentry.gradle)
 }
 
 val localProperties = Properties().apply {
@@ -36,6 +37,11 @@ android {
 
         buildConfigField("String", "POSTHOG_API_KEY", "\"${localProperties.getProperty("POSTHOG_API_KEY", localProperties.getProperty("posthog.apiKey", ""))}\"")
         buildConfigField("String", "POSTHOG_HOST", "\"${localProperties.getProperty("POSTHOG_HOST", localProperties.getProperty("posthog.host", "https://us.i.posthog.com"))}\"")
+        // Same backends/accounts as Azmaree: copy these keys from Azmaree's local.properties.
+        buildConfigField("String", "AXIOM_API_KEY", "\"${localProperties.getProperty("AXIOM_API_KEY") ?: ""}\"")
+        buildConfigField("String", "AXIOM_DATASET", "\"${localProperties.getProperty("AXIOM_DATASET") ?: "azmaree-qoe"}\"")
+        buildConfigField("String", "AXIOM_HOST", "\"${localProperties.getProperty("AXIOM_HOST") ?: "https://api.axiom.co"}\"")
+        buildConfigField("String", "SENTRY_DSN", "\"${localProperties.getProperty("SENTRY_DSN") ?: ""}\"")
         buildConfigField("boolean", "SKIP_PERMISSION_CHECK", "false")
     }
 
@@ -80,6 +86,15 @@ kotlin {
 
 composeCompiler {
     stabilityConfigurationFile = project.layout.projectDirectory.file("compose-stability.conf")
+}
+
+// Uploads R8/ProGuard mappings + source context on release builds so Sentry stack traces
+// stay readable once minification is enabled. No-ops without SENTRY_AUTH_TOKEN.
+sentry {
+    org.set(localProperties.getProperty("SENTRY_ORG") ?: System.getenv("SENTRY_ORG") ?: "")
+    projectName.set(localProperties.getProperty("SENTRY_PROJECT") ?: System.getenv("SENTRY_PROJECT") ?: "")
+    authToken.set(localProperties.getProperty("SENTRY_AUTH_TOKEN") ?: System.getenv("SENTRY_AUTH_TOKEN") ?: "")
+    includeSourceContext.set(true)
 }
 
 baselineProfile {
@@ -142,9 +157,10 @@ dependencies {
     implementation(libs.profileinstaller)
     baselineProfile(project(":macrobenchmark"))
 
-    // Logging & Analytics
+    // Logging, analytics, metrics, crash reporting (vendor-agnostic behind adapters)
     implementation(libs.timber)
     implementation(libs.posthog)
+    implementation(libs.sentry.android)
     
     testFixturesImplementation(platform(libs.androidx.compose.bom))
     testFixturesImplementation(libs.androidx.compose.ui)

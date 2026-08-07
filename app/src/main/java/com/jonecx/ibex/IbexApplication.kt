@@ -5,6 +5,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.jonecx.azmaree.player.AzmareePlayers
 import com.jonecx.ibex.analytics.AnalyticsManager
+import com.jonecx.ibex.analytics.NetworkContext
 import com.jonecx.ibex.di.appModules
 import com.jonecx.ibex.logging.AppLogger
 import org.koin.android.ext.android.inject
@@ -23,6 +24,8 @@ class IbexApplication : Application(), ImageLoaderFactory {
             androidContext(this@IbexApplication)
             modules(appModules)
         }
+        // Init network context before analytics so PostHog/Axiom stamp the transport from the start.
+        NetworkContext.init(this) { analyticsManager.onNetworkChanged() }
         logger.initialize()
         analyticsManager.initialize()
         logger.i("Ibex application started")
@@ -34,6 +37,8 @@ class IbexApplication : Application(), ImageLoaderFactory {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (level >= TRIM_MEMORY_UI_HIDDEN) {
+            // Ship the ~30s-batched telemetry before the app is likely evicted.
+            analyticsManager.flush()
             AzmareePlayers.release()
         }
     }

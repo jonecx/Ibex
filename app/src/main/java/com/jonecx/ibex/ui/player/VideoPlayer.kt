@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import com.jonecx.azmaree.player.AzmareePlayer
 import com.jonecx.azmaree.player.model.ControlsConfig
 import com.jonecx.azmaree.player.model.PlayerSettings
+import com.jonecx.azmaree.player.model.PlayerTelemetry
 import com.jonecx.azmaree.source.smb.SmbDataSourceFactory
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.preferences.PlayerSettingsPreferencesContract
@@ -30,6 +31,7 @@ fun VideoPlayer(
 ) {
     val smbContextProvider = koinInject<SmbContextProviderContract>()
     val playerSettingsPreferences = koinInject<PlayerSettingsPreferencesContract>()
+    val telemetry = koinInject<PlayerTelemetry>()
     // Defaults until the store's first emission; the read is fast, so any flash is a single frame.
     val defaults = remember { PlayerSettings() }
     val stored by playerSettingsPreferences.settings.collectAsState(initial = defaults)
@@ -61,6 +63,7 @@ fun VideoPlayer(
         onTap = onToggleControls,
         onNext = onNext,
         settings = settings,
+        telemetry = telemetry,
         sessionKey = fileItem.path,
     )
 }

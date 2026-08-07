@@ -20,7 +20,12 @@ open class AnalyticsTree(
             properties["stacktrace"] = it.stackTraceToString().take(1000)
         }
 
-        val event = if (priority == Log.ERROR) "log_error" else "log_warning"
-        analyticsManager.capture(event, properties)
+        // The facade scrubs remote urls out of these properties before they leave the device.
+        analyticsManager.trackLog(
+            isError = priority == Log.ERROR,
+            properties = properties,
+            message = message,
+            throwable = t,
+        )
     }
 }

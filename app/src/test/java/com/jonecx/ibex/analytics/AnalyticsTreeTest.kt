@@ -3,6 +3,12 @@ package com.jonecx.ibex.analytics
 import android.util.Log
 import com.jonecx.ibex.fixtures.FakeAnalyticsProvider
 import com.jonecx.ibex.fixtures.FakeAppLogger
+import com.jonecx.ibex.fixtures.FakeCrashReporter
+import com.jonecx.ibex.fixtures.FakeMetricsProvider
+import com.jonecx.ibex.fixtures.FakeSettingsPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -11,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class AnalyticsTreeTest {
 
@@ -22,7 +29,11 @@ class AnalyticsTreeTest {
         fakeProvider = FakeAnalyticsProvider()
         val analyticsManager = AnalyticsManager(
             context = RuntimeEnvironment.getApplication(),
-            analyticsProvider = fakeProvider,
+            analytics = fakeProvider,
+            metrics = FakeMetricsProvider(),
+            crashReporter = FakeCrashReporter(),
+            settingsPreferences = FakeSettingsPreferences(),
+            scope = CoroutineScope(Dispatchers.Unconfined),
             logger = FakeAppLogger(),
         )
         tree = TestableAnalyticsTree(analyticsManager)
