@@ -12,7 +12,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,11 +39,6 @@ fun LiveStreamPlayerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val streams = uiState.streams
 
-    if (streams.isEmpty()) {
-        LaunchedEffect(Unit) { onNavigateBack() }
-        return
-    }
-
     val playerSettingsPreferences = koinInject<PlayerSettingsPreferencesContract>()
     val telemetry = koinInject<PlayerTelemetry>()
     val accent = MaterialTheme.colorScheme.primary
@@ -62,7 +56,7 @@ fun LiveStreamPlayerScreen(
     }
 
     val pagerState = rememberPagerState(
-        initialPage = startIndex.coerceIn(0, streams.lastIndex),
+        initialPage = startIndex.coerceIn(0, maxOf(0, streams.lastIndex)),
         pageCount = { streams.size },
     )
 

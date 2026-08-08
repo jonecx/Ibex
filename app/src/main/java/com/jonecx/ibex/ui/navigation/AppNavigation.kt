@@ -328,9 +328,16 @@ fun AppNavigation(
             ),
         ) {
             val index = it.arguments?.getInt(Routes.LIVE_PLAYER_ARG_INDEX) ?: 0
+            // Share the Live grid's ViewModel so the already-loaded streams (and start index) are
+            // ready on the first frame; a fresh ViewModel would start empty and bounce straight back.
+            val parentEntry = remember(it) {
+                navController.getBackStackEntry(Routes.LIVE_FEED)
+            }
+            val viewModel: LiveFeedViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
             LiveStreamPlayerScreen(
                 startIndex = index,
                 onNavigateBack = { navController.popBackStack() },
+                viewModel = viewModel,
             )
         }
     }
