@@ -26,6 +26,25 @@
     <string name="source_cloud">Cloud</string>
     <string name="source_smb">SMB/CIFS</string>
     <string name="source_ftp">FTP</string>
+    <string name="source_live">Live</string>
+    <!-- Live streaming -->
+    <string name="live_feed_title">Live</string>
+    <string name="live_no_streams">No streams yet.\nTap + to add one.</string>
+    <string name="live_add_stream">Add stream</string>
+    <string name="live_add_title">Add stream</string>
+    <string name="live_edit_title">Edit stream</string>
+    <string name="live_edit_stream">Edit</string>
+    <string name="live_delete_stream">Delete</string>
+    <string name="live_stream_options">Stream options</string>
+    <string name="live_delete_title">Delete stream</string>
+    <string name="live_delete_message">Delete \"%1$s\"?</string>
+    <string name="live_delete_confirm">Delete</string>
+    <string name="live_save">Save</string>
+    <string name="live_close">Close</string>
+    <string name="live_field_title">Title</string>
+    <string name="live_field_url">Stream URL</string>
+    <string name="live_field_thumbnail">Thumbnail URL (optional)</string>
+    <string name="live_field_description">Description (optional)</string>
     <!-- File loading -->
     <string name="unknown_file">Unknown</string>
     <string name="failed_to_load_files">Failed to load files</string>

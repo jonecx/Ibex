@@ -49,6 +49,7 @@ fun HomeScreen(
     val cloudLabel = stringResource(R.string.source_cloud)
     val smbLabel = stringResource(R.string.source_smb)
     val ftpLabel = stringResource(R.string.source_ftp)
+    val liveLabel = stringResource(R.string.source_live)
     val localSectionLabel = stringResource(R.string.section_local)
     val remoteSectionLabel = stringResource(R.string.section_remote)
 
@@ -59,7 +60,7 @@ fun HomeScreen(
         )
     }
     val remoteSources = remember(cloudLabel) {
-        FileSources.getRemoteSources(cloudLabel, smbLabel, ftpLabel)
+        FileSources.getRemoteSources(cloudLabel, smbLabel, ftpLabel, liveLabel)
     }
 
     Scaffold(

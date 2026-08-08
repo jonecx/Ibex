@@ -1,5 +1,7 @@
 package com.jonecx.ibex.di
 
+import com.jonecx.ibex.data.preferences.LiveStreamsPreferences
+import com.jonecx.ibex.data.preferences.LiveStreamsPreferencesContract
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferences
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
 import com.jonecx.ibex.data.preferences.PlayerSettingsPreferences
@@ -18,4 +20,5 @@ val preferencesModule = module {
         NetworkConnectionsPreferences(androidContext(), get())
     }
     single<RecentFoldersPreferencesContract> { RecentFoldersPreferences(androidContext()) }
+    single<LiveStreamsPreferencesContract> { LiveStreamsPreferences(androidContext()) }
 }

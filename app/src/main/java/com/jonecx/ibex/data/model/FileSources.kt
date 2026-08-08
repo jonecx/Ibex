@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Lan
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Storage
@@ -23,6 +24,7 @@ import com.jonecx.ibex.ui.theme.SourceDocumentsColor
 import com.jonecx.ibex.ui.theme.SourceDownloadsColor
 import com.jonecx.ibex.ui.theme.SourceFtpColor
 import com.jonecx.ibex.ui.theme.SourceImagesColor
+import com.jonecx.ibex.ui.theme.SourceLiveColor
 import com.jonecx.ibex.ui.theme.SourceRecentColor
 import com.jonecx.ibex.ui.theme.SourceSmbColor
 import com.jonecx.ibex.ui.theme.SourceStorageColor
@@ -121,6 +123,7 @@ object FileSources {
         cloud: String,
         smb: String,
         ftp: String,
+        live: String,
     ): List<FileSource> = listOf(
         FileSource(
             id = "cloud",
@@ -144,6 +147,14 @@ object FileSources {
             type = FileSourceType.FTP,
             icon = Icons.Filled.Folder,
             iconTint = SourceFtpColor,
+            isLocal = false,
+        ),
+        FileSource(
+            id = "live",
+            name = live,
+            type = FileSourceType.LIVE,
+            icon = Icons.Filled.LiveTv,
+            iconTint = SourceLiveColor,
             isLocal = false,
         ),
     )

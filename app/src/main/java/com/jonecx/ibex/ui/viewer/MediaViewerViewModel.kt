@@ -2,6 +2,7 @@ package com.jonecx.ibex.ui.viewer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.repository.FileTrashManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -19,6 +20,7 @@ data class MediaViewerUiState(
 class MediaViewerViewModel(
     private val mediaViewerArgs: MediaViewerArgs,
     private val fileTrashManager: FileTrashManager,
+    private val analyticsManager: AnalyticsManager,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -29,6 +31,36 @@ class MediaViewerViewModel(
         ),
     )
     val uiState: StateFlow<MediaViewerUiState> = _uiState.asStateFlow()
+
+    // Viewer-session telemetry (video playback QoE is handled separately by PlayerTelemetry).
+    private val openedAtMs = System.currentTimeMillis()
+    private val visitedPages = mutableSetOf<Int>()
+    private var lastPage = mediaViewerArgs.initialIndex
+
+    init {
+        val files = mediaViewerArgs.viewableFiles
+        if (files.isNotEmpty()) {
+            val index = mediaViewerArgs.initialIndex.coerceIn(0, files.lastIndex)
+            visitedPages.add(index)
+            val file = files[index]
+            analyticsManager.trackMediaViewerOpen(
+                itemCount = files.size,
+                mediaType = file.fileType,
+                isRemote = file.isRemote,
+                initialIndex = index,
+            )
+        }
+    }
+
+    // Called when the pager settles on a page; the initial settle is skipped (index == lastPage).
+    fun onPageChanged(index: Int) {
+        if (index == lastPage) return
+        val file = _uiState.value.viewableFiles.getOrNull(index) ?: return
+        val forward = index > lastPage
+        visitedPages.add(index)
+        analyticsManager.trackMediaViewerPage(mediaType = file.fileType, forward = forward, pageIndex = index)
+        lastPage = index
+    }
 
     fun deleteFile(fileItem: FileItem) {
         viewModelScope.launch(ioDispatcher) {
@@ -44,6 +76,12 @@ class MediaViewerViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        if (visitedPages.isNotEmpty()) {
+            analyticsManager.trackMediaViewerClose(
+                durationMs = System.currentTimeMillis() - openedAtMs,
+                pagesViewed = visitedPages.size,
+            )
+        }
         mediaViewerArgs.clear()
     }
 }

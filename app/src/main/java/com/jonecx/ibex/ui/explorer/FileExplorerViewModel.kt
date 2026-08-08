@@ -5,8 +5,10 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileSourceType
+import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.data.model.RecentFolder
 import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
@@ -25,6 +27,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,6 +78,7 @@ class FileExplorerViewModel(
     private val fileTrashManager: FileTrashManager,
     private val fileMoveManager: FileMoveManager,
     private val clipboardManager: FileClipboardManager,
+    private val analyticsManager: AnalyticsManager,
     savedStateHandle: SavedStateHandle,
     private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -84,6 +88,7 @@ class FileExplorerViewModel(
         const val ARG_ROOT_PATH = "rootPath"
         const val ARG_TITLE = "title"
         const val ARG_CONNECTION_ID = "connectionId"
+        private const val SEARCH_DEBOUNCE_MS = 500L
     }
 
     private val sourceType: FileSourceType = FileSourceType.valueOf(
@@ -118,6 +123,10 @@ class FileExplorerViewModel(
     val recentFolders: StateFlow<List<RecentFolder>> = _recentFolders.asStateFlow()
 
     private var loadFilesJob: Job? = null
+    private var searchJob: Job? = null
+
+    // Guards connection_connect so it fires once per remote-source session, on the first listing.
+    private var remoteConnectTracked: Boolean = false
     private val scrollPositions = mutableMapOf<String, ScrollPosition>()
 
     private fun List<FileItem>.applySorting(
@@ -173,11 +182,15 @@ class FileExplorerViewModel(
     fun loadFiles(path: String, showLoading: Boolean = true) {
         loadFilesJob?.cancel()
         loadFilesJob = viewModelScope.launch(dispatcher) {
+            val startMs = System.currentTimeMillis()
+            val firstRemoteAttempt = isRemote && !remoteConnectTracked
+            if (firstRemoteAttempt) remoteConnectTracked = true
             if (showLoading) {
                 _uiState.update { it.copy(isLoading = true, error = null) }
             }
             repository.getFiles(path)
                 .catch { e ->
+                    trackLoadOutcome(firstRemoteAttempt, startMs, itemCount = 0, error = e)
                     if (showLoading) {
                         _uiState.update {
                             it.copy(
@@ -188,6 +201,7 @@ class FileExplorerViewModel(
                     }
                 }
                 .collect { files ->
+                    trackLoadOutcome(firstRemoteAttempt, startMs, itemCount = files.size, error = null)
                     val isAtRoot = path == INTERNAL_STORAGE_PATH
                     _uiState.update {
                         it.copy(
@@ -202,6 +216,21 @@ class FileExplorerViewModel(
         }
     }
 
+    // Fans a directory-listing result out to QoE latency, first-connect, and empty/error signals.
+    private fun trackLoadOutcome(firstRemoteAttempt: Boolean, startMs: Long, itemCount: Int, error: Throwable?) {
+        val durationMs = System.currentTimeMillis() - startMs
+        val success = error == null
+        val errorCode = error?.javaClass?.simpleName
+        analyticsManager.trackContentLoad(sourceType, isRemote, itemCount, durationMs, success, errorCode)
+        if (firstRemoteAttempt) {
+            analyticsManager.trackConnectionConnect(NetworkProtocol.SMB, success, durationMs, errorCode)
+        }
+        when {
+            errorCode != null -> analyticsManager.trackContentError(sourceType, isRemote, errorCode)
+            itemCount == 0 -> analyticsManager.trackContentEmpty(sourceType, isRemote, context = "folder")
+        }
+    }
+
     fun saveScrollPosition(firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int) {
         val path = _uiState.value.currentPath
         scrollPositions[path] = ScrollPosition(firstVisibleItemIndex, firstVisibleItemScrollOffset)
@@ -209,6 +238,7 @@ class FileExplorerViewModel(
 
     fun navigateTo(fileItem: FileItem) {
         if (fileItem.isDirectory && allowFolderNavigation) {
+            analyticsManager.trackFileOpen(sourceType, isRemote, fileItem.fileType, isDirectory = true, sizeBytes = fileItem.size)
             val newStack = _uiState.value.navigationStack + fileItem.path
             _uiState.update {
                 it.copy(
@@ -244,20 +274,31 @@ class FileExplorerViewModel(
     }
 
     fun setSortOption(option: SortOption) {
+        analyticsManager.trackSortChange(option.field, option.direction)
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setSortOption(option)
         }
     }
 
     fun activateSearch() {
+        analyticsManager.trackSearchStart(sourceType)
         _uiState.update { it.copy(isSearchActive = true, searchQuery = "") }
     }
 
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+        // Debounce so one search_perform lands per pause in typing, not per keystroke; never the text.
+        searchJob?.cancel()
+        if (query.isEmpty()) return
+        searchJob = viewModelScope.launch(dispatcher) {
+            delay(SEARCH_DEBOUNCE_MS)
+            analyticsManager.trackSearchPerform(sourceType, query.length, _uiState.value.displayFiles.size)
+        }
     }
 
     fun clearSearch() {
+        analyticsManager.trackSearchClear(sourceType)
+        searchJob?.cancel()
         _uiState.update { it.dismissSearch() }
     }
 
@@ -266,6 +307,10 @@ class FileExplorerViewModel(
     }
 
     fun selectFile(fileItem: FileItem?) {
+        // Opening a non-viewable file into the detail pane; viewable files go through the media viewer.
+        if (fileItem != null) {
+            analyticsManager.trackFileOpen(sourceType, isRemote, fileItem.fileType, isDirectory = false, sizeBytes = fileItem.size)
+        }
         _uiState.update { it.copy(selectedFile = fileItem) }
     }
 
@@ -321,7 +366,8 @@ class FileExplorerViewModel(
         if (filesToDelete.isEmpty()) return
 
         viewModelScope.launch(dispatcher) {
-            filesToDelete.map { file ->
+            val startMs = System.currentTimeMillis()
+            val results = filesToDelete.map { file ->
                 async {
                     if (isRemote) {
                         fileMoveManager.deleteFile(file)
@@ -330,6 +376,14 @@ class FileExplorerViewModel(
                     }
                 }
             }.awaitAll()
+            analyticsManager.trackFileDelete(
+                sourceType = sourceType,
+                isRemote = isRemote,
+                itemCount = filesToDelete.size,
+                permanent = isRemote,
+                success = results.all { it },
+                durationMs = System.currentTimeMillis() - startMs,
+            )
             _uiState.update { it.exitSelectionMode() }
             refreshFiles()
         }
@@ -350,7 +404,15 @@ class FileExplorerViewModel(
         val file = _uiState.value.selectedFileItems().firstOrNull() ?: return
 
         viewModelScope.launch(dispatcher) {
-            fileMoveManager.renameFile(file, newName)
+            val startMs = System.currentTimeMillis()
+            val success = fileMoveManager.renameFile(file, newName)
+            analyticsManager.trackFileRename(
+                sourceType = sourceType,
+                isRemote = isRemote,
+                fileType = file.fileType,
+                success = success,
+                durationMs = System.currentTimeMillis() - startMs,
+            )
             _uiState.update { it.exitSelectionMode() }
             refreshFiles()
         }
@@ -360,7 +422,14 @@ class FileExplorerViewModel(
         val parentDir = _uiState.value.currentPath
 
         viewModelScope.launch(dispatcher) {
-            fileMoveManager.createFolder(parentDir, name)
+            val startMs = System.currentTimeMillis()
+            val success = fileMoveManager.createFolder(parentDir, name)
+            analyticsManager.trackFolderCreate(
+                sourceType = sourceType,
+                isRemote = isRemote,
+                success = success,
+                durationMs = System.currentTimeMillis() - startMs,
+            )
             refreshFiles()
         }
     }
@@ -371,9 +440,24 @@ class FileExplorerViewModel(
 
     fun pasteFiles() {
         val destDir = _uiState.value.currentPath
+        // Snapshot the clipboard before paste() clears it, so item_count/size survive for telemetry.
+        val clipboard = clipboardManager.state.value
+        val operation = clipboard.operation
 
         viewModelScope.launch(dispatcher) {
-            clipboardManager.paste(destDir)
+            val startMs = System.currentTimeMillis()
+            val success = clipboardManager.paste(destDir)
+            if (operation != null && clipboard.files.isNotEmpty()) {
+                analyticsManager.trackPaste(
+                    operation = operation,
+                    sourceType = sourceType,
+                    isRemote = isRemote,
+                    itemCount = clipboard.files.size,
+                    sizeBytes = clipboard.files.sumOf { it.size },
+                    success = success,
+                    durationMs = System.currentTimeMillis() - startMs,
+                )
+            }
             refreshFiles()
         }
     }

@@ -17,6 +17,7 @@ enum class FileSourceType {
     CLOUD,
     SMB,
     FTP,
+    LIVE,
 }
 
 data class FileSource(

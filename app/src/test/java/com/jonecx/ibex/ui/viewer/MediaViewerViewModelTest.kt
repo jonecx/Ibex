@@ -3,6 +3,7 @@ package com.jonecx.ibex.ui.viewer
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
+import com.jonecx.ibex.fixtures.RecordingAnalytics
 import com.jonecx.ibex.fixtures.testImageFileItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -13,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -20,15 +22,18 @@ class MediaViewerViewModelTest {
 
     private val trashManager = FakeFileTrashManager()
     private val testDispatcher = StandardTestDispatcher()
+    private lateinit var analytics: RecordingAnalytics
 
     private fun createViewModel(
         files: List<com.jonecx.ibex.data.model.FileItem> = emptyList(),
         index: Int = 0,
     ): MediaViewerViewModel {
+        analytics = RecordingAnalytics(RuntimeEnvironment.getApplication())
         val args = MediaViewerArgs().apply { if (files.isNotEmpty()) set(files, index) }
         return MediaViewerViewModel(
             args,
             trashManager,
+            analytics.manager,
             testDispatcher,
         )
     }
@@ -64,9 +69,11 @@ class MediaViewerViewModelTest {
     fun `onCleared clears the args`() {
         val files = listOf(testImageFileItem("photo.jpg"))
         val args = MediaViewerArgs().apply { set(files, 0) }
+        val analytics = RecordingAnalytics(RuntimeEnvironment.getApplication())
         val viewModel = MediaViewerViewModel(
             args,
             trashManager,
+            analytics.manager,
             testDispatcher,
         )
 
@@ -76,6 +83,44 @@ class MediaViewerViewModelTest {
 
         assertTrue(args.viewableFiles.isEmpty())
         assertEquals(0, args.initialIndex)
+    }
+
+    @Test
+    fun `open emits media_viewer_open with item count and media type`() = runTest {
+        val files = listOf(testImageFileItem("photo1.jpg"), testImageFileItem("photo2.jpg"))
+        createViewModel(files, index = 1)
+
+        val props = analytics.event("media_viewer_open")
+        assertEquals(2, props?.get("item_count"))
+        assertEquals("image", props?.get("media_type"))
+        assertEquals(1, props?.get("initial_index"))
+        assertEquals(false, props?.get("is_remote"))
+    }
+
+    @Test
+    fun `page change emits media_viewer_page with direction`() = runTest {
+        val files = listOf(testImageFileItem("a.jpg"), testImageFileItem("b.jpg"))
+        val viewModel = createViewModel(files, index = 0)
+
+        viewModel.onPageChanged(1)
+
+        val props = analytics.event("media_viewer_page")
+        assertEquals("next", props?.get("direction"))
+        assertEquals(1, props?.get("page_index"))
+    }
+
+    @Test
+    fun `close emits media_viewer_close with pages viewed`() {
+        val files = listOf(testImageFileItem("a.jpg"), testImageFileItem("b.jpg"))
+        val viewModel = createViewModel(files, index = 0)
+        viewModel.onPageChanged(1)
+
+        val store = ViewModelStore()
+        store.put("test", viewModel)
+        store.clear()
+
+        val props = analytics.event("media_viewer_close")
+        assertEquals(2, props?.get("pages_viewed"))
     }
 
     @Test

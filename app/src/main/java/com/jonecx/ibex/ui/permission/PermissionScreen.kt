@@ -34,6 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
+import com.jonecx.ibex.analytics.AnalyticsManager
+import org.koin.compose.koinInject
 
 @Composable
 fun PermissionScreen(
@@ -41,11 +43,16 @@ fun PermissionScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val analyticsManager = koinInject<AnalyticsManager>()
+    val sdkInt = Build.VERSION.SDK_INT
     var hasPermission by remember { mutableStateOf(checkStoragePermission()) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) { permissions ->
+        permissions.forEach { (permission, granted) ->
+            analyticsManager.trackPermissionResult(permission.toPermissionType(), granted, sdkInt)
+        }
         hasPermission = permissions.values.all { it }
         if (hasPermission) {
             onPermissionGranted()
@@ -56,6 +63,7 @@ fun PermissionScreen(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) {
         hasPermission = checkStoragePermission()
+        analyticsManager.trackPermissionResult(ALL_FILES_ACCESS, hasPermission, sdkInt)
         if (hasPermission) {
             onPermissionGranted()
         }
@@ -103,11 +111,13 @@ fun PermissionScreen(
         Button(
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    analyticsManager.trackPermissionRequest(ALL_FILES_ACCESS, sdkInt)
                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
                         data = Uri.parse("package:${context.packageName}")
                     }
                     manageStorageLauncher.launch(intent)
                 } else {
+                    analyticsManager.trackPermissionRequest(STORAGE, sdkInt)
                     permissionLauncher.launch(
                         arrayOf(
                             Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -129,3 +139,9 @@ fun checkStoragePermission(): Boolean {
         true
     }
 }
+
+private const val ALL_FILES_ACCESS = "all_files_access"
+private const val STORAGE = "storage"
+
+// Manifest permission (e.g. android.permission.READ_EXTERNAL_STORAGE) -> read_external_storage.
+private fun String.toPermissionType(): String = substringAfterLast('.').lowercase()

@@ -22,6 +22,7 @@ fun MediaViewerScreen(
             initialIndex = uiState.initialIndex,
             onDismiss = onNavigateBack,
             onDelete = { fileItem -> viewModel.deleteFile(fileItem) },
+            onPageSettled = { index -> viewModel.onPageChanged(index) },
             modifier = modifier,
         )
     } else {

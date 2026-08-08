@@ -24,6 +24,10 @@ import com.jonecx.ibex.ui.analysis.StorageAnalysisScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerScreen
 import com.jonecx.ibex.ui.explorer.FileExplorerViewModel
 import com.jonecx.ibex.ui.home.HomeScreen
+import com.jonecx.ibex.ui.live.AddLiveStreamScreen
+import com.jonecx.ibex.ui.live.LiveFeedScreen
+import com.jonecx.ibex.ui.live.LiveFeedViewModel
+import com.jonecx.ibex.ui.live.LiveStreamPlayerScreen
 import com.jonecx.ibex.ui.network.AddNetworkConnectionScreen
 import com.jonecx.ibex.ui.network.NetworkConnectionsScreen
 import com.jonecx.ibex.ui.network.NetworkConnectionsViewModel
@@ -48,6 +52,13 @@ object Routes {
     const val FILE_EXPLORER = "file_explorer/{${FileExplorerViewModel.ARG_SOURCE_TYPE}}?${FileExplorerViewModel.ARG_ROOT_PATH}={${FileExplorerViewModel.ARG_ROOT_PATH}}&${FileExplorerViewModel.ARG_TITLE}={${FileExplorerViewModel.ARG_TITLE}}&${FileExplorerViewModel.ARG_CONNECTION_ID}={${FileExplorerViewModel.ARG_CONNECTION_ID}}"
     const val MEDIA_VIEWER = "media_viewer"
     const val KEY_REFRESH = "refresh"
+
+    const val LIVE_FEED = "live_feed"
+    const val ADD_LIVE_STREAM = "add_live_stream"
+    const val LIVE_PLAYER_ARG_INDEX = "index"
+    const val LIVE_PLAYER = "live_player/{$LIVE_PLAYER_ARG_INDEX}"
+
+    fun livePlayer(index: Int): String = "live_player/$index"
 
     fun fileExplorer(
         sourceType: FileSourceType,
@@ -99,7 +110,7 @@ fun AppNavigation(
         composable(Routes.HOME) {
             HomeScreen(
                 onSourceSelected = { source ->
-                    analyticsManager.trackTileClick(source.name, source.id)
+                    analyticsManager.trackTileClick(source.name, source.id, source.type)
                     when (source.type) {
                         FileSourceType.LOCAL_STORAGE,
                         FileSourceType.LOCAL_DOWNLOADS,
@@ -125,6 +136,9 @@ fun AppNavigation(
                         -> {
                             val protocol = NetworkProtocol.valueOf(source.type.name)
                             navController.navigate(Routes.networkConnections(protocol))
+                        }
+                        FileSourceType.LIVE -> {
+                            navController.navigate(Routes.LIVE_FEED)
                         }
                     }
                 },
@@ -260,6 +274,63 @@ fun AppNavigation(
                         ?.set(Routes.KEY_REFRESH, true)
                     navController.popBackStack()
                 },
+            )
+        }
+
+        composable(Routes.LIVE_FEED) {
+            val viewModel: LiveFeedViewModel = koinViewModel()
+            LiveFeedScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onAddStream = {
+                    viewModel.clearStreamToEdit()
+                    navController.navigate(Routes.ADD_LIVE_STREAM)
+                },
+                onEditStream = { stream ->
+                    viewModel.setStreamToEdit(stream)
+                    navController.navigate(Routes.ADD_LIVE_STREAM)
+                },
+                onStreamSelected = { index -> navController.navigate(Routes.livePlayer(index)) },
+                viewModel = viewModel,
+            )
+        }
+
+        composable(Routes.ADD_LIVE_STREAM) {
+            val parentEntry = remember(it) {
+                navController.getBackStackEntry(Routes.LIVE_FEED)
+            }
+            val viewModel: LiveFeedViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+            val uiState = viewModel.uiState.collectAsState().value
+            AddLiveStreamScreen(
+                onNavigateBack = {
+                    viewModel.clearStreamToEdit()
+                    navController.popBackStack()
+                },
+                onSave = { stream ->
+                    if (uiState.streamToEdit != null) {
+                        viewModel.updateStream(stream)
+                    } else {
+                        viewModel.addStream(stream)
+                    }
+                    viewModel.clearStreamToEdit()
+                    navController.popBackStack()
+                },
+                streamToEdit = uiState.streamToEdit,
+            )
+        }
+
+        composable(
+            route = Routes.LIVE_PLAYER,
+            arguments = listOf(
+                navArgument(Routes.LIVE_PLAYER_ARG_INDEX) {
+                    type = NavType.IntType
+                    defaultValue = 0
+                },
+            ),
+        ) {
+            val index = it.arguments?.getInt(Routes.LIVE_PLAYER_ARG_INDEX) ?: 0
+            LiveStreamPlayerScreen(
+                startIndex = index,
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     }

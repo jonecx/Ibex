@@ -2,6 +2,7 @@ package com.jonecx.ibex.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.ThemeMode
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
@@ -23,6 +24,7 @@ data class SettingsUiState(
 
 class SettingsViewModel(
     private val settingsPreferences: SettingsPreferencesContract,
+    private val analyticsManager: AnalyticsManager,
     private val dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -45,24 +47,34 @@ class SettingsViewModel(
     }
 
     fun setThemeMode(mode: ThemeMode) {
+        val from = _uiState.value.themeMode
+        if (from != mode) analyticsManager.trackThemeChange(from = from, to = mode)
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setThemeMode(mode)
         }
     }
 
     fun setSendAnalyticsEnabled(enabled: Boolean) {
+        // Disabling revokes consent, after which capture() no-ops; emit the change first so the
+        // opt-out itself is recorded. Enabling is emitted after the write.
+        if (!enabled) analyticsManager.trackAnalyticsConsentChange(granted = false)
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setSendAnalyticsEnabled(enabled)
         }
+        if (enabled) analyticsManager.trackAnalyticsConsentChange(granted = true)
     }
 
     fun setViewMode(mode: ViewMode) {
+        val from = _uiState.value.viewMode
+        if (from != mode) analyticsManager.trackViewModeChange(from = from, to = mode)
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setViewMode(mode)
         }
     }
 
     fun setGridColumns(columns: Int) {
+        val from = _uiState.value.gridColumns
+        if (from != columns) analyticsManager.trackGridColumnsChange(from = from, to = columns)
         viewModelScope.launch(dispatcher) {
             settingsPreferences.setGridColumns(columns)
         }

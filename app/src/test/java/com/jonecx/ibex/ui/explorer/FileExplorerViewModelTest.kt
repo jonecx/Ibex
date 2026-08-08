@@ -17,6 +17,7 @@ import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
+import com.jonecx.ibex.fixtures.RecordingAnalytics
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
 import com.jonecx.ibex.fixtures.testRemoteDirectoryFileItem
@@ -37,6 +38,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -50,6 +52,7 @@ class FileExplorerViewModelTest {
     private lateinit var fakeTrashManager: FakeFileTrashManager
     private lateinit var fakeMoveManager: FakeFileMoveManager
     private lateinit var fakeClipboardManager: FakeFileClipboardManager
+    private lateinit var analytics: RecordingAnalytics
 
     private lateinit var storagePath: String
     private lateinit var viewModel: FileExplorerViewModel
@@ -65,6 +68,7 @@ class FileExplorerViewModelTest {
         fakeTrashManager = FakeFileTrashManager()
         fakeMoveManager = FakeFileMoveManager()
         fakeClipboardManager = FakeFileClipboardManager(fakeMoveManager)
+        analytics = RecordingAnalytics(RuntimeEnvironment.getApplication())
         viewModel = createViewModel()
     }
 
@@ -94,6 +98,7 @@ class FileExplorerViewModelTest {
             fakeTrashManager,
             fakeMoveManager,
             fakeClipboardManager,
+            analytics.manager,
             savedStateHandle,
             testDispatcher,
         )
@@ -869,6 +874,97 @@ class FileExplorerViewModelTest {
 
         assertFalse(viewModel.uiState.value.isSearchActive)
         assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `initial load emits content_load QoE metric`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"), testFileItem("b.txt"))
+
+        val metric = analytics.metric("content_load")
+        assertEquals("success", metric?.get("result"))
+        assertEquals(false, metric?.get("is_remote"))
+    }
+
+    @Test
+    fun `load failure emits content_error and failure metric`() = runTest {
+        fakeRepository.errorToThrow = IllegalStateException("boom")
+        createViewModel()
+
+        assertEquals("IllegalStateException", analytics.event("content_error")?.get("error_code"))
+        assertEquals("failure", analytics.metric("content_load")?.get("result"))
+    }
+
+    @Test
+    fun `empty listing emits content_empty`() = runTest {
+        fakeRepository.filesToReturn = emptyList()
+        createViewModel()
+
+        assertEquals("folder", analytics.event("content_empty")?.get("context"))
+    }
+
+    @Test
+    fun `first remote load emits connection_connect`() = runTest {
+        fakeRepository.filesToReturn = listOf(testRemoteDirectoryFileItem("share1"))
+        createSmbViewModel()
+
+        assertEquals("smb", analytics.event("connection_connect")?.get("protocol"))
+        assertEquals("success", analytics.event("connection_connect")?.get("result"))
+    }
+
+    @Test
+    fun `navigateTo folder emits file_open`() = runTest {
+        val dir = testDirectoryFileItem("subdir", path = "$storagePath/subdir")
+        createViewModelWithFiles(dir)
+
+        viewModel.navigateTo(dir)
+
+        val props = analytics.event("file_open")
+        assertEquals(true, props?.get("is_directory"))
+        assertEquals("local_storage", props?.get("source_type"))
+    }
+
+    @Test
+    fun `deleteSelectedFiles emits file_delete with trash disposition`() = runTest {
+        val file = testFileItem("doc.txt", path = "$storagePath/doc.txt")
+        createViewModelWithFiles(file)
+        viewModel.enterSelectionMode(file)
+
+        viewModel.deleteSelectedFiles()
+
+        val props = analytics.event("file_delete")
+        assertEquals(1, props?.get("item_count"))
+        assertEquals("trash", props?.get("disposition"))
+        assertEquals("success", props?.get("result"))
+    }
+
+    @Test
+    fun `createFolder emits folder_create`() = runTest {
+        createViewModelWithFiles()
+
+        viewModel.createFolder("New Folder")
+
+        assertEquals("success", analytics.event("folder_create")?.get("result"))
+    }
+
+    @Test
+    fun `activateSearch emits search_start`() = runTest {
+        viewModel.activateSearch()
+
+        assertEquals("local_storage", analytics.event("search_start")?.get("source_type"))
+    }
+
+    @Test
+    fun `debounced search emits search_perform with query length only`() = runTest {
+        createViewModelWithFiles(testFileItem("apple.txt"), testFileItem("banana.txt"))
+        viewModel.activateSearch()
+
+        viewModel.setSearchQuery("ap")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val props = analytics.event("search_perform")
+        assertEquals(2, props?.get("query_length"))
+        // The raw query text must never be logged.
+        assertTrue(props?.values?.none { it == "ap" } == true)
     }
 
     companion object {

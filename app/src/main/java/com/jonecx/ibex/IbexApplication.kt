@@ -20,6 +20,7 @@ class IbexApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        val startMs = System.currentTimeMillis()
         startKoin {
             androidContext(this@IbexApplication)
             modules(appModules)
@@ -28,6 +29,8 @@ class IbexApplication : Application(), ImageLoaderFactory {
         NetworkContext.init(this) { analyticsManager.onNetworkChanged() }
         logger.initialize()
         analyticsManager.initialize()
+        // Startup-cost QoE (Axiom). App open/background funnels come from PostHog's lifecycle capture.
+        analyticsManager.trackAppStart(System.currentTimeMillis() - startMs)
         logger.i("Ibex application started")
     }
 

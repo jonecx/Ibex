@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,11 +47,16 @@ fun MediaViewerOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     onDelete: (FileItem) -> Unit = {},
+    onPageSettled: (Int) -> Unit = {},
 ) {
     val pagerState = rememberPagerState(
         initialPage = initialIndex,
         pageCount = { viewableFiles.size },
     )
+
+    LaunchedEffect(pagerState.settledPage) {
+        onPageSettled(pagerState.settledPage)
+    }
 
     val currentFile = viewableFiles.getOrNull(pagerState.settledPage)
     val scope = rememberCoroutineScope()

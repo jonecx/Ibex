@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
+import com.jonecx.ibex.fixtures.RecordingAnalytics
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -13,16 +14,22 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class NetworkConnectionsViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var fakePreferences: FakeNetworkConnectionsPreferences
+    private lateinit var analytics: RecordingAnalytics
 
     @Before
     fun setup() {
         fakePreferences = FakeNetworkConnectionsPreferences()
+        analytics = RecordingAnalytics(RuntimeEnvironment.getApplication())
     }
 
     private fun createViewModel(
@@ -31,7 +38,7 @@ class NetworkConnectionsViewModelTest {
         val savedStateHandle = SavedStateHandle().apply {
             if (protocol != null) set(NetworkConnectionsViewModel.ARG_PROTOCOL, protocol)
         }
-        return NetworkConnectionsViewModel(savedStateHandle, fakePreferences, testDispatcher)
+        return NetworkConnectionsViewModel(savedStateHandle, fakePreferences, analytics.manager, testDispatcher)
     }
 
     @Test
@@ -214,5 +221,56 @@ class NetworkConnectionsViewModelTest {
             assertEquals(connection, state.connectionToEdit)
             assertTrue(state.connections.isEmpty())
         }
+    }
+
+    @Test
+    fun addConnectionEmitsProtocolAndAnonymousOnly() = runTest {
+        val viewModel = createViewModel()
+        val connection = NetworkConnection(
+            id = "1",
+            protocol = NetworkProtocol.SMB,
+            displayName = "secret",
+            host = "10.0.0.5",
+            username = "admin",
+            password = "hunter2",
+            anonymous = false,
+        )
+
+        viewModel.addConnection(connection)
+
+        val props = analytics.event("connection_add")
+        assertEquals("smb", props?.get("protocol"))
+        assertEquals(false, props?.get("anonymous"))
+        // Credentials/host/name must never be logged.
+        assertTrue(props?.values?.none { it == "10.0.0.5" || it == "admin" || it == "hunter2" || it == "secret" } == true)
+    }
+
+    @Test
+    fun updateConnectionEmitsConnectionEdit() = runTest {
+        val viewModel = createViewModel()
+        val connection = NetworkConnection(id = "1", protocol = NetworkProtocol.FTP, displayName = "d", host = "h", anonymous = true)
+
+        viewModel.updateConnection(connection)
+
+        val props = analytics.event("connection_edit")
+        assertEquals("ftp", props?.get("protocol"))
+        assertEquals(true, props?.get("anonymous"))
+    }
+
+    @Test
+    fun removeConnectionEmitsProtocolResolvedFromState() = runTest {
+        val viewModel = createViewModel()
+        val connection = NetworkConnection(id = "gone", protocol = NetworkProtocol.SMB, displayName = "d", host = "h")
+
+        viewModel.uiState.test {
+            assertTrue(awaitItem().connections.isEmpty())
+            viewModel.addConnection(connection)
+            assertEquals(1, awaitItem().connections.size)
+
+            viewModel.removeConnection(connection.id)
+            awaitItem()
+        }
+
+        assertEquals("smb", analytics.event("connection_delete")?.get("protocol"))
     }
 }
