@@ -3,6 +3,7 @@ package com.jonecx.ibex.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -42,6 +43,17 @@ class LiveStreamsPreferences(
         }
     }
 
+    override suspend fun seedIfNeeded() {
+        dataStore.edit { preferences ->
+            if (preferences[SEEDED_KEY] == true) return@edit
+            val existingIds = preferences.currentStreams().map { it.id }.toSet()
+            val merged = preferences.currentStreams() +
+                LiveStreamDefaults.AZMAREE_STREAMS.filterNot { it.id in existingIds }
+            preferences[STREAMS_KEY] = toJson(merged)
+            preferences[SEEDED_KEY] = true
+        }
+    }
+
     private fun Preferences.currentStreams(): List<VideoFeed> =
         Json.decodeFromString(this[STREAMS_KEY] ?: EMPTY_JSON_ARRAY)
 
@@ -50,6 +62,7 @@ class LiveStreamsPreferences(
     companion object {
         const val STORE_NAME = "live_streams"
         private val STREAMS_KEY = stringPreferencesKey(STORE_NAME)
+        private val SEEDED_KEY = booleanPreferencesKey("live_streams_seeded")
         private const val EMPTY_JSON_ARRAY = "[]"
     }
 }

@@ -8,4 +8,7 @@ interface LiveStreamsPreferencesContract {
     suspend fun addStream(stream: VideoFeed)
     suspend fun removeStream(id: String)
     suspend fun updateStream(stream: VideoFeed)
+
+    /** Seeds the built-in default streams exactly once, so later deletions are respected. */
+    suspend fun seedIfNeeded()
 }

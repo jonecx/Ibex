@@ -28,6 +28,10 @@ class LiveFeedViewModel(
     val uiState: StateFlow<LiveFeedUiState> = _uiState.asStateFlow()
 
     init {
+        // Seed the built-in Azmaree streams once so the grid isn't empty out of the box.
+        viewModelScope.launch(dispatcher) {
+            liveStreamsPreferences.seedIfNeeded()
+        }
         viewModelScope.launchCollect(liveStreamsPreferences.streams, dispatcher) { streams ->
             _uiState.update { it.copy(streams = streams) }
         }

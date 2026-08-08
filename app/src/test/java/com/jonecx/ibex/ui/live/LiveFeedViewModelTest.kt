@@ -33,6 +33,12 @@ class LiveFeedViewModelTest {
     }
 
     @Test
+    fun `init seeds default streams once`() = runTest {
+        createViewModel()
+        assertEquals(1, fakePreferences.seedCalls)
+    }
+
+    @Test
     fun `addStream updates state`() = runTest {
         val viewModel = createViewModel()
         val stream = VideoFeed(id = "1", title = "Live", url = "https://example.com/s.m3u8")

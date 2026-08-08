@@ -24,6 +24,13 @@ class FakeLiveStreamsPreferences : LiveStreamsPreferencesContract {
         }
     }
 
+    var seedCalls: Int = 0
+        private set
+
+    override suspend fun seedIfNeeded() {
+        seedCalls++
+    }
+
     fun currentStreams(): List<VideoFeed> = _streams.value
 
     fun reset() {
