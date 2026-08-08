@@ -17,6 +17,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Ibex">
+
+        <!-- Sentry is initialized manually in SentryCrashReporter (which no-ops without a DSN);
+             disable the SDK's auto-init ContentProvider so a missing DSN can't crash startup. -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
