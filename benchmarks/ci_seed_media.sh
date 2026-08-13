@@ -8,10 +8,10 @@
 
 set -euo pipefail
 
-# Counts must overflow the grid viewport: a screenful of items reports itself
-# as not scrollable, and the scroll benchmarks require a scrollable grid.
+# Counts must overflow the grid viewport: a 4-column grid fits ~26 tiles per
+# screen, and a grid that fits on one screen reports itself as not scrollable.
 IMAGE_COUNT="${1:-40}"
-VIDEO_COUNT="${2:-24}"
+VIDEO_COUNT="${2:-48}"
 
 adb wait-for-device
 
