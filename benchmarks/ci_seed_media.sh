@@ -13,6 +13,15 @@ VIDEO_COUNT="${2:-6}"
 
 adb wait-for-device
 
+# Boot-completed does not imply /sdcard is mounted yet, so probe until it is writable.
+for i in $(seq 1 30); do
+    if adb shell "touch /sdcard/.seed_probe && rm /sdcard/.seed_probe" >/dev/null 2>&1; then
+        break
+    fi
+    [ "$i" = 30 ] && { echo "Error: /sdcard never became writable"; exit 1; }
+    sleep 2
+done
+
 adb shell mkdir -p /sdcard/Pictures /sdcard/Movies
 
 echo "Seeding $IMAGE_COUNT images..."
