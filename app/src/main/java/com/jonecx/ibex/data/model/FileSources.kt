@@ -1,6 +1,5 @@
 package com.jonecx.ibex.data.model
 
-import android.os.Environment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.AudioFile
@@ -44,6 +43,8 @@ object FileSources {
         recent: String,
         analysis: String,
         trash: String,
+        storageRootPath: String,
+        downloadsRootPath: String,
     ): List<FileSource> = listOf(
         FileSource(
             id = "main_storage",
@@ -51,7 +52,7 @@ object FileSources {
             type = FileSourceType.LOCAL_STORAGE,
             icon = Icons.Filled.Storage,
             iconTint = SourceStorageColor,
-            rootPath = Environment.getExternalStorageDirectory().absolutePath,
+            rootPath = storageRootPath,
         ),
         FileSource(
             id = "downloads",
@@ -59,7 +60,7 @@ object FileSources {
             type = FileSourceType.LOCAL_DOWNLOADS,
             icon = Icons.Filled.Download,
             iconTint = SourceDownloadsColor,
-            rootPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath,
+            rootPath = downloadsRootPath,
         ),
         FileSource(
             id = "images",

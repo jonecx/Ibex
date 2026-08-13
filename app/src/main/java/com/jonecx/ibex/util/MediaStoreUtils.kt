@@ -5,10 +5,12 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.data.model.SourceStats
 
 object MediaStoreUtils {
 
@@ -48,21 +50,53 @@ object MediaStoreUtils {
         sizeColumn: String = MediaStore.MediaColumns.SIZE,
         selection: String? = null,
         selectionArgs: Array<String>? = null,
-    ): Long {
+    ): Long = queryStats(context, collection, sizeColumn, selection, selectionArgs).sizeBytes
+
+    // Sums the size column and counts matching rows in a single cursor pass.
+    fun queryStats(
+        context: Context,
+        collection: Uri,
+        sizeColumn: String = MediaStore.MediaColumns.SIZE,
+        selection: String? = null,
+        selectionArgs: Array<String>? = null,
+    ): SourceStats =
+        context.contentResolver.query(collection, arrayOf(sizeColumn), selection, selectionArgs, null)
+            .foldStats(sizeColumn)
+
+    // Bundle variant for queries needing QUERY_ARG_* extras (e.g. matching trashed items).
+    fun queryStats(
+        context: Context,
+        collection: Uri,
+        queryArgs: Bundle,
+        sizeColumn: String = MediaStore.MediaColumns.SIZE,
+    ): SourceStats =
+        context.contentResolver.query(collection, arrayOf(sizeColumn), queryArgs, null)
+            .foldStats(sizeColumn)
+
+    private fun Cursor?.foldStats(sizeColumn: String): SourceStats {
         var total = 0L
-        context.contentResolver.query(
-            collection,
-            arrayOf(sizeColumn),
-            selection,
-            selectionArgs,
-            null,
-        )?.use { cursor ->
+        var count = 0
+        this?.use { cursor ->
             val colIndex = cursor.getColumnIndexOrThrow(sizeColumn)
             while (cursor.moveToNext()) {
                 total += cursor.getLong(colIndex)
+                count++
             }
         }
-        return total
+        return SourceStats(count = count, sizeBytes = total)
+    }
+
+    // Documents live in MediaStore.Files, filtered to the known office/pdf mime types.
+    fun queryDocumentStats(context: Context): SourceStats {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return SourceStats(count = 0, sizeBytes = 0L)
+        return queryStats(
+            context = context,
+            collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+            selection = appendTrashFilter(
+                "${MediaStore.Files.FileColumns.MIME_TYPE} IN (${FileTypeUtils.DOCUMENT_MIME_SELECTION_PLACEHOLDERS})",
+            ),
+            selectionArgs = FileTypeUtils.DOCUMENT_MIME_TYPES,
+        )
     }
 
     fun Cursor.toFileItems(

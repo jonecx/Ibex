@@ -47,6 +47,22 @@ class FormatUtilsTest {
     }
 
     @Test
+    fun `formatSizeWithCount appends count in parentheses`() {
+        assertEquals("1.0 KB (3)", formatSizeWithCount(1024, 3))
+    }
+
+    @Test
+    fun `formatSizeWithCount handles zero size and count`() {
+        assertEquals("0 B (0)", formatSizeWithCount(0, 0))
+    }
+
+    @Test
+    fun `formatStorageUsage formats used over total`() {
+        val gib = 1024L * 1024L * 1024L
+        assertEquals("221.0 GB / 256.0 GB", formatStorageUsage(221 * gib, 256 * gib))
+    }
+
+    @Test
     fun `formatDate returns empty for zero`() {
         assertEquals("", formatDate(0))
     }

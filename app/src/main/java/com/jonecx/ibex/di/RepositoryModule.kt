@@ -10,9 +10,11 @@ import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileSystemMoveManager
 import com.jonecx.ibex.data.repository.FileTrashManager
+import com.jonecx.ibex.data.repository.HomeSourceStatsRepository
 import com.jonecx.ibex.data.repository.LocalFileRepository
 import com.jonecx.ibex.data.repository.MediaFileRepository
 import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
+import com.jonecx.ibex.data.repository.MediaStoreHomeSourceStatsRepository
 import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.data.repository.ProtocolFileHandler
 import com.jonecx.ibex.data.repository.RecentFilesRepository
@@ -71,4 +73,8 @@ val repositoryModule = module {
 
     single<FileClipboardManager> { DefaultFileClipboardManager(get()) }
     single<SmbContextProviderContract> { SmbContextProvider() }
+
+    single<HomeSourceStatsRepository> {
+        MediaStoreHomeSourceStatsRepository(androidContext(), get(IoDispatcher))
+    }
 }

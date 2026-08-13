@@ -1,5 +1,6 @@
 package com.jonecx.ibex.ui.home
 
+import android.os.Environment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -19,23 +20,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileSource
+import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.FileSources
+import com.jonecx.ibex.data.model.SourceStats
+import com.jonecx.ibex.data.model.StorageUsage
 import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.SourceTile
+import com.jonecx.ibex.util.formatSizeWithCount
+import com.jonecx.ibex.util.formatStorageUsage
+import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onSourceSelected: (FileSource) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = koinViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     val storageLabel = stringResource(R.string.source_storage)
     val downloadsLabel = stringResource(R.string.source_downloads)
     val imagesLabel = stringResource(R.string.source_images)
@@ -50,18 +61,52 @@ fun HomeScreen(
     val smbLabel = stringResource(R.string.source_smb)
     val ftpLabel = stringResource(R.string.source_ftp)
     val liveLabel = stringResource(R.string.source_live)
-    val localSectionLabel = stringResource(R.string.section_local)
-    val remoteSectionLabel = stringResource(R.string.section_remote)
 
     val localSources = remember(storageLabel) {
         FileSources.getLocalSources(
-            storageLabel, downloadsLabel, imagesLabel, videosLabel,
-            audioLabel, documentsLabel, appsLabel, recentLabel, analysisLabel, trashLabel,
+            storage = storageLabel,
+            downloads = downloadsLabel,
+            images = imagesLabel,
+            videos = videosLabel,
+            audio = audioLabel,
+            documents = documentsLabel,
+            apps = appsLabel,
+            recent = recentLabel,
+            analysis = analysisLabel,
+            trash = trashLabel,
+            storageRootPath = Environment.getExternalStorageDirectory().absolutePath,
+            downloadsRootPath = Environment
+                .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath,
         )
     }
     val remoteSources = remember(cloudLabel) {
         FileSources.getRemoteSources(cloudLabel, smbLabel, ftpLabel, liveLabel)
     }
+
+    HomeScreenContent(
+        localSources = localSources,
+        remoteSources = remoteSources,
+        stats = uiState.stats,
+        storageUsage = uiState.storageUsage,
+        onSourceSelected = onSourceSelected,
+        onSettingsClick = onSettingsClick,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun HomeScreenContent(
+    localSources: List<FileSource>,
+    remoteSources: List<FileSource>,
+    stats: Map<FileSourceType, SourceStats>,
+    storageUsage: StorageUsage?,
+    onSourceSelected: (FileSource) -> Unit,
+    onSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val localSectionLabel = stringResource(R.string.section_local)
+    val remoteSectionLabel = stringResource(R.string.section_remote)
 
     Scaffold(
         topBar = {
@@ -82,7 +127,8 @@ fun HomeScreen(
         modifier = modifier,
     ) { paddingValues ->
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 100.dp),
+            // Adaptive so columns grow with width; min wide enough that "size (count)" never truncates.
+            columns = GridCells.Adaptive(minSize = 128.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
@@ -97,7 +143,7 @@ fun HomeScreen(
 
             items(localSources) { source ->
                 SourceTile(
-                    source = source,
+                    source = source.withStats(stats, storageUsage),
                     onClick = { onSourceSelected(source) },
                 )
             }
@@ -113,12 +159,25 @@ fun HomeScreen(
 
             items(remoteSources) { source ->
                 SourceTile(
-                    source = source,
+                    source = source.withStats(stats, storageUsage),
                     onClick = { onSourceSelected(source) },
                 )
             }
         }
     }
+}
+
+// Attaches a subtitle: used/total for Storage, "size (count)" for other local tiles with content.
+private fun FileSource.withStats(
+    stats: Map<FileSourceType, SourceStats>,
+    storageUsage: StorageUsage?,
+): FileSource {
+    if (type == FileSourceType.LOCAL_STORAGE) {
+        val usage = storageUsage ?: return this
+        return copy(subtitle = formatStorageUsage(usage.usedBytes, usage.totalBytes))
+    }
+    val stat = stats[type]?.takeIf { it.count > 0 } ?: return this
+    return copy(subtitle = formatSizeWithCount(stat.sizeBytes, stat.count))
 }
 
 @Composable

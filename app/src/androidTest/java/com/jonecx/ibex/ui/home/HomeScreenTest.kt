@@ -51,4 +51,18 @@ class HomeScreenTest {
         composeTestRule.onNodeWithText("SMB/CIFS").assertIsDisplayed()
         composeTestRule.onNodeWithText("FTP").assertIsDisplayed()
     }
+
+    @Test
+    fun displaysSizeAndCountAcrossLocalTiles() {
+        // Counts come from the fake stats repository wired into the test Koin graph.
+        composeTestRule.onNodeWithText("(4253)", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("(1056)", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("(364)", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("(172)", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun displaysUsedOverTotalOnStorageTile() {
+        composeTestRule.onNodeWithText("221.0 GB / 256.0 GB").assertIsDisplayed()
+    }
 }

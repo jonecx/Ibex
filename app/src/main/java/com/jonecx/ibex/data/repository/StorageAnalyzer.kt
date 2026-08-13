@@ -15,7 +15,6 @@ import com.jonecx.ibex.ui.theme.SourceDocumentsColor
 import com.jonecx.ibex.ui.theme.SourceImagesColor
 import com.jonecx.ibex.ui.theme.SourceStorageColor
 import com.jonecx.ibex.ui.theme.SourceVideosColor
-import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.MediaStoreUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
@@ -77,17 +76,7 @@ class MediaStoreStorageAnalyzer(
     private fun queryTotalSize(collectionUri: android.net.Uri): Long =
         MediaStoreUtils.sumColumnSize(context, collectionUri, selection = MediaStoreUtils.trashFilter())
 
-    private fun queryDocumentsSize(): Long {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return 0L
-        return MediaStoreUtils.sumColumnSize(
-            context = context,
-            collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-            selection = MediaStoreUtils.appendTrashFilter(
-                "${MediaStore.Files.FileColumns.MIME_TYPE} IN (${FileTypeUtils.DOCUMENT_MIME_SELECTION_PLACEHOLDERS})",
-            ),
-            selectionArgs = FileTypeUtils.DOCUMENT_MIME_TYPES,
-        )
-    }
+    private fun queryDocumentsSize(): Long = MediaStoreUtils.queryDocumentStats(context).sizeBytes
 
     private fun queryAppsSize(): Long {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

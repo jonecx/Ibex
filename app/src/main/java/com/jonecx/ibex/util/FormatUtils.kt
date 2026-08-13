@@ -22,6 +22,13 @@ fun formatFileSize(bytes: Long): String {
     )
 }
 
+// Home tile subtitle, e.g. "63.4 GB (1056)".
+fun formatSizeWithCount(bytes: Long, count: Int): String = "${formatFileSize(bytes)} ($count)"
+
+// Storage tile subtitle, e.g. "221 GB / 256 GB".
+fun formatStorageUsage(usedBytes: Long, totalBytes: Long): String =
+    "${formatFileSize(usedBytes)} / ${formatFileSize(totalBytes)}"
+
 fun formatDate(timestamp: Long): String {
     if (timestamp <= 0) return ""
     return dateFormat.get()!!.format(Date(timestamp))

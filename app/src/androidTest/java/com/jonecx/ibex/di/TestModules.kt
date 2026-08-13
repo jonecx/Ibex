@@ -12,6 +12,7 @@ import com.jonecx.ibex.data.repository.FakeFileRepository
 import com.jonecx.ibex.data.repository.FileClipboardManager
 import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileTrashManager
+import com.jonecx.ibex.data.repository.HomeSourceStatsRepository
 import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.data.repository.StorageAnalyzer
 import com.jonecx.ibex.fixtures.FakeAnalyticsProvider
@@ -22,6 +23,7 @@ import com.jonecx.ibex.fixtures.FakeFileImageRequestFactory
 import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
+import com.jonecx.ibex.fixtures.FakeHomeSourceStatsRepository
 import com.jonecx.ibex.fixtures.FakeMetricsProvider
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
@@ -70,6 +72,9 @@ val testOverridesModule = module {
 
     single { FakeStorageAnalyzer() }
     single<StorageAnalyzer> { get<FakeStorageAnalyzer>() }
+
+    single { FakeHomeSourceStatsRepository() }
+    single<HomeSourceStatsRepository> { get<FakeHomeSourceStatsRepository>() }
 
     single<FileRepositoryFactory> { FakeFileRepositoryFactory(FakeFileRepository()) }
     single<FileTrashManager> { FakeFileTrashManager() }

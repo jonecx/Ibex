@@ -1,5 +1,6 @@
 package com.jonecx.ibex
 
+import com.jonecx.ibex.fixtures.FakeHomeSourceStatsRepository
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
@@ -19,5 +20,6 @@ class FakeResetRunListener : RunListener() {
         koin.get<FakeNetworkConnectionsPreferences>().reset()
         koin.get<FakeRecentFoldersPreferences>().reset()
         koin.get<FakeStorageAnalyzer>().reset()
+        koin.get<FakeHomeSourceStatsRepository>().reset()
     }
 }
