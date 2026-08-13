@@ -59,6 +59,15 @@ jobs:
             bash benchmarks/ci_seed_media.sh
             ./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,LOW-BATTERY
 
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports
+          path: |
+            macrobenchmark/build/reports/androidTests/
+            macrobenchmark/build/outputs/connected_android_test_additional_output/
+
       - name: Convert results for github-action-benchmark
         run: python3 benchmarks/benchmark_to_gha.py --output benchmark-gha.json
 

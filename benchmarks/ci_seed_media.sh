@@ -20,9 +20,14 @@ for i in $(seq 1 "$IMAGE_COUNT"); do
     adb shell screencap -p "/sdcard/Pictures/seed_img_$i.png"
 done
 
+# screenrecord is unreliable on headless emulators, so push real sample MP4s from the test assets.
 echo "Seeding $VIDEO_COUNT videos..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ASSETS_DIR="$SCRIPT_DIR/../app/src/androidTest/assets"
+SAMPLES=("$ASSETS_DIR/earth_MP4_480_1_5MG.mp4" "$ASSETS_DIR/15764815-hd_1080_1920_60fps.mp4")
 for i in $(seq 1 "$VIDEO_COUNT"); do
-    adb shell screenrecord --time-limit 2 --size 480x854 "/sdcard/Movies/seed_vid_$i.mp4" || true
+    src="${SAMPLES[$((i % 2))]}"
+    adb push "$src" "/sdcard/Movies/seed_vid_$i.mp4" >/dev/null
 done
 
 # Trigger a MediaStore scan so the app's MediaStore queries see the files (API 30+).
