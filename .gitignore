@@ -25,4 +25,4 @@ benchmarks/__pycache__/
 # Build outputs (all modules)
 **/build/
 
-.githooks/benchmarks/results/
+benchmarks/results/
