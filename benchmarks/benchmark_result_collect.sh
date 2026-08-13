@@ -19,7 +19,7 @@ if [ ! -d "$SOURCE_DIR" ]; then
     echo "  $SOURCE_DIR"
     echo ""
     echo "Run benchmarks first:"
-    echo "  ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest"
+    echo "  ./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest"
     exit 1
 fi
 

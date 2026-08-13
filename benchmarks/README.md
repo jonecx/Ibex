@@ -13,13 +13,13 @@ CI runs the suite on an emulator on every push to `main` (`.github/workflows/ben
 
 ```bash
 # 1. Run benchmarks (installs app, grants permissions, runs tests)
-./gradlew :macrobenchmark:connectedBenchmarkAndroidTest
+./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest
 
 # 2. Save results with a label
 ./benchmarks/benchmark_result_collect.sh "before-refactor"
 
 # 3. Make your code changes, then run again
-./gradlew :macrobenchmark:connectedBenchmarkAndroidTest
+./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest
 ./benchmarks/benchmark_result_collect.sh "after-refactor"
 
 # 4. Compare the two runs
@@ -45,7 +45,7 @@ This automatically:
 ### Run benchmarks only
 
 ```bash
-./gradlew :macrobenchmark:connectedBenchmarkAndroidTest
+./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest
 ```
 
 This automatically:

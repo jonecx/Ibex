@@ -57,7 +57,7 @@ jobs:
           disable-animations: false
           script: |
             bash benchmarks/ci_seed_media.sh
-            ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,LOW-BATTERY
+            ./gradlew :macrobenchmark:connectedBenchmarkBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,LOW-BATTERY
 
       - name: Convert results for github-action-benchmark
         run: python3 benchmarks/benchmark_to_gha.py --output benchmark-gha.json
