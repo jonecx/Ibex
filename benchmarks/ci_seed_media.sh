@@ -8,8 +8,10 @@
 
 set -euo pipefail
 
+# Counts must overflow the grid viewport: a screenful of items reports itself
+# as not scrollable, and the scroll benchmarks require a scrollable grid.
 IMAGE_COUNT="${1:-40}"
-VIDEO_COUNT="${2:-6}"
+VIDEO_COUNT="${2:-24}"
 
 adb wait-for-device
 
