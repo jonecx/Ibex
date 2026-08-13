@@ -1,7 +1,8 @@
 # Benchmarks
 
-Local-only macrobenchmark suite for tracking Ibex performance over time.
-Benchmarks require a **physical device or emulator** — they are not run in CI.
+Macrobenchmark suite for tracking Ibex performance over time.
+
+CI runs the suite on an emulator on every push to `main` (`.github/workflows/benchmark.yml`) and publishes trend charts to GitHub Pages via [github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark): <https://jonecx.github.io/Ibex/dev/bench/>. Emulator numbers are for trend/regression tracking — for real-world numbers, run locally on a physical device with the tools below.
 
 ## Prerequisites
 
@@ -27,7 +28,7 @@ python3 benchmarks/benchmark_result_compare.py --latest
 
 ## Commands
 
-### Run benchmarks + view report (one command)
+### Run benchmarks + compare (one command)
 
 ```bash
 ./gradlew :macrobenchmark:benchmarkCheck
@@ -39,7 +40,7 @@ This automatically:
 2. Grants `MANAGE_EXTERNAL_STORAGE` via `adb shell appops set`
 3. Runs all startup and scroll benchmarks (5 iterations each)
 4. Collects results into `benchmarks/results/`
-5. Generates and opens the HTML chart report
+5. Compares against the previous run
 
 ### Run benchmarks only
 
@@ -73,21 +74,20 @@ Prints a table with median, min, max, and percentage delta for each metric. Flag
 
 ### Graph trends over time
 
-```bash
-python3 benchmarks/benchmark_result_chart.py             # generates report.html and opens in browser
-python3 benchmarks/benchmark_result_chart.py --no-open   # generates without opening
-```
+Trend charts live on GitHub Pages, updated by CI on every push to `main`: <https://jonecx.github.io/Ibex/dev/bench/>. Local results in `benchmarks/results/` are gitignored and stay on your machine.
 
-Creates an interactive Chart.js HTML report from all collected runs in `benchmarks/results/`.
+### Publish local device runs to the charts
 
-### Commit results
+Local runs appear on the same page as their own series ("Pixel 7 Pro local"), kept separate from the emulator series. To append new local runs:
 
 ```bash
-git add benchmarks/results/
-git commit -m "benchmark: <description>"
+git worktree add /tmp/gh-pages gh-pages
+python3 benchmarks/backfill_gha_history.py --merge /tmp/gh-pages/dev/bench/data.js --output /tmp/gh-pages/dev/bench/data.js
+git -C /tmp/gh-pages commit -am "append local benchmark runs" && git -C /tmp/gh-pages push
+git worktree remove /tmp/gh-pages
 ```
 
-Committing results lets you track performance across branches and PRs.
+Already-published runs are deduped, so this is safe to re-run anytime.
 
 ## Tests
 

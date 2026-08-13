@@ -1,0 +1,77 @@
+# Runs macrobenchmarks on an emulator and publishes trend charts to GitHub Pages
+# via benchmark-action/github-action-benchmark (gh-pages branch, /dev/bench).
+name: Benchmarks
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Serialize runs so gh-pages history writes never race.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  macrobenchmark:
+    name: Macrobenchmark (Pixel 7 Pro, API 34)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Create local.properties
+        run: |
+          echo "POSTHOG_API_KEY=" >> local.properties
+          echo "POSTHOG_HOST=https://us.i.posthog.com" >> local.properties
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run macrobenchmarks
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7_pro
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: false
+          script: |
+            bash benchmarks/ci_seed_media.sh
+            ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,LOW-BATTERY
+
+      - name: Convert results for github-action-benchmark
+        run: python3 benchmarks/benchmark_to_gha.py --output benchmark-gha.json
+
+      - name: Publish benchmark charts
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Ibex Macrobenchmarks
+          tool: customSmallerIsBetter
+          output-file-path: benchmark-gha.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          benchmark-data-dir-path: dev/bench
+          alert-threshold: 150%
+          comment-on-alert: true
+          fail-on-alert: false
+          max-items-in-chart: 150

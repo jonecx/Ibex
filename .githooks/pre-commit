@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# Ibex pre-commit: block commits that contain unformatted Kotlin.
+# Enable once per clone: git config core.hooksPath .githooks
+
+if [ -z "$JAVA_HOME" ] && [ -d "/Applications/Android Studio.app/Contents/jbr/Contents/Home" ]; then
+  export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+fi
+
+echo "pre-commit: ./gradlew spotlessCheck"
+if ! ./gradlew --quiet spotlessCheck; then
+  echo ""
+  echo "Spotless found formatting issues. Fix them with:"
+  echo "  ./gradlew spotlessApply"
+  echo "then re-stage your files and commit again."
+  exit 1
+fi

@@ -67,6 +67,5 @@ if [ "$NUM_RUNS" -gt "$MAX_RUNS" ]; then
 fi
 
 echo ""
-echo "Commit with:"
-echo "  git add benchmarks/results/"
-echo "  git commit -m \"benchmark: $TIMESTAMP ($GIT_SHA)\""
+echo "Compare with:"
+echo "  python3 benchmarks/benchmark_result_compare.py --latest"

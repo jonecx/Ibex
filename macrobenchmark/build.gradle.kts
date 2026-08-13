@@ -86,9 +86,6 @@ afterEvaluate {
                 logger.lifecycle("Comparing against previous run...")
                 runScript("python3", File(benchDir, "benchmark_result_compare.py").absolutePath, "--latest")
             }
-
-            logger.lifecycle("Generating benchmark report...")
-            runScript("python3", File(benchDir, "benchmark_result_chart.py").absolutePath)
         }
     }
 }
