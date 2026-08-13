@@ -39,15 +39,20 @@ for i in $(seq 1 "$VIDEO_COUNT"); do
     adb push "$src" "/sdcard/Movies/seed_vid_$i.mp4" >/dev/null
 done
 
-# Trigger a MediaStore scan so the app's MediaStore queries see the files (API 30+).
+# MediaStore does not reliably auto-index adb-pushed files, so scan each video explicitly (API 30+).
+for f in $(adb shell ls /sdcard/Movies 2>/dev/null | tr -d '\r'); do
+    adb shell content call --uri content://media/none --method scan_file --arg "/sdcard/Movies/$f" >/dev/null 2>&1 || true
+done
 adb shell content call --uri content://media/none --method scan_volume --arg external_primary >/dev/null 2>&1 || true
 
-# Fallback: per-file scan broadcast for images older scanners pick up.
-for f in $(adb shell ls /sdcard/Pictures 2>/dev/null | tr -d '\r'); do
-    adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/Pictures/$f" >/dev/null 2>&1 || true
-done
-for f in $(adb shell ls /sdcard/Movies 2>/dev/null | tr -d '\r'); do
-    adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/Movies/$f" >/dev/null 2>&1 || true
+# Verify MediaStore actually indexed the videos before handing off to the benchmarks.
+for i in $(seq 1 15); do
+    vids=$(adb shell content query --uri content://media/external/video/media --projection _id 2>/dev/null | grep -c "Row:" || true)
+    imgs=$(adb shell content query --uri content://media/external/images/media --projection _id 2>/dev/null | grep -c "Row:" || true)
+    echo "MediaStore sees: $imgs images, $vids videos (check $i)"
+    [ "$vids" -ge "$VIDEO_COUNT" ] && break
+    adb shell content call --uri content://media/none --method scan_volume --arg external_primary >/dev/null 2>&1 || true
+    sleep 4
 done
 
-echo "Seeded: $(adb shell ls /sdcard/Pictures | wc -l | tr -d ' ') images, $(adb shell ls /sdcard/Movies | wc -l | tr -d ' ') videos"
+echo "Seeded: $(adb shell ls /sdcard/Pictures | wc -l | tr -d ' ') images, $(adb shell ls /sdcard/Movies | wc -l | tr -d ' ') videos on disk"
