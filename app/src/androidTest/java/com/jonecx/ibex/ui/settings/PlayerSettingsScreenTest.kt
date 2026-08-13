@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.jonecx.azmaree.player.model.PlayButtonPosition
 import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
@@ -105,7 +106,7 @@ class PlayerSettingsScreenTest : KoinTest {
         composeTestRule.waitForIdle()
         assertEquals(30_000L, fakePreferences.currentSettings().controls.seekStepMs)
 
-        composeTestRule.onNodeWithText("Reset to defaults").performClick()
+        composeTestRule.onNodeWithText("Reset to defaults").performScrollTo().performClick()
         composeTestRule.waitForIdle()
 
         assertEquals(10_000L, fakePreferences.currentSettings().controls.seekStepMs)
