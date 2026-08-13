@@ -72,7 +72,7 @@ jobs:
         run: python3 benchmarks/benchmark_to_gha.py --output benchmark-gha.json
 
       - name: Publish benchmark charts
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
           name: Ibex Macrobenchmarks
           tool: customSmallerIsBetter
