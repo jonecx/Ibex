@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774223479000,
+  "lastUpdate": 1786646104609,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex Macrobenchmarks (Pixel 7 Pro local)": [
@@ -1240,6 +1240,167 @@ window.BENCHMARK_DATA = {
             "name": "StartupBenchmark.startupColdBaselineProfile / timeToInitialDisplayMs (median)",
             "unit": "ms",
             "value": 250.815715
+          }
+        ]
+      }
+    ],
+    "Ibex Macrobenchmarks": [
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "227515812ef2b840ead1e0c5008ac170461b87e6",
+          "message": "fix(ci): 48 seed videos so the grid overflows on tall screens",
+          "timestamp": "2026-08-13T10:41:40-07:00",
+          "tree_id": "450ff9606a017a4eeaddfaee6622ea25d57f9a4d",
+          "url": "https://github.com/jonecx/Ibex/commit/227515812ef2b840ead1e0c5008ac170461b87e6"
+        },
+        "date": 1786646103852,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameDurationCpuMs P50",
+            "value": 362.675511,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameDurationCpuMs P90",
+            "value": 450.22098040000003,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameDurationCpuMs P99",
+            "value": 530.29213174,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameOverrunMs P50",
+            "value": 509.777694,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameOverrunMs P90",
+            "value": 635.2761962,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameOverrunMs P99",
+            "value": 684.7739385199999,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameDurationCpuMs P50",
+            "value": 347.601508,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameDurationCpuMs P90",
+            "value": 487.403789,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameDurationCpuMs P99",
+            "value": 558.3538715,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameOverrunMs P50",
+            "value": 453.743346,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameOverrunMs P90",
+            "value": 660.557412,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameOverrunMs P99",
+            "value": 745.4843559999999,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameDurationCpuMs P50",
+            "value": 317.102054,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameDurationCpuMs P90",
+            "value": 439.56783240000004,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameDurationCpuMs P99",
+            "value": 478.28652539999996,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameOverrunMs P50",
+            "value": 457.737303,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameOverrunMs P90",
+            "value": 618.0622286,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameOverrunMs P99",
+            "value": 704.8884510799996,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameDurationCpuMs P50",
+            "value": 373.762412,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameDurationCpuMs P90",
+            "value": 459.217309,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameDurationCpuMs P99",
+            "value": 565.9749810000001,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameOverrunMs P50",
+            "value": 526.335437,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameOverrunMs P90",
+            "value": 646.114095,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameOverrunMs P99",
+            "value": 718.3059395,
+            "unit": "ms"
+          },
+          {
+            "name": "StartupBenchmark.startupWarm / timeToInitialDisplayMs (median)",
+            "value": 1157.544303,
+            "unit": "ms"
+          },
+          {
+            "name": "StartupBenchmark.startupColdNoCompilation / timeToInitialDisplayMs (median)",
+            "value": 3490.876581,
+            "unit": "ms"
+          },
+          {
+            "name": "StartupBenchmark.startupColdBaselineProfile / timeToInitialDisplayMs (median)",
+            "value": 3569.891956,
+            "unit": "ms"
           }
         ]
       }
