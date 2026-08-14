@@ -10,6 +10,7 @@ import com.jonecx.ibex.data.model.SortField
 import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.repository.ClipboardOperation
+import com.jonecx.ibex.data.repository.MediaType
 import com.jonecx.ibex.fixtures.FakeFileClipboardManager
 import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepository
@@ -213,7 +214,7 @@ class FileExplorerViewModelTest {
 
     @Test
     fun `non-folder-navigation source disables folder navigation`() = runTest {
-        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_AUDIO.name, title = "Audio")
 
         val state = viewModel.uiState.value
         assertFalse(state.allowFolderNavigation)
@@ -221,7 +222,7 @@ class FileExplorerViewModelTest {
 
     @Test
     fun `navigateTo directory is no-op when folder navigation disabled`() = runTest {
-        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_AUDIO.name, title = "Audio")
 
         val stackBefore = viewModel.uiState.value.navigationStack.size
         val dir = testDirectoryFileItem("subdir")
@@ -484,13 +485,75 @@ class FileExplorerViewModelTest {
     }
 
     @Test
-    fun `allowFolderNavigation is false for images`() = runTest {
-        assertFolderNavigation(FileSourceType.LOCAL_IMAGES, expected = false)
+    fun `allowFolderNavigation is true for images`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_IMAGES, expected = true)
     }
 
     @Test
-    fun `allowFolderNavigation is false for videos`() = runTest {
-        assertFolderNavigation(FileSourceType.LOCAL_VIDEOS, expected = false)
+    fun `allowFolderNavigation is true for videos`() = runTest {
+        assertFolderNavigation(FileSourceType.LOCAL_VIDEOS, expected = true)
+    }
+
+    @Test
+    fun `images source enables media folder browsing`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        assertTrue(viewModel.uiState.value.isMediaFolderBrowsing)
+    }
+
+    @Test
+    fun `videos source enables media folder browsing`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_VIDEOS.name, title = "Videos")
+        assertTrue(viewModel.uiState.value.isMediaFolderBrowsing)
+    }
+
+    @Test
+    fun `storage source does not enable media folder browsing`() = runTest {
+        assertFalse(viewModel.uiState.value.isMediaFolderBrowsing)
+    }
+
+    @Test
+    fun `media folder browsing starts at storage root`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        assertEquals(INTERNAL_STORAGE_PATH, viewModel.uiState.value.currentPath)
+    }
+
+    @Test
+    fun `media folder browsing disables create folder`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        assertFalse(viewModel.uiState.value.canCreateFolder)
+    }
+
+    @Test
+    fun `getCurrentDirectoryName shows source title at media folder root`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        assertEquals("Images", viewModel.getCurrentDirectoryName())
+    }
+
+    @Test
+    fun `media folder navigation into a subfolder shows its name`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+
+        viewModel.navigateTo(testDirectoryFileItem("Camera", path = "$storagePath/DCIM/Camera"))
+
+        assertEquals("Camera", viewModel.getCurrentDirectoryName())
+    }
+
+    @Test
+    fun `images source resolves to the media folder repository`() = runTest {
+        createViewModel(sourceType = FileSourceType.LOCAL_IMAGES.name, title = "Images")
+        assertEquals(MediaType.IMAGES, fakeFactory.lastMediaFolderType)
+    }
+
+    @Test
+    fun `videos source resolves to the media folder repository`() = runTest {
+        createViewModel(sourceType = FileSourceType.LOCAL_VIDEOS.name, title = "Videos")
+        assertEquals(MediaType.VIDEOS, fakeFactory.lastMediaFolderType)
+    }
+
+    @Test
+    fun `audio source resolves to the flat media repository`() = runTest {
+        createViewModel(sourceType = FileSourceType.LOCAL_AUDIO.name, title = "Audio")
+        assertEquals(MediaType.AUDIO, fakeFactory.lastMediaFileType)
     }
 
     @Test

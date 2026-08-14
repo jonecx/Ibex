@@ -32,6 +32,9 @@ data class FileItem(
     val mimeType: String? = null,
     val childCount: Int? = null,
     val isRemote: Boolean = false,
+    // For a media-folder tile: path of a representative image/video to show as the folder's cover.
+    val coverPath: String? = null,
+    val coverIsVideo: Boolean = false,
 ) {
     companion object
 }

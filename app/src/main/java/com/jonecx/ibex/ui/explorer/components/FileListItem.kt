@@ -56,6 +56,7 @@ fun FileListItem(
         }
 
         var thumbnailFailed by remember(fileItem.path) { mutableStateOf(false) }
+        // List rows are too small for a cover, so folders keep the plain folder icon; only files get a thumbnail.
         val showThumbnail = !thumbnailFailed && fileItem.fileType.isViewable
         if (showThumbnail) {
             ThumbnailImage(

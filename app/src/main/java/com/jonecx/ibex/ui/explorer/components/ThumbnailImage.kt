@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.jonecx.azmaree.image.AzmareeImage
 import com.jonecx.azmaree.image.model.AzmareeImageState
 import com.jonecx.ibex.data.model.FileItem
+import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.ui.theme.AlphaSecondary
 import com.jonecx.ibex.ui.util.previewPlaceholder
 
@@ -75,4 +76,14 @@ fun ThumbnailImage(
             }
         }
     }
+}
+
+// The item to draw a thumbnail from: a media folder resolves to its cover; a viewable file resolves to itself;
+// anything else (a plain folder or non-media file) has no thumbnail and returns null.
+fun FileItem.thumbnailCover(): FileItem? = when {
+    isDirectory -> coverPath?.let {
+        copy(path = it, fileType = if (coverIsVideo) FileType.VIDEO else FileType.IMAGE)
+    }
+    fileType.isViewable -> this
+    else -> null
 }

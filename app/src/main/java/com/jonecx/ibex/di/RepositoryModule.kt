@@ -13,6 +13,7 @@ import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.HomeSourceStatsRepository
 import com.jonecx.ibex.data.repository.LocalFileRepository
 import com.jonecx.ibex.data.repository.MediaFileRepository
+import com.jonecx.ibex.data.repository.MediaFolderRepository
 import com.jonecx.ibex.data.repository.MediaStoreFileTrashManager
 import com.jonecx.ibex.data.repository.MediaStoreHomeSourceStatsRepository
 import com.jonecx.ibex.data.repository.MediaType
@@ -31,6 +32,7 @@ import org.koin.dsl.module
 interface FileRepositoryFactory {
     fun createLocalFileRepository(): FileRepository
     fun createMediaFileRepository(mediaType: MediaType): FileRepository
+    fun createMediaFolderRepository(mediaType: MediaType): FileRepository
     fun createAppsRepository(): FileRepository
     fun createRecentFilesRepository(): FileRepository
     fun createTrashRepository(): FileRepository
@@ -47,6 +49,9 @@ class RealFileRepositoryFactory(
 
     override fun createMediaFileRepository(mediaType: MediaType): FileRepository =
         MediaFileRepository(context, mediaType, ioDispatcher)
+
+    override fun createMediaFolderRepository(mediaType: MediaType): FileRepository =
+        MediaFolderRepository(context, mediaType, ioDispatcher)
 
     override fun createAppsRepository(): FileRepository = AppsRepository(context, ioDispatcher)
 

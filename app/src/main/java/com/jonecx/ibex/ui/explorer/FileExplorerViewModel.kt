@@ -56,12 +56,14 @@ data class FileExplorerUiState(
     val selectedFiles: Set<String> = emptySet(),
     val clipboardOperation: ClipboardOperation? = null,
     val isRemoteBrowsing: Boolean = false,
+    val isMediaFolderBrowsing: Boolean = false,
     val restoredScrollPosition: ScrollPosition? = null,
     val sortOption: SortOption = SortOption.DEFAULT,
     val isSearchActive: Boolean = false,
     val searchQuery: String = "",
 ) {
-    val canCreateFolder: Boolean get() = allowFolderNavigation
+    // Media-folder browsing (Images/Videos) reuses folder navigation but is a gallery, not a place to create folders.
+    val canCreateFolder: Boolean get() = allowFolderNavigation && !isMediaFolderBrowsing
     val displayFiles: List<FileItem> = if (searchQuery.isEmpty()) {
         files
     } else {
@@ -99,12 +101,20 @@ class FileExplorerViewModel(
     private val connectionId: String? = savedStateHandle.decodedString(ARG_CONNECTION_ID)
 
     private val repository: FileRepository = createRepository(sourceType)
-    private val allowFolderNavigation: Boolean = sourceType in listOf(
+
+    // Images/Videos browse the folder tree filtered to their media, so they group into albums yet still nest.
+    private val isMediaFolderBrowsing: Boolean = sourceType in listOf(
+        FileSourceType.LOCAL_IMAGES,
+        FileSourceType.LOCAL_VIDEOS,
+    )
+    private val allowFolderNavigation: Boolean = isMediaFolderBrowsing || sourceType in listOf(
         FileSourceType.LOCAL_STORAGE,
         FileSourceType.LOCAL_DOWNLOADS,
         FileSourceType.SMB,
     )
-    private val startPath = initialPath ?: title ?: INTERNAL_STORAGE_PATH
+
+    // Media-folder browsing starts at the storage root; the title is kept only for the top-bar label there.
+    private val startPath = if (isMediaFolderBrowsing) INTERNAL_STORAGE_PATH else initialPath ?: title ?: INTERNAL_STORAGE_PATH
 
     private val isRemote: Boolean = sourceType == FileSourceType.SMB
 
@@ -115,6 +125,7 @@ class FileExplorerViewModel(
             rootPath = startPath,
             allowFolderNavigation = allowFolderNavigation,
             isRemoteBrowsing = isRemote,
+            isMediaFolderBrowsing = isMediaFolderBrowsing,
         ),
     )
     val uiState: StateFlow<FileExplorerUiState> = _uiState.asStateFlow()
@@ -165,8 +176,8 @@ class FileExplorerViewModel(
             FileSourceType.LOCAL_STORAGE,
             FileSourceType.LOCAL_DOWNLOADS,
             -> repositoryFactory.createLocalFileRepository()
-            FileSourceType.LOCAL_IMAGES -> repositoryFactory.createMediaFileRepository(MediaType.IMAGES)
-            FileSourceType.LOCAL_VIDEOS -> repositoryFactory.createMediaFileRepository(MediaType.VIDEOS)
+            FileSourceType.LOCAL_IMAGES -> repositoryFactory.createMediaFolderRepository(MediaType.IMAGES)
+            FileSourceType.LOCAL_VIDEOS -> repositoryFactory.createMediaFolderRepository(MediaType.VIDEOS)
             FileSourceType.LOCAL_AUDIO -> repositoryFactory.createMediaFileRepository(MediaType.AUDIO)
             FileSourceType.LOCAL_DOCUMENTS -> repositoryFactory.createMediaFileRepository(MediaType.DOCUMENTS)
             FileSourceType.LOCAL_APPS -> repositoryFactory.createAppsRepository()
@@ -320,7 +331,8 @@ class FileExplorerViewModel(
         }
         val path = _uiState.value.currentPath
         return when {
-            path == INTERNAL_STORAGE_PATH -> null
+            // At the media-folder root the last path segment is "0"; show the source title (Images/Videos) instead.
+            path == INTERNAL_STORAGE_PATH -> if (isMediaFolderBrowsing) title else null
             else -> path.trimEnd('/').substringAfterLast('/')
         }
     }
