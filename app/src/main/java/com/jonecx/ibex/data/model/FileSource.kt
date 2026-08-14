@@ -27,6 +27,8 @@ data class FileSource(
     val icon: ImageVector,
     val iconTint: Color,
     val subtitle: String? = null,
+    // Spoken label for TalkBack. Reads the stat aloud in words when the visual subtitle is shorthand.
+    val contentDescription: String? = null,
     val isLocal: Boolean = true,
     val isEnabled: Boolean = true,
     val rootPath: String? = null,

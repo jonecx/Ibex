@@ -57,9 +57,25 @@ class FormatUtilsTest {
     }
 
     @Test
+    fun `formatSizeWithCountSpoken spells out items for TalkBack`() {
+        assertEquals("1.0 KB, 3 items", formatSizeWithCountSpoken(1024, 3))
+    }
+
+    @Test
+    fun `formatSizeWithCountSpoken uses singular for a single item`() {
+        assertEquals("1.0 KB, 1 item", formatSizeWithCountSpoken(1024, 1))
+    }
+
+    @Test
     fun `formatStorageUsage formats used over total`() {
         val gib = 1024L * 1024L * 1024L
         assertEquals("221.0 GB / 256.0 GB", formatStorageUsage(221 * gib, 256 * gib))
+    }
+
+    @Test
+    fun `formatStorageUsageSpoken reads used of total for TalkBack`() {
+        val gib = 1024L * 1024L * 1024L
+        assertEquals("221.0 GB used of 256.0 GB", formatStorageUsageSpoken(221 * gib, 256 * gib))
     }
 
     @Test

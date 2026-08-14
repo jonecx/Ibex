@@ -25,6 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileSource
@@ -35,7 +37,9 @@ import com.jonecx.ibex.data.model.StorageUsage
 import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.SourceTile
 import com.jonecx.ibex.util.formatSizeWithCount
+import com.jonecx.ibex.util.formatSizeWithCountSpoken
 import com.jonecx.ibex.util.formatStorageUsage
+import com.jonecx.ibex.util.formatStorageUsageSpoken
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -167,17 +171,23 @@ internal fun HomeScreenContent(
     }
 }
 
-// Attaches a subtitle: used/total for Storage, "size (count)" for other local tiles with content.
+// Attaches a subtitle plus a spoken TalkBack label: used/total for Storage, "size (count)" otherwise.
 private fun FileSource.withStats(
     stats: Map<FileSourceType, SourceStats>,
     storageUsage: StorageUsage?,
 ): FileSource {
     if (type == FileSourceType.LOCAL_STORAGE) {
         val usage = storageUsage ?: return this
-        return copy(subtitle = formatStorageUsage(usage.usedBytes, usage.totalBytes))
+        return copy(
+            subtitle = formatStorageUsage(usage.usedBytes, usage.totalBytes),
+            contentDescription = "$name, ${formatStorageUsageSpoken(usage.usedBytes, usage.totalBytes)}",
+        )
     }
     val stat = stats[type]?.takeIf { it.count > 0 } ?: return this
-    return copy(subtitle = formatSizeWithCount(stat.sizeBytes, stat.count))
+    return copy(
+        subtitle = formatSizeWithCount(stat.sizeBytes, stat.count),
+        contentDescription = "$name, ${formatSizeWithCountSpoken(stat.sizeBytes, stat.count)}",
+    )
 }
 
 @Composable
@@ -189,6 +199,9 @@ private fun SectionHeader(
         text = title,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(vertical = 8.dp),
+        // Marks the section as a heading so TalkBack users can jump between Local and Remote.
+        modifier = modifier
+            .padding(vertical = 8.dp)
+            .semantics { heading() },
     )
 }

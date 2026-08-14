@@ -2,13 +2,12 @@ package com.jonecx.ibex.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,12 +38,16 @@ fun SourceTile(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        // Fixed height (not square) so the optional size/count subtitle always fits without clipping.
         modifier = modifier
             .fillMaxWidth()
-            .height(116.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = source.isEnabled, onClick = onClick),
+            .clickable(enabled = source.isEnabled, role = Role.Button, onClick = onClick)
+            .semantics {
+                // One spoken label for the whole tile so TalkBack reads it once, in words, not icon + text + shorthand.
+                contentDescription = source.contentDescription ?: source.name
+                // Announce unavailable sources as disabled instead of leaving the dim colour as the only cue.
+                if (!source.isEnabled) disabled()
+            },
         colors = CardDefaults.cardColors(
             containerColor = if (source.isEnabled) {
                 MaterialTheme.colorScheme.surfaceVariant
@@ -50,54 +57,63 @@ fun SourceTile(
         ),
         shape = RoundedCornerShape(16.dp),
     ) {
-        Column(
+        Box(
+            // Min height (not fixed) so the tile grows instead of clipping when the user scales font size up.
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+                .fillMaxWidth()
+                .heightIn(min = 116.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(source.iconTint.copy(alpha = AlphaTintBackground)),
-                contentAlignment = Alignment.Center,
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(
-                    imageVector = source.icon,
-                    contentDescription = source.name,
-                    modifier = Modifier.size(28.dp),
-                    tint = if (source.isEnabled) source.iconTint else source.iconTint.copy(alpha = AlphaDisabled),
-                )
-            }
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(source.iconTint.copy(alpha = AlphaTintBackground)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = source.icon,
+                        // Decorative: the tile's own contentDescription already names the source.
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp),
+                        tint = if (source.isEnabled) source.iconTint else source.iconTint.copy(alpha = AlphaDisabled),
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = source.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (source.isEnabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaDisabled)
-                },
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            source.subtitle?.let { subtitle ->
                 Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (source.isEnabled) 1f else AlphaDisabled,
-                    ),
+                    text = source.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (source.isEnabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaDisabled)
+                    },
                     textAlign = TextAlign.Center,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+
+                source.subtitle?.let { subtitle ->
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (source.isEnabled) 1f else AlphaDisabled,
+                        ),
+                        textAlign = TextAlign.Center,
+                        // Two lines so the size/count still shows in full when the user scales font size up.
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

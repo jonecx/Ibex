@@ -25,9 +25,19 @@ fun formatFileSize(bytes: Long): String {
 // Home tile subtitle, e.g. "63.4 GB (1056)".
 fun formatSizeWithCount(bytes: Long, count: Int): String = "${formatFileSize(bytes)} ($count)"
 
+// Spoken form of the subtitle for TalkBack, e.g. "63.4 GB, 1056 items". The visual "(count)" reads as a bare number.
+fun formatSizeWithCountSpoken(bytes: Long, count: Int): String {
+    val items = if (count == 1) "1 item" else "$count items"
+    return "${formatFileSize(bytes)}, $items"
+}
+
 // Storage tile subtitle, e.g. "221 GB / 256 GB".
 fun formatStorageUsage(usedBytes: Long, totalBytes: Long): String =
     "${formatFileSize(usedBytes)} / ${formatFileSize(totalBytes)}"
+
+// Spoken form of storage usage for TalkBack, e.g. "221 GB used of 256 GB". The visual "/" reads awkwardly.
+fun formatStorageUsageSpoken(usedBytes: Long, totalBytes: Long): String =
+    "${formatFileSize(usedBytes)} used of ${formatFileSize(totalBytes)}"
 
 fun formatDate(timestamp: Long): String {
     if (timestamp <= 0) return ""
