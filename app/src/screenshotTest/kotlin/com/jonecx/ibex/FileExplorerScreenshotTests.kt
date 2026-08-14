@@ -1,7 +1,9 @@
 package com.jonecx.ibex
 
 import android.net.Uri
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,6 +16,7 @@ import com.jonecx.ibex.data.model.FileType
 import com.jonecx.ibex.ui.explorer.Breadcrumb
 import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
 import com.jonecx.ibex.ui.explorer.components.DefaultFileImageRequestFactory
+import com.jonecx.ibex.ui.explorer.components.FileGridItem
 import com.jonecx.ibex.ui.explorer.components.FileListItem
 import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
 import com.jonecx.ibex.ui.theme.IbexTheme
@@ -170,6 +173,103 @@ fun FileListItemDarkThemePreview() {
                 ),
                 isSelected = false,
                 onClick = {},
+            )
+        }
+    }
+}
+
+// A row of grid tiles whose thumbnails resolve to file-type icons (no async load), so they render in the preview host.
+@Composable
+private fun GridTypeTilesRow() {
+    Row(
+        modifier = Modifier.padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        listOf(
+            FileType.DIRECTORY to "Downloads",
+            FileType.DOCUMENT to "notes.txt",
+            FileType.AUDIO to "track.mp3",
+            FileType.ARCHIVE to "backup.zip",
+        ).forEach { (type, name) ->
+            FileGridItem(
+                fileItem = FileItem(
+                    name = name,
+                    path = "/storage/emulated/0/$name",
+                    uri = Uri.EMPTY,
+                    size = 1_024_000,
+                    lastModified = 1700000000000,
+                    isDirectory = type == FileType.DIRECTORY,
+                    fileType = type,
+                    childCount = if (type == FileType.DIRECTORY) 15 else null,
+                ),
+                isSelected = false,
+                onClick = {},
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun FileGridItemAllTypesPreview() {
+    IbexTheme {
+        GridTypeTilesRow()
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun FileGridItemDarkThemePreview() {
+    IbexTheme(darkTheme = true) {
+        GridTypeTilesRow()
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun FileGridItemSelectionPreview() {
+    IbexTheme {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            FileGridItem(
+                fileItem = FileItem(
+                    name = "report.pdf",
+                    path = "/storage/emulated/0/Documents/report.pdf",
+                    uri = Uri.EMPTY,
+                    size = 2_500_000,
+                    lastModified = 1700000000000,
+                    isDirectory = false,
+                    fileType = FileType.DOCUMENT,
+                    mimeType = "application/pdf",
+                ),
+                isSelected = true,
+                onClick = {},
+                modifier = Modifier.weight(1f),
+                isSelectionMode = true,
+                isChecked = true,
+            )
+            FileGridItem(
+                fileItem = FileItem(
+                    name = "song.mp3",
+                    path = "/storage/emulated/0/Music/song.mp3",
+                    uri = Uri.EMPTY,
+                    size = 5_000_000,
+                    lastModified = 1700000000000,
+                    isDirectory = false,
+                    fileType = FileType.AUDIO,
+                    mimeType = "audio/mpeg",
+                ),
+                isSelected = false,
+                onClick = {},
+                modifier = Modifier.weight(1f),
+                isSelectionMode = true,
+                isChecked = false,
             )
         }
     }

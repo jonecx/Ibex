@@ -39,6 +39,9 @@ import com.jonecx.ibex.ui.theme.AlphaSecondary
 
 private val GridItemShape = RoundedCornerShape(2.dp)
 
+// Prominent play badge for the roomy grid tiles; a fixed size keeps the tile off the SubcomposeLayout path.
+private val GridVideoBadgeSize = 40.dp
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileGridItem(
@@ -82,6 +85,8 @@ fun FileGridItem(
                     modifier = Modifier.matchParentSize(),
                     // The folder's own badge signals it is a folder, so skip the per-file video play glyph.
                     showVideoIndicator = !fileItem.isDirectory,
+                    // Grid tiles are roomy, so use the enlarged badge rather than the list-sized default.
+                    videoIndicatorSize = GridVideoBadgeSize,
                     onError = { thumbnailFailed = true },
                 )
                 if (fileItem.isDirectory) {
