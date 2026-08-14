@@ -74,6 +74,7 @@ import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.ErrorView
 import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
+import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
 import com.jonecx.ibex.ui.explorer.components.FileDetailPane
 import com.jonecx.ibex.ui.explorer.components.FileGridItem
 import com.jonecx.ibex.ui.explorer.components.FileListItem
@@ -173,6 +174,7 @@ fun FileExplorerScreen(
                             onNavigateBack()
                         }
                     },
+                    onBreadcrumbClick = { index -> viewModel.navigateToBreadcrumb(index) },
                     showBackButton = true,
                     currentDirectoryName = viewModel.getCurrentDirectoryName() ?: stringResource(R.string.internal_storage),
                 )
@@ -211,6 +213,7 @@ private fun FileListPane(
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
     onNavigateUp: () -> Unit,
+    onBreadcrumbClick: (Int) -> Unit,
     showBackButton: Boolean,
     currentDirectoryName: String,
     modifier: Modifier = Modifier,
@@ -276,17 +279,26 @@ private fun FileListPane(
                     )
                 }
                 else -> {
-                    IbexTopAppBar(
-                        title = currentDirectoryName,
-                        onNavigateBack = onNavigateUp,
-                        showBackButton = showBackButton,
-                        actions = {
-                            RecentsAction { showRecentsSheet = true }
-                            SearchAction(onClick = onActivateSearch)
-                            SortAction { showSortSheet = true }
-                            CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
-                        },
-                    )
+                    Column {
+                        IbexTopAppBar(
+                            title = currentDirectoryName,
+                            onNavigateBack = onNavigateUp,
+                            showBackButton = showBackButton,
+                            actions = {
+                                RecentsAction { showRecentsSheet = true }
+                                SearchAction(onClick = onActivateSearch)
+                                SortAction { showSortSheet = true }
+                                CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
+                            },
+                        )
+                        // Show the trail only once nested; a lone home crumb at the root adds nothing.
+                        if (uiState.breadcrumbs.size > 1) {
+                            BreadcrumbBar(
+                                breadcrumbs = uiState.breadcrumbs,
+                                onCrumbClick = onBreadcrumbClick,
+                            )
+                        }
+                    }
                 }
             }
         },

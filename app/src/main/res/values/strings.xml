@@ -4,6 +4,7 @@
     <string name="permission_description">Ibex needs access to your storage to browse and manage files.</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="navigate_up">Navigate up</string>
+    <string name="breadcrumb_home">Home</string>
     <string name="select_file_hint">Select a file to view details</string>
     <string name="empty_folder">This folder is empty</string>
     <string name="error_loading">Error loading files</string>

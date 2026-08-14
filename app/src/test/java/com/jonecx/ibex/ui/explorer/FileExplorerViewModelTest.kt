@@ -193,6 +193,96 @@ class FileExplorerViewModelTest {
         assertEquals("Documents", viewModel.getCurrentDirectoryName())
     }
 
+    // Breadcrumb tests
+
+    @Test
+    fun `breadcrumbs reflect navigation trail`() = runTest {
+        navigateToSubdir("Documents")
+
+        val crumbs = viewModel.uiState.value.breadcrumbs
+        assertEquals(2, crumbs.size)
+        assertTrue(crumbs.first().isRoot)
+        assertFalse(crumbs.first().isCurrent)
+        assertEquals("Documents", crumbs.last().name)
+        assertTrue(crumbs.last().isCurrent)
+        assertFalse(crumbs.last().isRoot)
+    }
+
+    @Test
+    fun `breadcrumbs are empty when folder navigation disabled`() = runTest {
+        viewModel = createViewModel(sourceType = FileSourceType.LOCAL_AUDIO.name, title = "Audio")
+        assertTrue(viewModel.uiState.value.breadcrumbs.isEmpty())
+    }
+
+    @Test
+    fun `navigateToBreadcrumb truncates stack to root`() = runTest {
+        val root = viewModel.uiState.value.rootPath
+        viewModel.navigateTo(testDirectoryFileItem("level1", path = "$root/level1"))
+        viewModel.navigateTo(testDirectoryFileItem("level2", path = "$root/level1/level2"))
+        assertEquals(3, viewModel.uiState.value.navigationStack.size)
+
+        viewModel.navigateToBreadcrumb(0)
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.navigationStack.size)
+        assertEquals(root, state.navigationStack.last())
+        assertEquals(root, state.currentPath)
+    }
+
+    @Test
+    fun `navigateToBreadcrumb to a middle crumb keeps its ancestors`() = runTest {
+        val root = viewModel.uiState.value.rootPath
+        viewModel.navigateTo(testDirectoryFileItem("level1", path = "$root/level1"))
+        viewModel.navigateTo(testDirectoryFileItem("level2", path = "$root/level1/level2"))
+
+        viewModel.navigateToBreadcrumb(1)
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.navigationStack.size)
+        assertEquals("$root/level1", state.navigationStack.last())
+        assertEquals("$root/level1", state.currentPath)
+    }
+
+    @Test
+    fun `navigateToBreadcrumb on the current crumb is a no-op`() = runTest {
+        viewModel.navigateTo(testDirectoryFileItem("level1", path = "$storagePath/level1"))
+        val before = viewModel.uiState.value.navigationStack
+
+        viewModel.navigateToBreadcrumb(1)
+
+        assertEquals(before, viewModel.uiState.value.navigationStack)
+    }
+
+    @Test
+    fun `navigateToBreadcrumb clears selectedFile and search`() = runTest {
+        viewModel.navigateTo(testDirectoryFileItem("level1", path = "$storagePath/level1"))
+        viewModel.selectFile(testFileItem("file.txt"))
+        viewModel.activateSearch()
+        viewModel.setSearchQuery("query")
+
+        viewModel.navigateToBreadcrumb(0)
+
+        val state = viewModel.uiState.value
+        assertNull(state.selectedFile)
+        assertFalse(state.isSearchActive)
+        assertEquals("", state.searchQuery)
+    }
+
+    @Test
+    fun `navigateToBreadcrumb restores saved scroll position`() = runTest {
+        createViewModelWithFiles(testDirectoryFileItem("level1", path = "$storagePath/level1"))
+
+        viewModel.saveScrollPosition(7, 40)
+        viewModel.navigateTo(testDirectoryFileItem("level1", path = "$storagePath/level1"))
+
+        viewModel.navigateToBreadcrumb(0)
+
+        val restored = viewModel.uiState.value.restoredScrollPosition
+        assertNotNull(restored)
+        assertEquals(7, restored!!.firstVisibleItemIndex)
+        assertEquals(40, restored.firstVisibleItemScrollOffset)
+    }
+
     @Test
     fun `loadFiles error sets error state`() = runTest {
         val error = RuntimeException("disk error")

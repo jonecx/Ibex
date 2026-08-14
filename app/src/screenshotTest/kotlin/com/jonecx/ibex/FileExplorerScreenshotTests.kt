@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.ui.explorer.Breadcrumb
+import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
 import com.jonecx.ibex.ui.explorer.components.DefaultFileImageRequestFactory
 import com.jonecx.ibex.ui.explorer.components.FileListItem
 import com.jonecx.ibex.ui.explorer.components.LocalFileImageRequestFactory
@@ -20,6 +22,30 @@ import com.jonecx.ibex.ui.theme.IbexTheme
 private fun WithImageRequestFactory(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalFileImageRequestFactory provides DefaultFileImageRequestFactory()) {
         content()
+    }
+}
+
+private fun sampleBreadcrumbs() = listOf(
+    Breadcrumb(index = 0, name = "0", isRoot = true, isCurrent = false),
+    Breadcrumb(index = 1, name = "update", isRoot = false, isCurrent = false),
+    Breadcrumb(index = 2, name = "downloads", isRoot = false, isCurrent = true),
+)
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun BreadcrumbBarPreview() {
+    IbexTheme {
+        BreadcrumbBar(breadcrumbs = sampleBreadcrumbs(), onCrumbClick = {})
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun BreadcrumbBarDarkPreview() {
+    IbexTheme(darkTheme = true) {
+        BreadcrumbBar(breadcrumbs = sampleBreadcrumbs(), onCrumbClick = {})
     }
 }
 

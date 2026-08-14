@@ -39,6 +39,15 @@ import java.net.URLDecoder
 @Immutable
 data class ScrollPosition(val firstVisibleItemIndex: Int = 0, val firstVisibleItemScrollOffset: Int = 0)
 
+// One tappable segment of the path bar; the root renders as a home icon, the current folder is not clickable.
+@Immutable
+data class Breadcrumb(
+    val index: Int,
+    val name: String,
+    val isRoot: Boolean,
+    val isCurrent: Boolean,
+)
+
 @Immutable
 data class FileExplorerUiState(
     val currentPath: String = INTERNAL_STORAGE_PATH,
@@ -68,6 +77,20 @@ data class FileExplorerUiState(
         files
     } else {
         files.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
+    // The path bar mirrors the navigation stack: root as home, each visited folder after it, current last.
+    val breadcrumbs: List<Breadcrumb> = if (allowFolderNavigation) {
+        navigationStack.mapIndexed { index, path ->
+            Breadcrumb(
+                index = index,
+                name = path.trimEnd('/').substringAfterLast('/'),
+                isRoot = index == 0,
+                isCurrent = index == navigationStack.lastIndex,
+            )
+        }
+    } else {
+        emptyList()
     }
 }
 
@@ -267,21 +290,30 @@ class FileExplorerViewModel(
 
     fun navigateUp(): Boolean {
         val stack = _uiState.value.navigationStack
-        if (stack.size > 1) {
-            val newStack = stack.dropLast(1)
-            val parentPath = newStack.last()
-            val restored = scrollPositions.remove(parentPath)
-            _uiState.update {
-                it.copy(
-                    navigationStack = newStack,
-                    selectedFile = null,
-                    restoredScrollPosition = restored,
-                ).dismissSearch()
-            }
-            loadFiles(parentPath)
-            return true
+        if (stack.size <= 1) return false
+        navigateToStack(stack.dropLast(1))
+        return true
+    }
+
+    // Loads the last entry of [newStack], restoring its saved scroll and dropping any active search.
+    private fun navigateToStack(newStack: List<String>) {
+        val targetPath = newStack.last()
+        val restored = scrollPositions.remove(targetPath)
+        _uiState.update {
+            it.copy(
+                navigationStack = newStack,
+                selectedFile = null,
+                restoredScrollPosition = restored,
+            ).dismissSearch()
         }
-        return false
+        loadFiles(targetPath)
+    }
+
+    // Jumps to an ancestor by truncating the stack to it; the current (last) crumb is a no-op.
+    fun navigateToBreadcrumb(index: Int) {
+        val stack = _uiState.value.navigationStack
+        if (index < 0 || index >= stack.lastIndex) return
+        navigateToStack(stack.subList(0, index + 1).toList())
     }
 
     fun setSortOption(option: SortOption) {
