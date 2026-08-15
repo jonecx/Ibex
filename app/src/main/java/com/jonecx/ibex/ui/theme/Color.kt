@@ -7,6 +7,9 @@ val BrandRed = Color(0xFFEF4545) // Matches ic_launcher_background.
 
 // Darker sibling of BrandRed for destructive text/icons on light surfaces: clears WCAG AA on white.
 val BrandRedOnLight = Color(0xFFB71C1C)
+
+// Lighter sibling for destructive text on dark surfaces, where the darker red would fail: clears WCAG AA.
+val BrandRedOnDark = Color(0xFFFF6B6B)
 val Ink = Color(0xFF1A1A1A)
 val Snow = Color(0xFFF2F2F2)
 val PaperLight = Color(0xFFFAFAFA)

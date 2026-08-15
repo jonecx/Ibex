@@ -7,7 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 // Every accent and container role is pinned: Material3's baseline defaults are purple-tinted.
-private val LightColorScheme = lightColorScheme(
+internal val LightColorScheme = lightColorScheme(
     primary = BrandRed,
     onPrimary = Snow,
     // Accent container drives FABs and prompts; kept the single brand red, never a purple tonal.
@@ -37,15 +37,15 @@ private val LightColorScheme = lightColorScheme(
     inversePrimary = BrandRed,
 )
 
-private val DarkColorScheme = darkColorScheme(
+internal val DarkColorScheme = darkColorScheme(
     primary = BrandRed,
     onPrimary = Snow,
     // Accent container drives FABs and prompts; kept the single brand red, never a purple tonal.
     primaryContainer = BrandRed,
     onPrimaryContainer = Snow,
-    // Vivid brand red stays legible on dark surfaces; the darker sibling is only for light.
-    error = BrandRed,
-    onError = Snow,
+    // Lighter destructive red so small red text clears WCAG AA on dark surfaces.
+    error = BrandRedOnDark,
+    onError = Ink,
     background = PaperDark,
     onBackground = Snow,
     surface = PaperDark,
