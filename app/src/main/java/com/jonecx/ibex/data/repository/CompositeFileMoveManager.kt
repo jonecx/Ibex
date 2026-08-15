@@ -52,7 +52,7 @@ class CompositeFileMoveManager(
                 crossProtocolCopyFile(fileItem.path, fileItem.name, destinationDir, srcHandler, dstHandler)
             }
         } catch (e: Exception) {
-            Timber.e(e, "Cross-protocol copy failed: ${fileItem.path} -> $destinationDir")
+            Timber.e(e, "Cross-protocol copy failed")
             false
         }
     }

@@ -7,6 +7,13 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
 
+    <!-- Resilient copy/move: a foreground worker keeps transfers alive while backgrounded/locked. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".IbexApplication"
         android:allowBackup="true"
@@ -21,6 +28,12 @@
         <!-- Sentry is initialized manually in SentryCrashReporter (which no-ops without a DSN);
              disable the SDK's auto-init ContentProvider so a missing DSN can't crash startup. -->
         <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
+        <!-- WorkManager's foreground service runs our transfer worker; declare its data-sync type. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
 
         <activity
             android:name=".MainActivity"

@@ -76,7 +76,7 @@ val repositoryModule = module {
         CompositeFileMoveManager(getAll<ProtocolFileHandler>().toSet(), get(IoDispatcher))
     }
 
-    single<FileClipboardManager> { DefaultFileClipboardManager(get()) }
+    single<FileClipboardManager> { DefaultFileClipboardManager() }
     single<SmbContextProviderContract> { SmbContextProvider() }
 
     single<HomeSourceStatsRepository> {

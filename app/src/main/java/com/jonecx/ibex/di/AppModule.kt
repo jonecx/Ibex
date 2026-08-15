@@ -20,6 +20,7 @@ val appModules = listOf(
     imageLoaderModule,
     imageRequestModule,
     repositoryModule,
+    transferModule,
     storageAnalyzerModule,
     viewModelModule,
 )

@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@android:color/white">
+    <!-- Two opposing arrows: the transfer/sync glyph. Monochrome for the status-bar small icon. -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M7.5,3L4,6.5L7.5,10V7.5H15V5.5H7.5V3M16.5,14V16.5H9V18.5H16.5V21L20,17.5L16.5,14Z" />
+</vector>

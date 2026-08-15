@@ -21,6 +21,7 @@ import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
+import com.jonecx.ibex.data.transfer.TransferManager
 import com.jonecx.ibex.di.FileRepositoryFactory
 import com.jonecx.ibex.util.launchCollect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -103,6 +104,7 @@ class FileExplorerViewModel(
     private val fileTrashManager: FileTrashManager,
     private val fileMoveManager: FileMoveManager,
     private val clipboardManager: FileClipboardManager,
+    private val transferManager: TransferManager,
     private val analyticsManager: AnalyticsManager,
     savedStateHandle: SavedStateHandle,
     private val dispatcher: CoroutineDispatcher,
@@ -180,6 +182,11 @@ class FileExplorerViewModel(
         }
         viewModelScope.launchCollect(clipboardManager.state, dispatcher) { clipboard ->
             _uiState.update { it.copy(clipboardOperation = clipboard.operation) }
+        }
+        // A background transfer that touches the folder we're showing (its destination, or the source
+        // folder for a move) won't reflect until we re-list it. Trailing-slash-tolerant for SMB paths.
+        viewModelScope.launchCollect(transferManager.completions, dispatcher) { affectedDir ->
+            if (affectedDir.trimEnd('/') == _uiState.value.currentPath.trimEnd('/')) refreshFiles()
         }
         viewModelScope.launchCollect(recentFoldersPreferences.recentFolders, dispatcher) { folders ->
             _recentFolders.value = folders
@@ -484,26 +491,23 @@ class FileExplorerViewModel(
 
     fun pasteFiles() {
         val destDir = _uiState.value.currentPath
-        // Snapshot the clipboard before paste() clears it, so item_count/size survive for telemetry.
         val clipboard = clipboardManager.state.value
-        val operation = clipboard.operation
+        val operation = clipboard.operation ?: return
+        if (clipboard.files.isEmpty()) return
 
-        viewModelScope.launch(dispatcher) {
-            val startMs = System.currentTimeMillis()
-            val success = clipboardManager.paste(destDir)
-            if (operation != null && clipboard.files.isNotEmpty()) {
-                analyticsManager.trackPaste(
-                    operation = operation,
-                    sourceType = sourceType,
-                    isRemote = isRemote,
-                    itemCount = clipboard.files.size,
-                    sizeBytes = clipboard.files.sumOf { it.size },
-                    success = success,
-                    durationMs = System.currentTimeMillis() - startMs,
-                )
-            }
-            refreshFiles()
-        }
+        // Hand the copy/move to the durable transfer queue; it runs in a foreground worker and
+        // survives rotation, backgrounding, and reboot. The progress bar tracks it from here.
+        transferManager.enqueue(clipboard.files, operation, destDir)
+        analyticsManager.trackPaste(
+            operation = operation,
+            sourceType = sourceType,
+            isRemote = isRemote,
+            itemCount = clipboard.files.size,
+            sizeBytes = clipboard.files.sumOf { it.size },
+            success = true,
+            durationMs = 0L,
+        )
+        clipboardManager.clear()
     }
 
     fun navigateToPath(path: String) {

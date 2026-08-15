@@ -39,6 +39,10 @@ fun formatStorageUsage(usedBytes: Long, totalBytes: Long): String =
 fun formatStorageUsageSpoken(usedBytes: Long, totalBytes: Long): String =
     "${formatFileSize(usedBytes)} used of ${formatFileSize(totalBytes)}"
 
+// Transfer speed, e.g. "8.4 MB/s". Empty when unknown so the UI can omit it cleanly.
+fun formatTransferSpeed(bytesPerSecond: Long): String =
+    if (bytesPerSecond <= 0L) "" else "${formatFileSize(bytesPerSecond)}/s"
+
 fun formatDate(timestamp: Long): String {
     if (timestamp <= 0) return ""
     return dateFormat.get()!!.format(Date(timestamp))

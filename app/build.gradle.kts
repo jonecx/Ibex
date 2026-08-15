@@ -148,6 +148,9 @@ dependencies {
     implementation(libs.jcifs.ng)
     testFixturesImplementation(libs.jcifs.ng)
 
+    // WorkManager: durable, resumable foreground transfers that survive process death and reboot
+    implementation(libs.androidx.work.runtime)
+
     // Azmaree video player SDK + its SMB byte source (brings the player core + jcifs-ng transitively)
     implementation(libs.azmaree.player)
     implementation(libs.azmaree.source.smb)

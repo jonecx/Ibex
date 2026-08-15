@@ -19,7 +19,7 @@ val viewModelModule = module {
     viewModel { StorageAnalysisViewModel(get(), get(), get(MainDispatcher)) }
     viewModel { NetworkConnectionsViewModel(get(), get(), get(), get(IoDispatcher)) }
     viewModel {
-        FileExplorerViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(MainDispatcher))
+        FileExplorerViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(MainDispatcher))
     }
     viewModel { MediaViewerViewModel(get(), get(), get(), get(IoDispatcher)) }
     viewModel { LiveFeedViewModel(get(), get(IoDispatcher)) }

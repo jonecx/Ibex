@@ -15,6 +15,7 @@ import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.HomeSourceStatsRepository
 import com.jonecx.ibex.data.repository.SmbContextProviderContract
 import com.jonecx.ibex.data.repository.StorageAnalyzer
+import com.jonecx.ibex.data.transfer.TransferManager
 import com.jonecx.ibex.fixtures.FakeAnalyticsProvider
 import com.jonecx.ibex.fixtures.FakeAppLogger
 import com.jonecx.ibex.fixtures.FakeCrashReporter
@@ -31,6 +32,7 @@ import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeSmbContextProvider
 import com.jonecx.ibex.fixtures.FakeStorageAnalyzer
+import com.jonecx.ibex.fixtures.FakeTransferManager
 import com.jonecx.ibex.logging.AppLogger
 import com.jonecx.ibex.ui.explorer.components.FileImageRequestFactory
 import com.jonecx.ibex.ui.permission.PermissionChecker
@@ -79,7 +81,8 @@ val testOverridesModule = module {
     single<FileRepositoryFactory> { FakeFileRepositoryFactory(FakeFileRepository()) }
     single<FileTrashManager> { FakeFileTrashManager() }
     single<FileMoveManager> { FakeFileMoveManager() }
-    single<FileClipboardManager> { FakeFileClipboardManager(get()) }
+    single<FileClipboardManager> { FakeFileClipboardManager() }
+    single<TransferManager> { FakeTransferManager() }
     single<SmbContextProviderContract> { FakeSmbContextProvider() }
 }
 

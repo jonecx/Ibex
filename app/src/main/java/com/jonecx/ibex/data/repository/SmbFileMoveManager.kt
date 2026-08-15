@@ -4,10 +4,12 @@ import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import jcifs.smb.SmbFile
+import jcifs.smb.SmbFileOutputStream
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import kotlin.coroutines.coroutineContext
@@ -60,7 +62,7 @@ class SmbFileMoveManager(
                 folder.mkdir()
                 true
             } catch (e: Exception) {
-                Timber.e(e, "SMB createFolder failed: $parentDir/$name")
+                Timber.e(e, "SMB createFolder failed")
                 false
             }
         }
@@ -83,10 +85,34 @@ class SmbFileMoveManager(
         SmbFile(path, context).outputStream
     }
 
+    // Append when resuming: the temp file already holds exactly [offset] verified bytes.
+    override suspend fun openOutputStream(path: String, offset: Long): OutputStream = withContext(ioDispatcher) {
+        val context = contextForPath(path)
+            ?: throw IllegalStateException("No SMB context for path: $path")
+        SmbFileOutputStream(SmbFile(path, context), offset > 0)
+    }
+
+    override suspend fun sizeOf(path: String): Long = withContext(ioDispatcher) {
+        try {
+            val context = contextForPath(path) ?: return@withContext -1L
+            val file = SmbFile(path, context)
+            if (file.exists()) file.length() else -1L
+        } catch (e: Exception) {
+            Timber.e(e, "SMB sizeOf failed")
+            -1L
+        }
+    }
+
+    // A copy/move walks the tree through this. It MUST fail loudly, never quietly return empty on error:
+    // an empty result reads as "directory has no children", which for a MOVE would delete a source we
+    // never actually copied. An empty directory returns an empty array (no throw); a failure throws.
     override suspend fun listFiles(path: String): List<FileItem> = withContext(ioDispatcher) {
-        val context = contextForPath(path) ?: return@withContext emptyList()
+        val context = contextForPath(path)
+            ?: throw IOException("No SMB context for listing")
         val dir = SmbFile(FileTypeUtils.smbEnsureTrailingSlash(path), context)
-        dir.listFiles()?.map { it.toFileItem() } ?: emptyList()
+        val children = dir.listFiles()
+            ?: throw IOException("SMB directory listing failed")
+        children.map { it.toFileItem() }
     }
 
     private fun contextForPath(path: String): jcifs.CIFSContext? {
@@ -104,7 +130,7 @@ class SmbFileMoveManager(
             val source = SmbFile(FileTypeUtils.smbEnsureTrailingSlash(fileItem.path, fileItem.isDirectory), context)
             action(source, context)
         } catch (e: Exception) {
-            Timber.e(e, "SMB $operation failed: ${fileItem.path}")
+            Timber.e(e, "SMB $operation failed")
             false
         }
     }

@@ -86,6 +86,20 @@
     <string name="more">More</string>
     <string name="cancel">Cancel</string>
     <string name="paste">Paste</string>
+    <!-- File transfers (copy/move progress) -->
+    <string name="transfer_channel_name">File transfers</string>
+    <string name="transfer_notification_copying">Copying files</string>
+    <string name="transfer_notification_moving">Moving files</string>
+    <string name="transfer_notification_preparing">Preparing…</string>
+    <string name="transfer_copying">Copying %1$d files</string>
+    <string name="transfer_moving">Moving %1$d files</string>
+    <string name="transfer_preparing">Preparing…</string>
+    <string name="transfer_expand">Show transfer details</string>
+    <string name="transfer_collapse">Hide transfer details</string>
+    <string name="transfer_expanded">Expanded</string>
+    <string name="transfer_collapsed">Collapsed</string>
+    <string name="transfer_cancel">Cancel transfer</string>
+    <string name="transfer_cancel_all">Cancel all</string>
     <string name="rename_dialog_title">Rename</string>
     <string name="rename_dialog_hint">New name</string>
     <string name="rename_dialog_confirm">Rename</string>

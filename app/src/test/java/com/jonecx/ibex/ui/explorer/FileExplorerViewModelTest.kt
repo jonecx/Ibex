@@ -18,6 +18,7 @@ import com.jonecx.ibex.fixtures.FakeFileRepositoryFactory
 import com.jonecx.ibex.fixtures.FakeFileTrashManager
 import com.jonecx.ibex.fixtures.FakeRecentFoldersPreferences
 import com.jonecx.ibex.fixtures.FakeSettingsPreferences
+import com.jonecx.ibex.fixtures.FakeTransferManager
 import com.jonecx.ibex.fixtures.RecordingAnalytics
 import com.jonecx.ibex.fixtures.testDirectoryFileItem
 import com.jonecx.ibex.fixtures.testFileItem
@@ -53,6 +54,7 @@ class FileExplorerViewModelTest {
     private lateinit var fakeTrashManager: FakeFileTrashManager
     private lateinit var fakeMoveManager: FakeFileMoveManager
     private lateinit var fakeClipboardManager: FakeFileClipboardManager
+    private lateinit var fakeTransferManager: FakeTransferManager
     private lateinit var analytics: RecordingAnalytics
 
     private lateinit var storagePath: String
@@ -68,7 +70,8 @@ class FileExplorerViewModelTest {
         fakeRecentFolders = FakeRecentFoldersPreferences()
         fakeTrashManager = FakeFileTrashManager()
         fakeMoveManager = FakeFileMoveManager()
-        fakeClipboardManager = FakeFileClipboardManager(fakeMoveManager)
+        fakeClipboardManager = FakeFileClipboardManager()
+        fakeTransferManager = FakeTransferManager()
         analytics = RecordingAnalytics(RuntimeEnvironment.getApplication())
         viewModel = createViewModel()
     }
@@ -99,6 +102,7 @@ class FileExplorerViewModelTest {
             fakeTrashManager,
             fakeMoveManager,
             fakeClipboardManager,
+            fakeTransferManager,
             analytics.manager,
             savedStateHandle,
             testDispatcher,
@@ -498,7 +502,7 @@ class FileExplorerViewModelTest {
     }
 
     @Test
-    fun `pasteFiles with MOVE calls moveFile and clears clipboard`() = runTest {
+    fun `pasteFiles with MOVE enqueues a move transfer and clears clipboard`() = runTest {
         val file1 = testFileItem("a.txt")
         val file2 = testFileItem("b.txt")
         createViewModelWithFiles(file1, file2)
@@ -508,8 +512,10 @@ class FileExplorerViewModelTest {
         viewModel.moveToClipboard()
         viewModel.pasteFiles()
 
-        assertEquals(2, fakeMoveManager.movedFiles.size)
-        assertTrue(fakeMoveManager.copiedFiles.isEmpty())
+        assertEquals(1, fakeTransferManager.enqueued.size)
+        val enqueued = fakeTransferManager.enqueued.first()
+        assertEquals(ClipboardOperation.MOVE, enqueued.operation)
+        assertEquals(2, enqueued.files.size)
         assertFalse(fakeClipboardManager.state.value.hasContent)
         assertNull(viewModel.uiState.value.clipboardOperation)
     }
@@ -1164,7 +1170,7 @@ class FileExplorerViewModelTest {
     }
 
     @Test
-    fun `pasteFiles with COPY calls copyFile and clears clipboard`() = runTest {
+    fun `pasteFiles with COPY enqueues a copy transfer and clears clipboard`() = runTest {
         val file1 = testFileItem("a.txt")
         createViewModelWithFiles(file1)
 
@@ -1172,8 +1178,8 @@ class FileExplorerViewModelTest {
         viewModel.copyToClipboard()
         viewModel.pasteFiles()
 
-        assertEquals(1, fakeMoveManager.copiedFiles.size)
-        assertTrue(fakeMoveManager.movedFiles.isEmpty())
+        assertEquals(1, fakeTransferManager.enqueued.size)
+        assertEquals(ClipboardOperation.COPY, fakeTransferManager.enqueued.first().operation)
         assertFalse(fakeClipboardManager.state.value.hasContent)
         assertNull(viewModel.uiState.value.clipboardOperation)
     }
