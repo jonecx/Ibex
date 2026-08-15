@@ -217,6 +217,8 @@
     <string name="search">Search</string>
     <string name="search_hint">Search files…</string>
     <string name="search_no_results">No results found</string>
+    <!-- Fast scroll -->
+    <string name="fast_scroll">Fast scroll</string>
     <!-- Recent Folders -->
     <string name="recent_folders">Recent Folders</string>
     <string name="recent_folders_empty">No recent folders yet</string>

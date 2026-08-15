@@ -2,6 +2,7 @@ package com.jonecx.ibex.ui.explorer
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -73,6 +74,7 @@ import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.ErrorView
+import com.jonecx.ibex.ui.components.FastScroller
 import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
@@ -350,58 +352,81 @@ private fun FileListPane(
                     bottom = paddingValues.calculateBottomPadding() + 16.dp,
                 )
                 val selectedPath = uiState.selectedFile?.path
-                when (uiState.viewMode) {
-                    ViewMode.LIST -> {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize().testTag("file_list"),
-                            contentPadding = contentPadding,
-                        ) {
-                            items(
-                                items = uiState.displayFiles,
-                                key = { it.path },
-                                contentType = { it.fileType },
-                            ) { fileItem ->
-                                FileListItem(
-                                    fileItem = fileItem,
-                                    isSelected = selectedPath == fileItem.path,
-                                    onClick = {
-                                        if (fileItem.isDirectory) saveCurrentScrollPosition()
-                                        onFileClick(fileItem)
-                                    },
-                                    isSelectionMode = uiState.isSelectionMode,
-                                    isChecked = fileItem.path in uiState.selectedFiles,
-                                    onLongClick = { onFileLongClick(fileItem) },
-                                )
+                // Bubble label: the first letter of the row at the scrubbed position, matching name-sorted sections.
+                val labelForIndex: (Int) -> String = { index ->
+                    uiState.displayFiles.getOrNull(index)?.name
+                        ?.firstOrNull()?.uppercaseChar()?.toString().orEmpty()
+                }
+                val fastScrollPadding = Modifier.padding(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (uiState.viewMode) {
+                        ViewMode.LIST -> {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize().testTag("file_list"),
+                                contentPadding = contentPadding,
+                            ) {
+                                items(
+                                    items = uiState.displayFiles,
+                                    key = { it.path },
+                                    contentType = { it.fileType },
+                                ) { fileItem ->
+                                    FileListItem(
+                                        fileItem = fileItem,
+                                        isSelected = selectedPath == fileItem.path,
+                                        onClick = {
+                                            if (fileItem.isDirectory) saveCurrentScrollPosition()
+                                            onFileClick(fileItem)
+                                        },
+                                        isSelectionMode = uiState.isSelectionMode,
+                                        isChecked = fileItem.path in uiState.selectedFiles,
+                                        onLongClick = { onFileLongClick(fileItem) },
+                                    )
+                                }
                             }
+                            FastScroller(
+                                state = listState,
+                                itemCount = uiState.displayFiles.size,
+                                labelForIndex = labelForIndex,
+                                modifier = Modifier.align(Alignment.CenterEnd).then(fastScrollPadding),
+                            )
                         }
-                    }
-                    ViewMode.GRID -> {
-                        LazyVerticalGrid(
-                            state = gridState,
-                            columns = GridCells.Fixed(uiState.gridColumns),
-                            modifier = Modifier.fillMaxSize().testTag("file_grid"),
-                            contentPadding = contentPadding,
-                            horizontalArrangement = Arrangement.spacedBy(0.5.dp),
-                            verticalArrangement = Arrangement.spacedBy(0.5.dp),
-                        ) {
-                            items(
-                                items = uiState.displayFiles,
-                                key = { it.path },
-                                contentType = { it.fileType },
-                            ) { fileItem ->
-                                FileGridItem(
-                                    fileItem = fileItem,
-                                    isSelected = selectedPath == fileItem.path,
-                                    onClick = {
-                                        if (fileItem.isDirectory) saveCurrentScrollPosition()
-                                        onFileClick(fileItem)
-                                    },
-                                    isSelectionMode = uiState.isSelectionMode,
-                                    isChecked = fileItem.path in uiState.selectedFiles,
-                                    onLongClick = { onFileLongClick(fileItem) },
-                                )
+                        ViewMode.GRID -> {
+                            LazyVerticalGrid(
+                                state = gridState,
+                                columns = GridCells.Fixed(uiState.gridColumns),
+                                modifier = Modifier.fillMaxSize().testTag("file_grid"),
+                                contentPadding = contentPadding,
+                                horizontalArrangement = Arrangement.spacedBy(0.5.dp),
+                                verticalArrangement = Arrangement.spacedBy(0.5.dp),
+                            ) {
+                                items(
+                                    items = uiState.displayFiles,
+                                    key = { it.path },
+                                    contentType = { it.fileType },
+                                ) { fileItem ->
+                                    FileGridItem(
+                                        fileItem = fileItem,
+                                        isSelected = selectedPath == fileItem.path,
+                                        onClick = {
+                                            if (fileItem.isDirectory) saveCurrentScrollPosition()
+                                            onFileClick(fileItem)
+                                        },
+                                        isSelectionMode = uiState.isSelectionMode,
+                                        isChecked = fileItem.path in uiState.selectedFiles,
+                                        onLongClick = { onFileLongClick(fileItem) },
+                                    )
+                                }
                             }
+                            FastScroller(
+                                state = gridState,
+                                itemCount = uiState.displayFiles.size,
+                                labelForIndex = labelForIndex,
+                                modifier = Modifier.align(Alignment.CenterEnd).then(fastScrollPadding),
+                            )
                         }
                     }
                 }
