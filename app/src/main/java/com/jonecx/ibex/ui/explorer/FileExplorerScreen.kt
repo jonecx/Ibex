@@ -89,6 +89,7 @@ import kotlinx.coroutines.launch
 fun FileExplorerScreen(
     viewModel: FileExplorerViewModel,
     onNavigateBack: () -> Unit,
+    onNavigateHome: () -> Unit,
     onOpenMediaViewer: (viewableFiles: List<FileItem>, initialIndex: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -175,7 +176,9 @@ fun FileExplorerScreen(
                             onNavigateBack()
                         }
                     },
-                    onBreadcrumbClick = { index -> viewModel.navigateToBreadcrumb(index) },
+                    onBreadcrumbClick = { crumb ->
+                        if (crumb.isHome) onNavigateHome() else viewModel.navigateToBreadcrumb(crumb.index)
+                    },
                     showBackButton = true,
                     currentDirectoryName = viewModel.getCurrentDirectoryName() ?: stringResource(R.string.internal_storage),
                 )
@@ -214,7 +217,7 @@ private fun FileListPane(
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
     onNavigateUp: () -> Unit,
-    onBreadcrumbClick: (Int) -> Unit,
+    onBreadcrumbClick: (Breadcrumb) -> Unit,
     showBackButton: Boolean,
     currentDirectoryName: String,
     modifier: Modifier = Modifier,
@@ -292,8 +295,8 @@ private fun FileListPane(
                                 CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
                             },
                         )
-                        // Show the trail only once nested; a lone home crumb at the root adds nothing.
-                        if (uiState.breadcrumbs.size > 1) {
+                        // Every source shows the trail: home crumb plus the source title, then any nested folders.
+                        if (uiState.breadcrumbs.isNotEmpty()) {
                             BreadcrumbBar(
                                 breadcrumbs = uiState.breadcrumbs,
                                 onCrumbClick = onBreadcrumbClick,

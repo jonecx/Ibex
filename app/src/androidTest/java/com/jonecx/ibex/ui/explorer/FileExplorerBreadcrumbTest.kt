@@ -29,11 +29,13 @@ class FileExplorerBreadcrumbTest : KoinTest {
     }
 
     @Test
-    fun breadcrumbHiddenAtRoot() {
+    fun breadcrumbShownAtRootWithHomeAndTitle() {
         composeTestRule.onNodeWithText("Storage").performClick()
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag("breadcrumb_bar").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("breadcrumb_bar").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("breadcrumb_home").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("breadcrumb_Storage").assertIsDisplayed()
     }
 
     @Test
@@ -50,7 +52,24 @@ class FileExplorerBreadcrumbTest : KoinTest {
     }
 
     @Test
-    fun tappingHomeCrumbReturnsToRoot() {
+    fun tappingTitleCrumbReturnsToSourceRoot() {
+        composeTestRule.onNodeWithText("Storage").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("DCIM").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Camera").assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag("breadcrumb_Storage").performClick()
+        composeTestRule.waitForIdle()
+
+        // The source title crumb jumps to the folder root but stays in the explorer, trail still showing.
+        composeTestRule.onNodeWithText("DCIM").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("breadcrumb_bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun tappingHomeCrumbReturnsToHomeScreen() {
         composeTestRule.onNodeWithText("Storage").performClick()
         composeTestRule.waitForIdle()
 
@@ -61,7 +80,8 @@ class FileExplorerBreadcrumbTest : KoinTest {
         composeTestRule.onNodeWithTag("breadcrumb_home").performClick()
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("Alarms").assertIsDisplayed()
+        // The home crumb leaves the explorer for the source list, not just the folder root.
+        composeTestRule.onNodeWithText("Local").assertIsDisplayed()
         composeTestRule.onNodeWithTag("breadcrumb_bar").assertDoesNotExist()
     }
 }

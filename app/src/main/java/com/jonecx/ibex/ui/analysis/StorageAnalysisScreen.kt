@@ -34,12 +34,15 @@ import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
 import com.jonecx.ibex.ui.components.PieChart
 import com.jonecx.ibex.ui.components.PieChartSegment
+import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
+import com.jonecx.ibex.ui.explorer.components.singleSourceBreadcrumbs
 import com.jonecx.ibex.util.formatFileSize
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StorageAnalysisScreen(
     onNavigateBack: () -> Unit,
+    onNavigateHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StorageAnalysisViewModel = koinViewModel(),
 ) {
@@ -48,6 +51,7 @@ fun StorageAnalysisScreen(
     StorageAnalysisScreenContent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
+        onNavigateHome = onNavigateHome,
         onRetry = viewModel::analyze,
         modifier = modifier,
     )
@@ -58,15 +62,22 @@ fun StorageAnalysisScreen(
 internal fun StorageAnalysisScreenContent(
     uiState: StorageAnalysisUiState,
     onNavigateBack: () -> Unit,
+    onNavigateHome: () -> Unit = onNavigateBack,
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         topBar = {
-            IbexTopAppBar(
-                title = stringResource(R.string.analysis_title),
-                onNavigateBack = onNavigateBack,
-            )
+            Column {
+                IbexTopAppBar(
+                    title = stringResource(R.string.analysis_title),
+                    onNavigateBack = onNavigateBack,
+                )
+                BreadcrumbBar(
+                    breadcrumbs = singleSourceBreadcrumbs(stringResource(R.string.analysis_title)),
+                    onCrumbClick = { crumb -> if (crumb.isHome) onNavigateHome() },
+                )
+            }
         },
         modifier = modifier,
     ) { paddingValues ->

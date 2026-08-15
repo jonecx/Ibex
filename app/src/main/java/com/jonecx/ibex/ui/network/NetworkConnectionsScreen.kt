@@ -44,12 +44,15 @@ import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.ui.components.ConfirmationDialog
 import com.jonecx.ibex.ui.components.EmptyView
 import com.jonecx.ibex.ui.components.IbexTopAppBar
+import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
+import com.jonecx.ibex.ui.explorer.components.singleSourceBreadcrumbs
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NetworkConnectionsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateHome: () -> Unit,
     onConnectionSelected: (NetworkConnection) -> Unit,
     onAddConnection: () -> Unit,
     onEditConnection: (NetworkConnection) -> Unit,
@@ -65,10 +68,16 @@ fun NetworkConnectionsScreen(
 
     Scaffold(
         topBar = {
-            IbexTopAppBar(
-                title = stringResource(R.string.network_connections_title),
-                onNavigateBack = onNavigateBack,
-            )
+            Column {
+                IbexTopAppBar(
+                    title = stringResource(R.string.network_connections_title),
+                    onNavigateBack = onNavigateBack,
+                )
+                BreadcrumbBar(
+                    breadcrumbs = singleSourceBreadcrumbs(stringResource(R.string.network_connections_title)),
+                    onCrumbClick = { crumb -> if (crumb.isHome) onNavigateHome() },
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(

@@ -40,14 +40,19 @@ import java.net.URLDecoder
 @Immutable
 data class ScrollPosition(val firstVisibleItemIndex: Int = 0, val firstVisibleItemScrollOffset: Int = 0)
 
-// One tappable segment of the path bar; the root renders as a home icon, the current folder is not clickable.
+// One tappable segment of the path bar; the leading home crumb returns to the home screen, the current folder is not clickable.
 @Immutable
 data class Breadcrumb(
     val index: Int,
     val name: String,
-    val isRoot: Boolean,
+    val isHome: Boolean,
     val isCurrent: Boolean,
-)
+) {
+    companion object {
+        // Sentinel index for the leading crumb that jumps back to the app home screen.
+        const val HOME_INDEX = -1
+    }
+}
 
 @Immutable
 data class FileExplorerUiState(
@@ -58,6 +63,7 @@ data class FileExplorerUiState(
     val error: Throwable? = null,
     val navigationStack: List<String> = listOf(INTERNAL_STORAGE_PATH),
     val rootPath: String = INTERNAL_STORAGE_PATH,
+    val rootTitle: String = "",
     val allowFolderNavigation: Boolean = true,
     val isAtInternalStorageRoot: Boolean = false,
     val viewMode: ViewMode = ViewMode.LIST,
@@ -80,18 +86,19 @@ data class FileExplorerUiState(
         files.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
 
-    // The path bar mirrors the navigation stack: root as home, each visited folder after it, current last.
-    val breadcrumbs: List<Breadcrumb> = if (allowFolderNavigation) {
-        navigationStack.mapIndexed { index, path ->
-            Breadcrumb(
-                index = index,
-                name = path.trimEnd('/').substringAfterLast('/'),
-                isRoot = index == 0,
-                isCurrent = index == navigationStack.lastIndex,
+    // Every source leads with a home crumb (the home screen), then its title; navigable sources append each visited folder.
+    val breadcrumbs: List<Breadcrumb> = buildList {
+        add(Breadcrumb(index = Breadcrumb.HOME_INDEX, name = "", isHome = true, isCurrent = false))
+        navigationStack.forEachIndexed { index, path ->
+            add(
+                Breadcrumb(
+                    index = index,
+                    name = if (index == 0) rootTitle else path.trimEnd('/').substringAfterLast('/'),
+                    isHome = false,
+                    isCurrent = index == navigationStack.lastIndex,
+                ),
             )
         }
-    } else {
-        emptyList()
     }
 }
 
@@ -141,6 +148,9 @@ class FileExplorerViewModel(
     // Media-folder browsing starts at the storage root; the title is kept only for the top-bar label there.
     private val startPath = if (isMediaFolderBrowsing) INTERNAL_STORAGE_PATH else initialPath ?: title ?: INTERNAL_STORAGE_PATH
 
+    // Label for the root crumb: the source title from the home view, falling back to the start folder's name.
+    private val rootTitle: String = title ?: startPath.trimEnd('/').substringAfterLast('/')
+
     private val isRemote: Boolean = sourceType == FileSourceType.SMB
 
     private val _uiState = MutableStateFlow(
@@ -148,6 +158,7 @@ class FileExplorerViewModel(
             currentPath = startPath,
             navigationStack = listOf(startPath),
             rootPath = startPath,
+            rootTitle = rootTitle,
             allowFolderNavigation = allowFolderNavigation,
             isRemoteBrowsing = isRemote,
             isMediaFolderBrowsing = isMediaFolderBrowsing,

@@ -29,9 +29,10 @@ private fun WithImageRequestFactory(content: @Composable () -> Unit) {
 }
 
 private fun sampleBreadcrumbs() = listOf(
-    Breadcrumb(index = 0, name = "0", isRoot = true, isCurrent = false),
-    Breadcrumb(index = 1, name = "update", isRoot = false, isCurrent = false),
-    Breadcrumb(index = 2, name = "downloads", isRoot = false, isCurrent = true),
+    Breadcrumb(index = Breadcrumb.HOME_INDEX, name = "", isHome = true, isCurrent = false),
+    Breadcrumb(index = 0, name = "Storage", isHome = false, isCurrent = false),
+    Breadcrumb(index = 1, name = "update", isHome = false, isCurrent = false),
+    Breadcrumb(index = 2, name = "downloads", isHome = false, isCurrent = true),
 )
 
 @PreviewTest

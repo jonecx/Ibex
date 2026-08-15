@@ -31,11 +31,17 @@ import com.jonecx.ibex.R
 import com.jonecx.ibex.ui.explorer.Breadcrumb
 import com.jonecx.ibex.ui.theme.AlphaSecondary
 
-// Scrollable path bar under the top app bar; tapping an ancestor crumb jumps back to that folder.
+// Home crumb plus a single current title crumb, for standalone screens that only need a way back to the home screen.
+fun singleSourceBreadcrumbs(title: String): List<Breadcrumb> = listOf(
+    Breadcrumb(index = Breadcrumb.HOME_INDEX, name = "", isHome = true, isCurrent = false),
+    Breadcrumb(index = 0, name = title, isHome = false, isCurrent = true),
+)
+
+// Scrollable path bar under the top app bar; the home crumb returns to the home screen, ancestor crumbs jump back up the tree.
 @Composable
 fun BreadcrumbBar(
     breadcrumbs: List<Breadcrumb>,
-    onCrumbClick: (index: Int) -> Unit,
+    onCrumbClick: (crumb: Breadcrumb) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -67,7 +73,7 @@ fun BreadcrumbBar(
                     modifier = Modifier.size(18.dp),
                 )
             }
-            CrumbChip(crumb = crumb, onClick = { onCrumbClick(crumb.index) })
+            CrumbChip(crumb = crumb, onClick = { onCrumbClick(crumb) })
         }
     }
 }
@@ -82,7 +88,7 @@ private fun CrumbChip(
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val tag = if (crumb.isRoot) "breadcrumb_home" else "breadcrumb_${crumb.name}"
+    val tag = if (crumb.isHome) "breadcrumb_home" else "breadcrumb_${crumb.name}"
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -93,7 +99,7 @@ private fun CrumbChip(
             .padding(horizontal = 8.dp, vertical = 6.dp)
             .testTag(tag),
     ) {
-        if (crumb.isRoot) {
+        if (crumb.isHome) {
             Icon(
                 imageVector = Icons.Filled.Home,
                 contentDescription = stringResource(R.string.breadcrumb_home),

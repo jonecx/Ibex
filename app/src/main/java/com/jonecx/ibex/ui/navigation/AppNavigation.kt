@@ -102,6 +102,9 @@ fun AppNavigation(
         }
     }
 
+    // Breadcrumb home crumbs jump straight to the home screen, popping any screens stacked above it.
+    val navigateHome: () -> Unit = { navController.popBackStack(Routes.HOME, inclusive = false) }
+
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
@@ -164,6 +167,7 @@ fun AppNavigation(
         composable(Routes.STORAGE_ANALYSIS) {
             StorageAnalysisScreen(
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateHome = navigateHome,
             )
         }
 
@@ -201,6 +205,7 @@ fun AppNavigation(
             FileExplorerScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateHome = navigateHome,
                 onOpenMediaViewer = { viewableFiles, initialIndex ->
                     mediaViewerArgs.set(viewableFiles, initialIndex)
                     navController.navigate(Routes.MEDIA_VIEWER)
@@ -220,6 +225,7 @@ fun AppNavigation(
             val viewModel: NetworkConnectionsViewModel = koinViewModel()
             NetworkConnectionsScreen(
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateHome = navigateHome,
                 onConnectionSelected = { connection ->
                     navController.navigate(
                         Routes.fileExplorer(

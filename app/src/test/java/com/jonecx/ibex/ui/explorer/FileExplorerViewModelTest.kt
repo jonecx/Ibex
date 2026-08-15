@@ -204,18 +204,58 @@ class FileExplorerViewModelTest {
         navigateToSubdir("Documents")
 
         val crumbs = viewModel.uiState.value.breadcrumbs
-        assertEquals(2, crumbs.size)
-        assertTrue(crumbs.first().isRoot)
+        assertEquals(3, crumbs.size)
+        assertTrue(crumbs.first().isHome)
         assertFalse(crumbs.first().isCurrent)
         assertEquals("Documents", crumbs.last().name)
         assertTrue(crumbs.last().isCurrent)
-        assertFalse(crumbs.last().isRoot)
+        assertFalse(crumbs.last().isHome)
     }
 
     @Test
-    fun `breadcrumbs are empty when folder navigation disabled`() = runTest {
+    fun `breadcrumbs at source root lead with home crumb then source title`() = runTest {
+        viewModel = createViewModel(rootPath = storagePath, title = "Storage")
+
+        val crumbs = viewModel.uiState.value.breadcrumbs
+        assertEquals(2, crumbs.size)
+        assertTrue(crumbs.first().isHome)
+        assertEquals(Breadcrumb.HOME_INDEX, crumbs.first().index)
+        assertEquals("Storage", crumbs[1].name)
+        assertEquals(0, crumbs[1].index)
+        assertTrue(crumbs[1].isCurrent)
+    }
+
+    @Test
+    fun `breadcrumbs root crumb uses source title not path segment`() = runTest {
+        viewModel = createViewModel(rootPath = storagePath, title = "Storage")
+        viewModel.navigateTo(testDirectoryFileItem("Documents", path = "$storagePath/Documents"))
+
+        val crumbs = viewModel.uiState.value.breadcrumbs
+        assertEquals(3, crumbs.size)
+        assertEquals("Storage", crumbs[1].name)
+        assertFalse(crumbs[1].isCurrent)
+        assertEquals("Documents", crumbs.last().name)
+    }
+
+    @Test
+    fun `navigateToBreadcrumb ignores the home sentinel index`() = runTest {
+        viewModel.navigateTo(testDirectoryFileItem("level1", path = "$storagePath/level1"))
+        val before = viewModel.uiState.value.navigationStack
+
+        viewModel.navigateToBreadcrumb(Breadcrumb.HOME_INDEX)
+
+        assertEquals(before, viewModel.uiState.value.navigationStack)
+    }
+
+    @Test
+    fun `breadcrumbs for a flat source are home then its title`() = runTest {
         viewModel = createViewModel(sourceType = FileSourceType.LOCAL_AUDIO.name, title = "Audio")
-        assertTrue(viewModel.uiState.value.breadcrumbs.isEmpty())
+
+        val crumbs = viewModel.uiState.value.breadcrumbs
+        assertEquals(2, crumbs.size)
+        assertTrue(crumbs.first().isHome)
+        assertEquals("Audio", crumbs[1].name)
+        assertTrue(crumbs[1].isCurrent)
     }
 
     @Test
