@@ -26,6 +26,8 @@ import com.jonecx.ibex.ui.theme.FileVideoColor
 fun FileIcon(
     fileItem: FileItem,
     modifier: Modifier = Modifier,
+    // Null marks the icon decorative when a surrounding label already names the item, e.g. a labelled grid tile.
+    contentDescription: String? = fileItem.fileType.name,
 ) {
     val (icon, tint) = when (fileItem.fileType) {
         FileType.DIRECTORY -> Icons.Filled.Folder to FileDirectoryColor
@@ -39,7 +41,7 @@ fun FileIcon(
     }
     Icon(
         imageVector = icon,
-        contentDescription = fileItem.fileType.name,
+        contentDescription = contentDescription,
         modifier = modifier,
         tint = tint,
     )

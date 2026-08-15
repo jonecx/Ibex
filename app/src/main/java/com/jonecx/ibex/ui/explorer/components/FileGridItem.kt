@@ -3,9 +3,12 @@ package com.jonecx.ibex.ui.explorer.components
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,14 +31,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.ui.theme.AlphaSecondary
+import com.jonecx.ibex.ui.theme.AlphaTileResting
 
 private val GridItemShape = RoundedCornerShape(2.dp)
 
@@ -55,8 +57,15 @@ fun FileGridItem(
 ) {
     // A media folder renders its cover photo instead of a plain folder icon; a plain file renders its own thumbnail.
     val coverItem = remember(fileItem) { fileItem.thumbnailCover() }
-    // Merge the tile into one spoken label so TalkBack reads "Camera, 42 items" once, not name + count + cover.
-    val folderDescription = fileItem.folderContentDescription()
+    // One spoken label per tile so TalkBack reads "Camera, 42 items" once; the inner icon and frame stay decorative.
+    val tileDescription = fileItem.folderContentDescription() ?: fileItem.name
+
+    // A soft resting fill lifts flat icon tiles off the page; hover and selection still layer a stronger tone on top.
+    val tileBackground = if (isSelected) {
+        selectionBackgroundColor(isSelected = true)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = AlphaTileResting)
+    }
 
     Column(
         modifier = modifier
@@ -65,8 +74,8 @@ fun FileGridItem(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .background(selectionBackgroundColor(isSelected))
-            .semantics { folderDescription?.let { contentDescription = it } }
+            .background(tileBackground)
+            .semantics(mergeDescendants = true) { contentDescription = tileDescription }
             .padding(1.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -83,19 +92,36 @@ fun FileGridItem(
                 ThumbnailImage(
                     fileItem = coverItem,
                     modifier = Modifier.matchParentSize(),
-                    // The folder's own badge signals it is a folder, so skip the per-file video play glyph.
+                    // The folder's label strip signals it is a folder, so skip the per-file video play glyph.
                     showVideoIndicator = !fileItem.isDirectory,
                     // Grid tiles are roomy, so use the enlarged badge rather than the list-sized default.
                     videoIndicatorSize = GridVideoBadgeSize,
+                    // The tile carries the spoken label, so keep the frame out of the TalkBack tree.
+                    contentDescription = null,
                     onError = { thumbnailFailed = true },
                 )
                 if (fileItem.isDirectory) {
-                    FolderBadge(modifier = Modifier.align(Alignment.BottomStart).padding(4.dp))
+                    // A cover folder overlays its name and count on a translucent strip so the label stays in the tile.
+                    FolderCoverLabel(
+                        name = fileItem.name,
+                        childCount = fileItem.childCount,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
                 }
-            } else {
-                FileIcon(
+            } else if (fileItem.isDirectory) {
+                // A plain folder stacks its icon, name, and count inside the square, like the file tiles.
+                FileTypeTile(
                     fileItem = fileItem,
-                    modifier = Modifier.fillMaxWidth(0.5f).aspectRatio(1f),
+                    contentColor = selectionContentColor(isSelected),
+                    modifier = Modifier.fillMaxSize(),
+                    childCount = fileItem.childCount,
+                )
+            } else {
+                // Non-thumbnail files carry their name inside the square so every cell stays the same height.
+                FileTypeTile(
+                    fileItem = fileItem,
+                    contentColor = selectionContentColor(isSelected),
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
 
@@ -108,57 +134,92 @@ fun FileGridItem(
                 )
             }
         }
+    }
+}
 
-        // Folders always caption their name and count; plain files only caption when the thumbnail fails to load.
-        if (fileItem.isDirectory) {
-            TileCaption(text = fileItem.name, color = selectionContentColor(isSelected))
-            fileItem.childCount?.let { count ->
-                TileCaption(
-                    text = stringResource(R.string.items_count, count),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelSmall,
-                    topPadding = 2.dp,
-                )
-            }
-        } else if (!fileItem.fileType.isViewable || thumbnailFailed) {
-            TileCaption(text = fileItem.name, color = selectionContentColor(isSelected))
+// Stacks a type icon over a name (and an optional child count for folders) inside the square, keeping tiles uniform.
+@Composable
+private fun FileTypeTile(
+    fileItem: FileItem,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+    childCount: Int? = null,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        FileIcon(
+            fileItem = fileItem,
+            modifier = Modifier.fillMaxWidth(0.45f).aspectRatio(1f),
+            // The tile carries the spoken label, so keep the icon out of the TalkBack tree.
+            contentDescription = null,
+        )
+        Text(
+            text = fileItem.name,
+            style = MaterialTheme.typography.bodySmall,
+            // A lone name may wrap to two lines; leave room for the count line when a folder shows one.
+            maxLines = if (childCount != null) 1 else 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            color = contentColor,
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+        )
+        childCount?.let { count ->
+            Text(
+                text = stringResource(R.string.folder_child_count, count),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            )
         }
     }
 }
 
+// A cover folder's name and count on a translucent strip pinned to the tile bottom, keeping the label inside the tile.
 @Composable
-private fun TileCaption(
-    text: String,
-    color: Color,
+private fun FolderCoverLabel(
+    name: String,
+    childCount: Int?,
     modifier: Modifier = Modifier,
-    style: TextStyle = MaterialTheme.typography.bodySmall,
-    topPadding: Dp = 6.dp,
 ) {
-    Text(
-        text = text,
-        style = style,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        textAlign = TextAlign.Center,
-        color = color,
-        modifier = modifier.fillMaxWidth().padding(top = topPadding),
-    )
-}
-
-// Small translucent folder glyph pinned to a cover so a media-folder tile reads as a folder, not a single photo.
-@Composable
-private fun FolderBadge(modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = AlphaSecondary),
-        modifier = modifier.size(20.dp),
+        modifier = modifier.fillMaxWidth().padding(4.dp),
     ) {
-        Icon(
-            imageVector = Icons.Filled.Folder,
-            contentDescription = null,
-            modifier = Modifier.padding(3.dp),
-            tint = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Folder,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
+            )
+            childCount?.let { count ->
+                Text(
+                    text = stringResource(R.string.folder_child_count, count),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+        }
     }
 }
 

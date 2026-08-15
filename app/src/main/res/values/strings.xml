@@ -11,6 +11,8 @@
     <string name="internal_storage">Internal Storage</string>
     <string name="sd_card">SD Card</string>
     <string name="items_count">%1$d items</string>
+    <!-- Compact child count shown inside a folder tile, e.g. "(15)" -->
+    <string name="folder_child_count">(%1$d)</string>
     <!-- Home screen -->
     <string name="section_local">Local</string>
     <string name="section_remote">Remote</string>

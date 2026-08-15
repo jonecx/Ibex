@@ -19,6 +19,9 @@ const val AlphaDisabled = 0.5f
 const val AlphaSecondary = 0.7f
 const val AlphaTintBackground = 0.15f
 
+// Soft resting fill for a grid tile: lifts it off the flat page, stays lighter than the hover or selected state.
+const val AlphaTileResting = 0.4f
+
 // Per-category icon accents. Kept vivid and distinct on purpose: file-type and source-tile icons
 // stay colour-coded for quick scanning, independent of the monochrome chrome above.
 val FileDirectoryColor = Color(0xFFFFB74D)

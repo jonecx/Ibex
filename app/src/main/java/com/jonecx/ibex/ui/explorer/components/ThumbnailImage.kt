@@ -52,6 +52,8 @@ fun ThumbnailImage(
     shape: Shape = RoundedCornerShape(2.dp),
     showVideoIndicator: Boolean = true,
     videoIndicatorSize: Dp = DefaultVideoBadgeSize,
+    // Null marks the frame decorative when a surrounding label already names the item, e.g. a labelled grid tile.
+    contentDescription: String? = fileItem.name,
     onError: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -77,7 +79,7 @@ fun ThumbnailImage(
         )
         AzmareeImage(
             model = imageRequest,
-            contentDescription = fileItem.name,
+            contentDescription = contentDescription,
             modifier = Modifier
                 .fillMaxSize()
                 .clip(shape)
