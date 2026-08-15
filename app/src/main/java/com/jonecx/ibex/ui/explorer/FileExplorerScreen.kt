@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -274,7 +275,7 @@ private fun FileListPane(
                             CreateFolderAction(uiState.canCreateFolder) { showCreateFolderDialog = true }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         ),
                     )
                 }
@@ -571,6 +572,8 @@ private data class ActionBarItem(
     val label: String,
     val onClick: () -> Unit,
     val enabled: Boolean = true,
+    // Null inherits the bar's accent; set it to keep red reserved for destructive actions.
+    val contentColor: Color? = null,
 )
 
 @Composable
@@ -581,12 +584,14 @@ private fun SelectionActionBar(
     onDelete: () -> Unit,
     singleSelection: Boolean,
 ) {
+    // Neutral labels for the safe actions; red stays reserved for the destructive Delete.
+    val neutral = MaterialTheme.colorScheme.onSecondaryContainer
     EvenlySpacedActionBar(
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
         actions = listOf(
-            ActionBarItem(Icons.Filled.ContentCopy, stringResource(R.string.copy), onCopy),
-            ActionBarItem(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move), onMove),
-            ActionBarItem(Icons.Filled.EditNote, stringResource(R.string.rename), onRename, enabled = singleSelection),
+            ActionBarItem(Icons.Filled.ContentCopy, stringResource(R.string.copy), onCopy, contentColor = neutral),
+            ActionBarItem(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move), onMove, contentColor = neutral),
+            ActionBarItem(Icons.Filled.EditNote, stringResource(R.string.rename), onRename, enabled = singleSelection, contentColor = neutral),
             ActionBarItem(Icons.Filled.Delete, stringResource(R.string.delete_selected), onDelete),
         ),
     )
@@ -614,7 +619,12 @@ private fun EvenlySpacedActionBar(
     BottomAppBar(containerColor = containerColor) {
         actions.forEach { action ->
             Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = action.onClick, enabled = action.enabled) {
+            val contentColor = action.contentColor ?: MaterialTheme.colorScheme.primary
+            TextButton(
+                onClick = action.onClick,
+                enabled = action.enabled,
+                colors = ButtonDefaults.textButtonColors(contentColor = contentColor),
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = action.icon,
