@@ -13,6 +13,9 @@ private val LightColorScheme = lightColorScheme(
     // Accent container drives FABs and prompts; kept the single brand red, never a purple tonal.
     primaryContainer = BrandRed,
     onPrimaryContainer = Snow,
+    // Destructive red darkened so it clears WCAG AA on light surfaces.
+    error = BrandRedOnLight,
+    onError = Snow,
     background = PaperLight,
     onBackground = Ink,
     surface = PaperLight,
@@ -40,6 +43,9 @@ private val DarkColorScheme = darkColorScheme(
     // Accent container drives FABs and prompts; kept the single brand red, never a purple tonal.
     primaryContainer = BrandRed,
     onPrimaryContainer = Snow,
+    // Vivid brand red stays legible on dark surfaces; the darker sibling is only for light.
+    error = BrandRed,
+    onError = Snow,
     background = PaperDark,
     onBackground = Snow,
     surface = PaperDark,

@@ -592,7 +592,12 @@ private fun SelectionActionBar(
             ActionBarItem(Icons.Filled.ContentCopy, stringResource(R.string.copy), onCopy, contentColor = neutral),
             ActionBarItem(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move), onMove, contentColor = neutral),
             ActionBarItem(Icons.Filled.EditNote, stringResource(R.string.rename), onRename, enabled = singleSelection, contentColor = neutral),
-            ActionBarItem(Icons.Filled.Delete, stringResource(R.string.delete_selected), onDelete),
+            ActionBarItem(
+                Icons.Filled.Delete,
+                stringResource(R.string.delete_selected),
+                onDelete,
+                contentColor = MaterialTheme.colorScheme.error,
+            ),
         ),
     )
 }
