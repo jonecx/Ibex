@@ -100,6 +100,27 @@
     <string name="transfer_collapsed">Collapsed</string>
     <string name="transfer_cancel">Cancel transfer</string>
     <string name="transfer_cancel_all">Cancel all</string>
+    <!-- Transfer detail panel -->
+    <string name="transfer_pause_all">Pause all</string>
+    <string name="transfer_pause">Pause</string>
+    <string name="transfer_resume">Resume</string>
+    <string name="transfer_cancel_action">Cancel</string>
+    <string name="transfer_dest_moving">Moving to</string>
+    <string name="transfer_dest_copying">Copying to</string>
+    <string name="transfer_dest_internal">Internal</string>
+    <string name="transfer_paused">Paused</string>
+    <string name="transfer_queued">Queued</string>
+    <!-- e.g. "3 of 5 files" -->
+    <string name="transfer_files_progress">%1$d of %2$d files</string>
+    <!-- e.g. "40 files" -->
+    <string name="transfer_files_total">%1$d files</string>
+    <!-- e.g. "40 items" for a job not yet measured -->
+    <string name="transfer_item_count">%1$d items</string>
+    <!-- e.g. "128 MB / 207 MB" -->
+    <string name="transfer_size_progress">%1$s / %2$s</string>
+    <!-- e.g. "12s left" -->
+    <string name="transfer_eta">%1$s left</string>
+    <string name="transfer_percent">%1$d%%</string>
     <string name="rename_dialog_title">Rename</string>
     <string name="rename_dialog_hint">New name</string>
     <string name="rename_dialog_confirm">Rename</string>

@@ -4,9 +4,17 @@ import androidx.compose.runtime.Immutable
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import kotlinx.serialization.Serializable
 
+// Whole seconds left at the current rate, or -1 when it cannot be estimated. Shared by the per-job and
+// aggregate ETAs so the estimate is computed one way only.
+internal fun etaSeconds(totalBytes: Long, bytesDone: Long, bytesPerSecond: Long): Long =
+    if (bytesPerSecond > 0L && totalBytes > bytesDone) (totalBytes - bytesDone) / bytesPerSecond else -1L
+
 enum class TransferStatus {
     QUEUED,
     RUNNING,
+
+    // User-paused: the .ibexpart temp is kept so resume picks up from the last byte. Not auto-resumed on reboot.
+    PAUSED,
     COMPLETED,
     FAILED,
     CANCELLED,
@@ -54,26 +62,67 @@ data class TransferProgress(
     val filesDone: Int,
     val currentFileName: String? = null,
     val bytesPerSecond: Long = 0L,
+    // Progress of the file being copied right now, for the sheet's per-file bar. Live-only, never journaled.
+    val currentFileBytes: Long = 0L,
+    val currentFileTotal: Long = 0L,
+    // Top-level items the user picked, so a still-unmeasured queued job can show "N items" honestly.
+    val itemCount: Int = 0,
 ) {
     // 0 total means "not counted yet": the bar shows indeterminate until enumeration finishes.
     val fraction: Float get() = if (totalBytes > 0L) (bytesDone.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
+    val currentFileFraction: Float
+        get() = if (currentFileTotal > 0L) (currentFileBytes.toFloat() / currentFileTotal).coerceIn(0f, 1f) else 0f
     val isCounting: Boolean get() = status == TransferStatus.RUNNING && totalBytes == 0L
+    val isPaused: Boolean get() = status == TransferStatus.PAUSED
+    val isFailed: Boolean get() = status == TransferStatus.FAILED
+    val secondsRemaining: Long get() = etaSeconds(totalBytes, bytesDone, bytesPerSecond)
 }
 
 @Immutable
 data class TransferSnapshot(
     val jobs: List<TransferProgress> = emptyList(),
 ) {
-    val hasActive: Boolean get() = jobs.any {
+    // Non-terminal jobs: what the bar and sheet actually show. Excludes COMPLETED/CANCELLED (already pruned).
+    private val active: List<TransferProgress> get() = jobs.filter {
+        it.status == TransferStatus.RUNNING ||
+            it.status == TransferStatus.QUEUED ||
+            it.status == TransferStatus.PAUSED ||
+            it.status == TransferStatus.FAILED
+    }
+
+    // The bar is visible whenever there is any non-terminal job, paused or failed included.
+    val hasActive: Boolean get() = active.isNotEmpty()
+    val activeCount: Int get() = active.size
+
+    // Something is running or waiting to run: gates "Pause all" and whether the worker should keep going.
+    val hasRunningOrQueued: Boolean get() = jobs.any {
         it.status == TransferStatus.RUNNING || it.status == TransferStatus.QUEUED
     }
-    val activeCount: Int get() = jobs.count {
-        it.status == TransferStatus.RUNNING || it.status == TransferStatus.QUEUED
+    val hasFailed: Boolean get() = jobs.any { it.status == TransferStatus.FAILED }
+
+    // Icon/verb for the collapsed row: prefer the running job, else the next queued, else a paused one.
+    val primaryOperation: ClipboardOperation? get() = (
+        jobs.firstOrNull { it.status == TransferStatus.RUNNING }
+            ?: jobs.firstOrNull { it.status == TransferStatus.QUEUED }
+            ?: jobs.firstOrNull { it.status == TransferStatus.PAUSED }
+        )?.operation
+
+    // Aggregate over jobs that carry real progress (paused ones freeze their bytes, so they still count);
+    // FAILED is excluded so a failure never drags the headline bar. Speed drops on its own as paused
+    // jobs clear their live bytes-per-second.
+    private val counted: List<TransferProgress> get() = jobs.filter {
+        it.status == TransferStatus.RUNNING ||
+            it.status == TransferStatus.QUEUED ||
+            it.status == TransferStatus.PAUSED
     }
-    val totalBytes: Long get() = jobs.sumOf { it.totalBytes }
-    val bytesDone: Long get() = jobs.sumOf { it.bytesDone }
-    val totalFiles: Int get() = jobs.sumOf { it.totalFiles }
-    val filesDone: Int get() = jobs.sumOf { it.filesDone }
-    val bytesPerSecond: Long get() = jobs.sumOf { it.bytesPerSecond }
+    val totalBytes: Long get() = counted.sumOf { it.totalBytes }
+    val bytesDone: Long get() = counted.sumOf { it.bytesDone }
+    val totalFiles: Int get() = counted.sumOf { it.totalFiles }
+    val filesDone: Int get() = counted.sumOf { it.filesDone }
+    val bytesPerSecond: Long get() = counted.sumOf { it.bytesPerSecond }
     val fraction: Float get() = if (totalBytes > 0L) (bytesDone.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
+    val secondsRemaining: Long get() = etaSeconds(totalBytes, bytesDone, bytesPerSecond)
+
+    // Indeterminate only while something is actively running before its size is known ("Preparing…").
+    val isCounting: Boolean get() = hasRunningOrQueued && totalBytes == 0L
 }

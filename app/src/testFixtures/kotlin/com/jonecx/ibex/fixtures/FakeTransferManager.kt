@@ -19,7 +19,10 @@ class FakeTransferManager : TransferManager {
 
     val enqueued = mutableListOf<Enqueued>()
     val cancelledIds = mutableListOf<String>()
+    val pausedIds = mutableListOf<String>()
+    val resumedIds = mutableListOf<String>()
     var cancelAllCount = 0
+    var pauseAllCount = 0
     var recoverCount = 0
 
     private val _snapshot = MutableStateFlow(TransferSnapshot())
@@ -38,6 +41,18 @@ class FakeTransferManager : TransferManager {
 
     override fun cancelAll() {
         cancelAllCount += 1
+    }
+
+    override fun pause(jobId: String) {
+        pausedIds.add(jobId)
+    }
+
+    override fun resume(jobId: String) {
+        resumedIds.add(jobId)
+    }
+
+    override fun pauseAll() {
+        pauseAllCount += 1
     }
 
     override fun recoverAndResume() {

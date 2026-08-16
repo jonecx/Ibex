@@ -24,7 +24,8 @@ fun memFileItem(path: String, size: Long, isDirectory: Boolean = false): FileIte
 
 // In-memory ProtocolFileHandler for transfer tests: a flat path -> bytes map plus a set of directories.
 // Enough to exercise copy/move/resume without touching a real filesystem or the network.
-class InMemoryProtocolHandler(private val scheme: String = MEM_SCHEME) : ProtocolFileHandler {
+// Open so a test can subclass it to inject read hooks (e.g. pausing mid-copy).
+open class InMemoryProtocolHandler(private val scheme: String = MEM_SCHEME) : ProtocolFileHandler {
 
     val files = LinkedHashMap<String, ByteArray>()
     val dirs = LinkedHashSet<String>()

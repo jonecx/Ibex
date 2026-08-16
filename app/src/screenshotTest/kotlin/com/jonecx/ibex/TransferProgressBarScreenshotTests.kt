@@ -3,7 +3,11 @@ package com.jonecx.ibex
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.jonecx.ibex.fixtures.pausedTransferSnapshot
 import com.jonecx.ibex.fixtures.runningTransferSnapshot
+import com.jonecx.ibex.fixtures.sheetTransferSnapshot
+import com.jonecx.ibex.ui.components.TransferDetailActions
+import com.jonecx.ibex.ui.components.TransferDetailContent
 import com.jonecx.ibex.ui.components.TransferProgressBarContent
 import com.jonecx.ibex.ui.theme.IbexTheme
 
@@ -16,7 +20,7 @@ fun TransferProgressBarCollapsedPreview() {
             snapshot = runningTransferSnapshot(),
             expanded = false,
             onToggleExpanded = {},
-            onCancel = {},
+            actions = TransferDetailActions.Noop,
         )
     }
 }
@@ -30,7 +34,7 @@ fun TransferProgressBarCollapsedDarkPreview() {
             snapshot = runningTransferSnapshot(),
             expanded = false,
             onToggleExpanded = {},
-            onCancel = {},
+            actions = TransferDetailActions.Noop,
         )
     }
 }
@@ -41,10 +45,10 @@ fun TransferProgressBarCollapsedDarkPreview() {
 fun TransferProgressBarExpandedPreview() {
     IbexTheme {
         TransferProgressBarContent(
-            snapshot = runningTransferSnapshot(),
+            snapshot = sheetTransferSnapshot(),
             expanded = true,
             onToggleExpanded = {},
-            onCancel = {},
+            actions = TransferDetailActions.Noop,
         )
     }
 }
@@ -55,10 +59,28 @@ fun TransferProgressBarExpandedPreview() {
 fun TransferProgressBarExpandedDarkPreview() {
     IbexTheme(darkTheme = true) {
         TransferProgressBarContent(
-            snapshot = runningTransferSnapshot(),
+            snapshot = sheetTransferSnapshot(),
             expanded = true,
             onToggleExpanded = {},
-            onCancel = {},
+            actions = TransferDetailActions.Noop,
         )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun TransferDetailPausedPreview() {
+    IbexTheme {
+        TransferDetailContent(snapshot = pausedTransferSnapshot(), actions = TransferDetailActions.Noop)
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun TransferDetailPausedDarkPreview() {
+    IbexTheme(darkTheme = true) {
+        TransferDetailContent(snapshot = pausedTransferSnapshot(), actions = TransferDetailActions.Noop)
     }
 }
