@@ -2,6 +2,7 @@ package com.jonecx.ibex.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -74,12 +75,15 @@ class FastScrollerTest {
         composeTestRule.setContent {
             IbexTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
+                    // Pin the rail to the end edge as production does; the bubble sits to its
+                    // left, so a start-aligned rail would push the bubble off-screen.
                     FastScrollOverlay(
                         alpha = 1f,
                         thumbFraction = 0.4f,
                         dragging = true,
                         bubbleFraction = 0.4f,
                         label = "F",
+                        modifier = Modifier.align(Alignment.CenterEnd),
                     )
                 }
             }
