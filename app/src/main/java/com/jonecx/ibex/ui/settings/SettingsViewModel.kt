@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val sendAnalyticsEnabled: Boolean = false,
+    val networkFolderItemCountEnabled: Boolean = false,
     val viewMode: ViewMode = ViewMode.LIST,
     val gridColumns: Int = DEFAULT_GRID_COLUMNS,
 )
@@ -37,6 +38,9 @@ class SettingsViewModel(
         }
         viewModelScope.launchCollect(settingsPreferences.sendAnalyticsEnabled, dispatcher) { enabled ->
             _uiState.update { it.copy(sendAnalyticsEnabled = enabled) }
+        }
+        viewModelScope.launchCollect(settingsPreferences.networkFolderItemCountEnabled, dispatcher) { enabled ->
+            _uiState.update { it.copy(networkFolderItemCountEnabled = enabled) }
         }
         viewModelScope.launchCollect(settingsPreferences.viewMode, dispatcher) { mode ->
             _uiState.update { it.copy(viewMode = mode) }
@@ -62,6 +66,12 @@ class SettingsViewModel(
             settingsPreferences.setSendAnalyticsEnabled(enabled)
         }
         if (enabled) analyticsManager.trackAnalyticsConsentChange(granted = true)
+    }
+
+    fun setNetworkFolderItemCountEnabled(enabled: Boolean) {
+        viewModelScope.launch(dispatcher) {
+            settingsPreferences.setNetworkFolderItemCountEnabled(enabled)
+        }
     }
 
     fun setViewMode(mode: ViewMode) {

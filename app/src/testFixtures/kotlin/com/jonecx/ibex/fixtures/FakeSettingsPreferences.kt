@@ -23,6 +23,13 @@ class FakeSettingsPreferences : SettingsPreferencesContract {
         _sendAnalyticsEnabled.value = enabled
     }
 
+    private val _networkFolderItemCountEnabled = MutableStateFlow(false)
+    override val networkFolderItemCountEnabled: Flow<Boolean> = _networkFolderItemCountEnabled
+
+    override suspend fun setNetworkFolderItemCountEnabled(enabled: Boolean) {
+        _networkFolderItemCountEnabled.value = enabled
+    }
+
     private val _viewMode = MutableStateFlow(ViewMode.LIST)
     override val viewMode: Flow<ViewMode> = _viewMode
 
@@ -46,6 +53,7 @@ class FakeSettingsPreferences : SettingsPreferencesContract {
 
     fun currentThemeMode(): ThemeMode = _themeMode.value
     fun currentAnalyticsValue(): Boolean = _sendAnalyticsEnabled.value
+    fun currentNetworkItemCountValue(): Boolean = _networkFolderItemCountEnabled.value
     fun currentViewMode(): ViewMode = _viewMode.value
     fun currentGridColumns(): Int = _gridColumns.value
     fun currentSortOption(): SortOption = _sortOption.value
@@ -53,6 +61,7 @@ class FakeSettingsPreferences : SettingsPreferencesContract {
     fun reset() {
         _themeMode.value = ThemeMode.SYSTEM
         _sendAnalyticsEnabled.value = false
+        _networkFolderItemCountEnabled.value = false
         _viewMode.value = ViewMode.LIST
         _gridColumns.value = DEFAULT_GRID_COLUMNS
         _sortOption.value = SortOption.DEFAULT

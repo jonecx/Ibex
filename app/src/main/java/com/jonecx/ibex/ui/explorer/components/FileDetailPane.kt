@@ -116,7 +116,10 @@ fun FileDetailPane(
             if (!fileItem.isDirectory) {
                 DetailRow(label = stringResource(R.string.detail_size), value = formatFileSize(fileItem.size))
             } else {
-                DetailRow(label = stringResource(R.string.detail_items), value = "${fileItem.childCount ?: 0}")
+                // Only state a count we actually computed, skipping the row when it is unknown.
+                fileItem.childCount?.let { count ->
+                    DetailRow(label = stringResource(R.string.detail_items), value = "$count")
+                }
             }
 
             DetailRow(label = stringResource(R.string.detail_modified), value = formatDate(fileItem.lastModified))

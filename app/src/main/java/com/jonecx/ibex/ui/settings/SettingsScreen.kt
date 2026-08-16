@@ -40,6 +40,7 @@ fun SettingsScreen(
         onNavigateBack = onNavigateBack,
         onThemeModeChanged = viewModel::setThemeMode,
         onAnalyticsToggleChanged = viewModel::setSendAnalyticsEnabled,
+        onNetworkItemCountToggleChanged = viewModel::setNetworkFolderItemCountEnabled,
         onViewModeChanged = viewModel::setViewMode,
         onGridColumnsChanged = viewModel::setGridColumns,
         onNavigateToPlayerSettings = onNavigateToPlayerSettings,
@@ -54,6 +55,7 @@ internal fun SettingsScreenContent(
     onNavigateBack: () -> Unit,
     onThemeModeChanged: (ThemeMode) -> Unit,
     onAnalyticsToggleChanged: (Boolean) -> Unit,
+    onNetworkItemCountToggleChanged: (Boolean) -> Unit,
     onViewModeChanged: (ViewMode) -> Unit,
     onGridColumnsChanged: (Int) -> Unit,
     onNavigateToPlayerSettings: () -> Unit,
@@ -106,6 +108,12 @@ internal fun SettingsScreenContent(
                         onSelect = onGridColumnsChanged,
                     )
                 }
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_network_item_count),
+                    hint = stringResource(R.string.settings_network_item_count_description),
+                    checked = uiState.networkFolderItemCountEnabled,
+                    onChange = onNetworkItemCountToggleChanged,
+                )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 SettingsSectionHeader(stringResource(R.string.settings_section_privacy))

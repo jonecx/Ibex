@@ -82,10 +82,13 @@ fun FileListItem(
                 color = selectionContentColor(isSelected),
             )
             Text(
-                text = if (fileItem.isDirectory) {
-                    stringResource(R.string.items_count, fileItem.childCount ?: 0)
-                } else {
-                    "${formatFileSize(fileItem.size)}${stringResource(R.string.bullet_separator)}${formatDate(fileItem.lastModified)}"
+                text = when {
+                    // Show a count only when we have one, else the date, so it never reads as "0 items".
+                    fileItem.isDirectory && fileItem.childCount != null ->
+                        stringResource(R.string.items_count, fileItem.childCount)
+                    fileItem.isDirectory -> formatDate(fileItem.lastModified)
+                    else ->
+                        "${formatFileSize(fileItem.size)}${stringResource(R.string.bullet_separator)}${formatDate(fileItem.lastModified)}"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isSelected) {

@@ -12,6 +12,9 @@ interface SettingsPreferencesContract {
     val sendAnalyticsEnabled: Flow<Boolean>
     suspend fun setSendAnalyticsEnabled(enabled: Boolean)
 
+    val networkFolderItemCountEnabled: Flow<Boolean>
+    suspend fun setNetworkFolderItemCountEnabled(enabled: Boolean)
+
     val viewMode: Flow<ViewMode>
     suspend fun setViewMode(mode: ViewMode)
 

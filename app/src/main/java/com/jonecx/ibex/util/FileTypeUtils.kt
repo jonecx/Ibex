@@ -82,6 +82,10 @@ object FileTypeUtils {
      */
     fun getMimeType(file: File): String? = getMimeTypeFromName(file.name)
 
+    // Directory child count, or null when not detailed or the listing failed (permissions, network).
+    fun directoryChildCount(isDirectory: Boolean, detailed: Boolean, count: () -> Int?): Int? =
+        if (detailed && isDirectory) runCatching(count).getOrNull() else null
+
     fun File.toFileItem(detailed: Boolean = true): FileItem {
         val fileType = getFileType(this)
         val creationTime = if (detailed) {
@@ -101,11 +105,12 @@ object FileTypeUtils {
             isDirectory = isDirectory,
             fileType = fileType,
             mimeType = if (isFile) getMimeType(this) else null,
-            childCount = if (detailed && isDirectory) listFiles()?.size else null,
+            childCount = directoryChildCount(isDirectory, detailed) { listFiles()?.size },
         )
     }
 
-    fun SmbFile.toFileItem(): FileItem {
+    // detailed=false skips per-folder child enumeration (an extra SMB round trip each). True while browsing.
+    fun SmbFile.toFileItem(detailed: Boolean = true): FileItem {
         val fileName = name.trimEnd('/')
         val isDir = isDirectory
         val fileType = if (isDir) FileType.DIRECTORY else getFileTypeFromName(fileName)
@@ -120,6 +125,7 @@ object FileTypeUtils {
             isDirectory = isDir,
             fileType = fileType,
             mimeType = if (isDir) null else getMimeTypeFromName(fileName),
+            childCount = directoryChildCount(isDir, detailed) { listFiles()?.size },
             isRemote = true,
         )
     }

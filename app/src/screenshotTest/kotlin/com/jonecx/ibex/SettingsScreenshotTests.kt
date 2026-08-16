@@ -16,6 +16,7 @@ private fun SettingsPreview(
         onNavigateBack = {},
         onThemeModeChanged = {},
         onAnalyticsToggleChanged = {},
+        onNetworkItemCountToggleChanged = {},
         onViewModeChanged = {},
         onGridColumnsChanged = {},
         onNavigateToPlayerSettings = {},

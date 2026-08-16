@@ -86,4 +86,46 @@ class FileTypeUtilsSmbTest {
     fun `smbExtractHost returns null for empty string`() {
         assertEquals(null, FileTypeUtils.smbExtractHost(""))
     }
+
+    @Test
+    fun `directoryChildCount returns count for detailed directory`() {
+        assertEquals(3, FileTypeUtils.directoryChildCount(isDirectory = true, detailed = true) { 3 })
+    }
+
+    @Test
+    fun `directoryChildCount returns null when listing yields null`() {
+        assertEquals(null, FileTypeUtils.directoryChildCount(isDirectory = true, detailed = true) { null })
+    }
+
+    @Test
+    fun `directoryChildCount returns null when listing throws`() {
+        assertEquals(
+            null,
+            FileTypeUtils.directoryChildCount(isDirectory = true, detailed = true) {
+                error("permission denied")
+            },
+        )
+    }
+
+    @Test
+    fun `directoryChildCount skips counting when not detailed`() {
+        var invoked = false
+        val result = FileTypeUtils.directoryChildCount(isDirectory = true, detailed = false) {
+            invoked = true
+            9
+        }
+        assertEquals(null, result)
+        assertEquals(false, invoked)
+    }
+
+    @Test
+    fun `directoryChildCount skips counting for a file`() {
+        var invoked = false
+        val result = FileTypeUtils.directoryChildCount(isDirectory = false, detailed = true) {
+            invoked = true
+            9
+        }
+        assertEquals(null, result)
+        assertEquals(false, invoked)
+    }
 }

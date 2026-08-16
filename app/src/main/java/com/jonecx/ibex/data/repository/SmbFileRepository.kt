@@ -3,6 +3,7 @@ package com.jonecx.ibex.data.repository
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import jcifs.CIFSContext
@@ -20,6 +21,7 @@ import java.util.Properties
 class SmbFileRepository(
     private val connectionId: String,
     private val networkPreferences: NetworkConnectionsPreferencesContract,
+    private val settingsPreferences: SettingsPreferencesContract,
     private val ioDispatcher: CoroutineDispatcher,
     private val smbContextProvider: SmbContextProviderContract,
 ) : FileRepository {
@@ -82,9 +84,11 @@ class SmbFileRepository(
             buildRootUrl(connection)
         }
 
+        // Counting children is one extra SMB round trip per folder, so it is opt-in via settings.
+        val includeItemCount = settingsPreferences.networkFolderItemCountEnabled.first()
         val smbFile = SmbFile(smbUrl, context)
         val files = smbFile.listFiles()
-            .map { it.toFileItem() }
+            .map { it.toFileItem(detailed = includeItemCount) }
         emit(files)
     }.flowOn(ioDispatcher)
 
@@ -95,7 +99,7 @@ class SmbFileRepository(
         val root = SmbFile(rootUrl, context)
         val shares = root.listFiles()
             .filter { it.type == SmbFile.TYPE_SHARE }
-            .map { it.toFileItem() }
+            .map { it.toFileItem(detailed = false) }
             .sortedBy { it.name.lowercase() }
         emit(shares)
     }.flowOn(ioDispatcher)

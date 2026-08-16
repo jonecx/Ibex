@@ -43,6 +43,16 @@ class SettingsPreferences(
         }
     }
 
+    override val networkFolderItemCountEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[NETWORK_FOLDER_ITEM_COUNT_ENABLED] ?: false
+    }
+
+    override suspend fun setNetworkFolderItemCountEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[NETWORK_FOLDER_ITEM_COUNT_ENABLED] = enabled
+        }
+    }
+
     override val viewMode: Flow<ViewMode> = dataStore.data.map { preferences ->
         preferences[VIEW_MODE]?.let { runCatching { ViewMode.valueOf(it) }.getOrNull() } ?: ViewMode.LIST
     }
@@ -82,6 +92,7 @@ class SettingsPreferences(
     companion object {
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val SEND_ANALYTICS_ENABLED = booleanPreferencesKey("send_analytics_enabled")
+        private val NETWORK_FOLDER_ITEM_COUNT_ENABLED = booleanPreferencesKey("network_folder_item_count_enabled")
         private val VIEW_MODE = stringPreferencesKey("view_mode")
         private val GRID_COLUMNS = intPreferencesKey("grid_columns")
         private val SORT_FIELD = stringPreferencesKey("sort_field")

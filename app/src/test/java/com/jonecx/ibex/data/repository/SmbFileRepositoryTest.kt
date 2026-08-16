@@ -3,6 +3,7 @@ package com.jonecx.ibex.data.repository
 import app.cash.turbine.test
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
+import com.jonecx.ibex.fixtures.FakeSettingsPreferences
 import com.jonecx.ibex.fixtures.FakeSmbContextProvider
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures
 import com.jonecx.ibex.util.FileTypeUtils
@@ -22,12 +23,14 @@ class SmbFileRepositoryTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private val fakePreferences = FakeNetworkConnectionsPreferences()
+    private val fakeSettingsPreferences = FakeSettingsPreferences()
     private val fakeSmbContextProvider = FakeSmbContextProvider()
 
     private fun createRepository(connectionId: String = "smb-1"): SmbFileRepository {
         return SmbFileRepository(
             connectionId = connectionId,
             networkPreferences = fakePreferences,
+            settingsPreferences = fakeSettingsPreferences,
             ioDispatcher = testDispatcher,
             smbContextProvider = fakeSmbContextProvider,
         )

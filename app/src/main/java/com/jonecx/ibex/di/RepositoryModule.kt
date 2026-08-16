@@ -2,6 +2,7 @@ package com.jonecx.ibex.di
 
 import android.content.Context
 import com.jonecx.ibex.data.preferences.NetworkConnectionsPreferencesContract
+import com.jonecx.ibex.data.preferences.SettingsPreferencesContract
 import com.jonecx.ibex.data.repository.AppsRepository
 import com.jonecx.ibex.data.repository.CompositeFileMoveManager
 import com.jonecx.ibex.data.repository.DefaultFileClipboardManager
@@ -43,6 +44,7 @@ class RealFileRepositoryFactory(
     private val context: Context,
     private val ioDispatcher: CoroutineDispatcher,
     private val networkPreferences: NetworkConnectionsPreferencesContract,
+    private val settingsPreferences: SettingsPreferencesContract,
     private val smbContextProvider: SmbContextProviderContract,
 ) : FileRepositoryFactory {
     override fun createLocalFileRepository(): FileRepository = LocalFileRepository(context, ioDispatcher)
@@ -60,12 +62,12 @@ class RealFileRepositoryFactory(
     override fun createTrashRepository(): FileRepository = TrashRepository(context, ioDispatcher)
 
     override fun createSmbFileRepository(connectionId: String): FileRepository =
-        SmbFileRepository(connectionId, networkPreferences, ioDispatcher, smbContextProvider)
+        SmbFileRepository(connectionId, networkPreferences, settingsPreferences, ioDispatcher, smbContextProvider)
 }
 
 val repositoryModule = module {
     single<FileRepositoryFactory> {
-        RealFileRepositoryFactory(androidContext(), get(IoDispatcher), get(), get())
+        RealFileRepositoryFactory(androidContext(), get(IoDispatcher), get(), get(), get())
     }
     single<FileTrashManager> { MediaStoreFileTrashManager(androidContext(), get(IoDispatcher)) }
 

@@ -74,6 +74,32 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `initial state has network item count disabled`() = runTest {
+        viewModel.uiState.test {
+            assertFalse(awaitItem().networkFolderItemCountEnabled)
+        }
+    }
+
+    @Test
+    fun `uiState reflects network item count change to enabled`() = runTest {
+        viewModel.uiState.test {
+            assertFalse(awaitItem().networkFolderItemCountEnabled)
+
+            fakePreferences.setNetworkFolderItemCountEnabled(true)
+            assertTrue(awaitItem().networkFolderItemCountEnabled)
+        }
+    }
+
+    @Test
+    fun `setNetworkFolderItemCountEnabled updates preferences`() = runTest {
+        viewModel.setNetworkFolderItemCountEnabled(true)
+        assertTrue(fakePreferences.currentNetworkItemCountValue())
+
+        viewModel.setNetworkFolderItemCountEnabled(false)
+        assertFalse(fakePreferences.currentNetworkItemCountValue())
+    }
+
+    @Test
     fun `initial state has list view mode`() = runTest {
         viewModel.uiState.test {
             assertEquals(ViewMode.LIST, awaitItem().viewMode)

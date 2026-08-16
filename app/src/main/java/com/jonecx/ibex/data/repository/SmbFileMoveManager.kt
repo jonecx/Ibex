@@ -112,7 +112,7 @@ class SmbFileMoveManager(
         val dir = SmbFile(FileTypeUtils.smbEnsureTrailingSlash(path), context)
         val children = dir.listFiles()
             ?: throw IOException("SMB directory listing failed")
-        children.map { it.toFileItem() }
+        children.map { it.toFileItem(detailed = false) }
     }
 
     private fun contextForPath(path: String): jcifs.CIFSContext? {
