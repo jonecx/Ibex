@@ -201,8 +201,8 @@ class TransferManagerTest {
         manager.enqueue(listOf(folder), ClipboardOperation.MOVE, "$MEM_SCHEME/dest")
         manager.runQueue()
 
-        // No phantom job stuck in the bar, and the source is fully intact.
-        assertFalse(manager.snapshot.value.hasActive)
+        // The job surfaces as failed (kept for retry), and the source is fully intact — no data loss.
+        assertEquals(TransferStatus.FAILED, manager.snapshot.value.jobs.single().status)
         assertArrayEquals("one".toByteArray(), remoteHandler.files["smb://src/Folder/f1.txt"])
     }
 
@@ -336,6 +336,69 @@ class TransferManagerTest {
         assertTrue((pausingHandler.files["mem://dest/big.bin.ibexpart"]?.size ?: 0) > 0)
         assertNull(pausingHandler.files["mem://dest/big.bin"])
         pausingJournal.delete()
+    }
+
+    @Test
+    fun `failedJob_isKeptForRetry_notPruned`() = runTest {
+        seedSource("a.txt", "data".toByteArray())
+        handler.failReadPaths.add("$MEM_SCHEME/src/a.txt")
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+
+        manager.runQueue()
+
+        assertEquals(TransferStatus.FAILED, manager.snapshot.value.jobs.single().status)
+        assertTrue(manager.snapshot.value.hasFailed)
+    }
+
+    @Test
+    fun `retry_failedJob_requeuesAndCompletes`() = runTest {
+        seedSource("a.txt", "data".toByteArray())
+        handler.failReadPaths.add("$MEM_SCHEME/src/a.txt")
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        manager.runQueue()
+        val jobId = manager.snapshot.value.jobs.single().id
+
+        handler.failReadPaths.clear()
+        manager.retry(jobId)
+        manager.runQueue()
+
+        assertArrayEquals("data".toByteArray(), handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertFalse(manager.snapshot.value.hasActive)
+    }
+
+    @Test
+    fun `dismiss_failedJob_removesIt`() = runTest {
+        seedSource("a.txt", "data".toByteArray())
+        handler.failReadPaths.add("$MEM_SCHEME/src/a.txt")
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        manager.runQueue()
+        val jobId = manager.snapshot.value.jobs.single().id
+
+        manager.dismiss(jobId)
+
+        assertTrue(manager.snapshot.value.jobs.isEmpty())
+        assertFalse(manager.snapshot.value.hasActive)
+    }
+
+    @Test
+    fun `failedJob_survivesReloadAndIsNotAutoResumed`() = runTest {
+        seedSource("a.txt", "data".toByteArray())
+        handler.failReadPaths.add("$MEM_SCHEME/src/a.txt")
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        manager.runQueue()
+
+        val restartScheduler = RecordingScheduler()
+        val restarted = DefaultTransferManager(
+            scheduler = restartScheduler,
+            engine = TransferEngine(setOf(handler, remoteHandler), dispatcher),
+            journal = TransferJournal(journalFile, dispatcher),
+            appScope = appScope,
+        )
+        restarted.recoverAndResume()
+
+        assertEquals(0, restartScheduler.count)
+        assertEquals(TransferStatus.FAILED, restarted.snapshot.value.jobs.single().status)
+        assertFalse(restarted.hasPendingWork())
     }
 
     @Test

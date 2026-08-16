@@ -1,17 +1,22 @@
 package com.jonecx.ibex.ui.components
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
 import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.data.transfer.TransferManager
 import com.jonecx.ibex.fixtures.FakeTransferManager
+import com.jonecx.ibex.fixtures.failedTransferSnapshot
 import com.jonecx.ibex.fixtures.runningTransferSnapshot
 import com.jonecx.ibex.fixtures.sheetTransferSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.koin.core.context.GlobalContext
@@ -22,6 +27,19 @@ class TransferProgressBarTest {
 
     private val fakeManager: FakeTransferManager
         get() = GlobalContext.get().get<TransferManager>() as FakeTransferManager
+
+    // An active transfer makes the app request POST_NOTIFICATIONS; pre-grant it so no system dialog covers
+    // the UI mid-test.
+    @Before
+    fun grantNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.uiAutomation.grantRuntimePermission(
+                instrumentation.targetContext.packageName,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        }
+    }
 
     @Test
     fun showsRunningTransferUnderTheToolbar() {
@@ -68,6 +86,29 @@ class TransferProgressBarTest {
 
         composeTestRule.onNodeWithText("Pause all").performClick()
         assertEquals(1, fakeManager.pauseAllCount)
+    }
+
+    @Test
+    fun failedJobUnfurlsAndRetryInvokesTheManager() {
+        fakeManager.setSnapshot(failedTransferSnapshot())
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Transfer failed").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Retry").performClick()
+        assertTrue("job-1" in fakeManager.retriedIds)
+    }
+
+    @Test
+    fun failedJobDismissInvokesTheManager() {
+        fakeManager.setSnapshot(failedTransferSnapshot())
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Transfer failed").performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Dismiss").performClick()
+        assertTrue("job-1" in fakeManager.dismissedIds)
     }
 
     @Test

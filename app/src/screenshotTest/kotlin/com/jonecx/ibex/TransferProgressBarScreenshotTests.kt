@@ -3,6 +3,7 @@ package com.jonecx.ibex
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.jonecx.ibex.fixtures.failedTransferSnapshot
 import com.jonecx.ibex.fixtures.pausedTransferSnapshot
 import com.jonecx.ibex.fixtures.runningTransferSnapshot
 import com.jonecx.ibex.fixtures.sheetTransferSnapshot
@@ -82,5 +83,23 @@ fun TransferDetailPausedPreview() {
 fun TransferDetailPausedDarkPreview() {
     IbexTheme(darkTheme = true) {
         TransferDetailContent(snapshot = pausedTransferSnapshot(), actions = TransferDetailActions.Noop)
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun TransferDetailFailedPreview() {
+    IbexTheme {
+        TransferDetailContent(snapshot = failedTransferSnapshot(), actions = TransferDetailActions.Noop)
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun TransferDetailFailedDarkPreview() {
+    IbexTheme(darkTheme = true) {
+        TransferDetailContent(snapshot = failedTransferSnapshot(), actions = TransferDetailActions.Noop)
     }
 }

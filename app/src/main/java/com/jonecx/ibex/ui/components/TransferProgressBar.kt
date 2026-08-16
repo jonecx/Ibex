@@ -17,10 +17,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,9 +78,18 @@ class TransferDetailActions(
     val onResume: (String) -> Unit,
     val onCancel: (String) -> Unit,
     val onPauseAll: () -> Unit,
+    val onRetry: (String) -> Unit,
+    val onDismiss: (String) -> Unit,
 ) {
     companion object {
-        val Noop = TransferDetailActions(onPause = {}, onResume = {}, onCancel = {}, onPauseAll = {})
+        val Noop = TransferDetailActions(
+            onPause = {},
+            onResume = {},
+            onCancel = {},
+            onPauseAll = {},
+            onRetry = {},
+            onDismiss = {},
+        )
     }
 }
 
@@ -96,6 +107,8 @@ fun TransferProgressBar(modifier: Modifier = Modifier) {
             onResume = manager::resume,
             onCancel = manager::cancel,
             onPauseAll = manager::pauseAll,
+            onRetry = manager::retry,
+            onDismiss = manager::dismiss,
         )
     }
 
@@ -183,10 +196,12 @@ private fun AggregateRow(snapshot: TransferSnapshot, expanded: Boolean, onToggle
             .semantics { stateDescription = stateLabel }
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
+        // Nothing is moving and only failures remain: the row becomes a "tap to retry" error affordance.
+        val failedOnly = snapshot.hasFailed && !snapshot.hasRunningOrQueued && !snapshot.hasPaused
         Icon(
-            imageVector = snapshot.primaryOperation.icon(),
+            imageVector = if (failedOnly) Icons.Filled.ErrorOutline else snapshot.primaryOperation.icon(),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = if (failedOnly) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(20.dp),
         )
         Column(
@@ -195,14 +210,18 @@ private fun AggregateRow(snapshot: TransferSnapshot, expanded: Boolean, onToggle
                 .padding(start = 12.dp),
         ) {
             Text(
-                text = titleFor(snapshot.primaryOperation, snapshot.totalFiles),
+                text = if (failedOnly) {
+                    failedTitle(snapshot.failedCount)
+                } else {
+                    titleFor(snapshot.primaryOperation, snapshot.totalFiles)
+                },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (failedOnly) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = collapsedSubtitle(snapshot),
+                text = if (failedOnly) stringResource(R.string.transfer_tap_retry) else collapsedSubtitle(snapshot),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -255,6 +274,12 @@ fun TransferDetailContent(
                     ActiveJobCard(job = job, actions = actions)
                 TransferStatus.QUEUED ->
                     QueuedJobCard(job = job, onCancel = { actions.onCancel(job.id) })
+                TransferStatus.FAILED ->
+                    FailedJobCard(
+                        job = job,
+                        onRetry = { actions.onRetry(job.id) },
+                        onDismiss = { actions.onDismiss(job.id) },
+                    )
                 else -> Unit
             }
         }
@@ -416,6 +441,56 @@ private fun QueuedJobCard(job: TransferProgress, onCancel: () -> Unit) {
 }
 
 @Composable
+private fun FailedJobCard(job: TransferProgress, onRetry: () -> Unit, onDismiss: () -> Unit) {
+    JobCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Filled.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = destinationLine(job.operation, job.destinationDir),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 10.dp),
+            )
+        }
+        Text(
+            text = stringResource(R.string.transfer_failed),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+        ) {
+            JobActionButton(
+                icon = Icons.Filled.Refresh,
+                label = stringResource(R.string.transfer_retry),
+                onClick = onRetry,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            JobActionButton(
+                icon = Icons.Filled.Close,
+                label = stringResource(R.string.transfer_dismiss),
+                onClick = onDismiss,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
 private fun JobCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -553,4 +628,11 @@ private fun ClipboardOperation?.icon(): ImageVector = when (this) {
 private fun titleFor(operation: ClipboardOperation?, totalFiles: Int): String = when (operation) {
     ClipboardOperation.MOVE -> stringResource(R.string.transfer_moving, totalFiles)
     else -> stringResource(R.string.transfer_copying, totalFiles)
+}
+
+@Composable
+private fun failedTitle(count: Int): String = if (count == 1) {
+    stringResource(R.string.transfer_failed_title_one)
+} else {
+    stringResource(R.string.transfer_failed_title_many, count)
 }

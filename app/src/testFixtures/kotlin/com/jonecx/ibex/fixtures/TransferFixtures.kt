@@ -102,3 +102,10 @@ fun pausedTransferSnapshot(): TransferSnapshot = TransferSnapshot(
         queuedTransferJob(),
     ),
 )
+
+// A single failed job: the card shows the error with Retry and Dismiss.
+fun failedTransferSnapshot(
+    id: String = "job-1",
+): TransferSnapshot = TransferSnapshot(
+    listOf(runningTransferJob(id = id, status = TransferStatus.FAILED, currentFileName = "")),
+)

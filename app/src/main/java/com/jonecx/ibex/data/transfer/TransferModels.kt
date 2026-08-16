@@ -111,12 +111,15 @@ data class TransferSnapshot(
         it.status == TransferStatus.RUNNING || it.status == TransferStatus.QUEUED
     }
     val hasFailed: Boolean get() = jobs.any { it.status == TransferStatus.FAILED }
+    val failedCount: Int get() = jobs.count { it.status == TransferStatus.FAILED }
+    val hasPaused: Boolean get() = jobs.any { it.status == TransferStatus.PAUSED }
 
-    // Icon/verb for the collapsed row: prefer the running job, else the next queued, else a paused one.
+    // Icon/verb for the collapsed row: prefer the running job, else queued, else paused, else a failed one.
     val primaryOperation: ClipboardOperation? get() = (
         jobs.firstOrNull { it.status == TransferStatus.RUNNING }
             ?: jobs.firstOrNull { it.status == TransferStatus.QUEUED }
             ?: jobs.firstOrNull { it.status == TransferStatus.PAUSED }
+            ?: jobs.firstOrNull { it.status == TransferStatus.FAILED }
         )?.operation
 
     // Aggregate over jobs that carry real progress (paused ones freeze their bytes, so they still count);

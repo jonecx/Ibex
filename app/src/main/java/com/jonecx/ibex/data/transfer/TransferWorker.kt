@@ -111,6 +111,13 @@ class TransferWorker(
             Intent(applicationContext, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE,
         )
+        val cancelAll = PendingIntent.getBroadcast(
+            applicationContext,
+            0,
+            Intent(applicationContext, TransferActionReceiver::class.java)
+                .setAction(TransferActionReceiver.ACTION_CANCEL_ALL),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
 
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_transfer_notification)
@@ -119,6 +126,7 @@ class TransferWorker(
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(openApp)
+            .addAction(0, applicationContext.getString(R.string.transfer_cancel_all), cancelAll)
 
         if (snapshot.totalBytes > 0L) {
             builder.setProgress(100, (snapshot.fraction * 100).toInt(), false)

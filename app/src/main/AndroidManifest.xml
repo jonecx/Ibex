@@ -35,6 +35,11 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
 
+        <!-- Backs the transfer notification's "Cancel all" action. Internal only. -->
+        <receiver
+            android:name=".data.transfer.TransferActionReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

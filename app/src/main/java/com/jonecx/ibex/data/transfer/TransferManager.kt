@@ -42,6 +42,10 @@ interface TransferManager {
     fun resume(jobId: String)
     fun pauseAll()
 
+    // Requeue a FAILED job to resume from its temp / drop a FAILED job the user has acknowledged.
+    fun retry(jobId: String)
+    fun dismiss(jobId: String)
+
     // Loads the journal on app start and resumes anything left unfinished (auto-resume).
     fun recoverAndResume()
 
@@ -100,7 +104,11 @@ class DefaultTransferManager(
             if (loaded) return
             jobsState.value = journal.load()
                 .map { if (it.status == TransferStatus.RUNNING) it.copy(status = TransferStatus.QUEUED) else it }
-                .filter { it.status == TransferStatus.QUEUED || it.status == TransferStatus.PAUSED }
+                .filter {
+                    it.status == TransferStatus.QUEUED ||
+                        it.status == TransferStatus.PAUSED ||
+                        it.status == TransferStatus.FAILED
+                }
             // A job that was paused before a kill/reboot stays paused (never auto-resumed); re-arm its flag.
             jobsState.value.filter { it.status == TransferStatus.PAUSED }.forEach { pausedIds.add(it.id) }
             loaded = true
@@ -150,7 +158,10 @@ class DefaultTransferManager(
         jobsState.value.forEach { cancelledIds.add(it.id) }
         jobsState.update { jobs ->
             jobs.map {
-                if (it.status == TransferStatus.QUEUED || it.status == TransferStatus.PAUSED) {
+                if (it.status == TransferStatus.QUEUED ||
+                    it.status == TransferStatus.PAUSED ||
+                    it.status == TransferStatus.FAILED
+                ) {
                     it.copy(status = TransferStatus.CANCELLED)
                 } else {
                     it
@@ -184,6 +195,25 @@ class DefaultTransferManager(
             if (it.status == TransferStatus.QUEUED || it.status == TransferStatus.RUNNING) pausedIds.add(it.id)
         }
         updateJob { if (it.status == TransferStatus.QUEUED) it.copy(status = TransferStatus.PAUSED) else it }
+        appScope.launch { journal.save(jobsState.value) }
+    }
+
+    override fun retry(jobId: String) {
+        // A failed run left its .ibexpart temp behind, so requeuing resumes from the last verified byte.
+        cancelledIds.remove(jobId)
+        pausedIds.remove(jobId)
+        updateJob(jobId) { if (it.status == TransferStatus.FAILED) it.copy(status = TransferStatus.QUEUED) else it }
+        appScope.launch {
+            journal.save(jobsState.value)
+            if (jobsState.value.any { it.status == TransferStatus.QUEUED }) scheduler.ensureRunning()
+        }
+    }
+
+    override fun dismiss(jobId: String) {
+        // Drop a failure the user has acknowledged; the leftover temp is theirs to re-paste later if wanted.
+        cancelledIds.remove(jobId)
+        pausedIds.remove(jobId)
+        jobsState.update { jobs -> jobs.filterNot { it.id == jobId && it.status == TransferStatus.FAILED } }
         appScope.launch { journal.save(jobsState.value) }
     }
 
@@ -282,7 +312,8 @@ class DefaultTransferManager(
             Timber.e(e, "Transfer job failed: ${job.id}")
             setStatus(job.id, TransferStatus.FAILED)
             journal.save(jobsState.value)
-            // Don't let failed jobs accumulate in the journal; the temp survives for a later re-paste to resume.
+            // Keep the FAILED job (and its .ibexpart temp) so the sheet can offer a retry; pruneFinished
+            // clears only COMPLETED/CANCELLED.
             pruneFinished()
         } finally {
             liveState.update { it - job.id }
@@ -412,13 +443,14 @@ class DefaultTransferManager(
         jobsState.update { jobs -> jobs.map(transform) }
     }
 
-    // Drop terminal jobs from the live queue + journal so the bar reflects only in-flight work; a PAUSED
-    // job is not terminal (it is waiting on the user) so it stays put with its temp.
+    // Drop terminal jobs from the live queue + journal so the bar reflects only in-flight work. PAUSED and
+    // FAILED are not terminal here (both wait on the user), so they stay put with their temps.
     private suspend fun pruneFinished() {
         val remaining = jobsState.value.filter {
             it.status == TransferStatus.QUEUED ||
                 it.status == TransferStatus.RUNNING ||
-                it.status == TransferStatus.PAUSED
+                it.status == TransferStatus.PAUSED ||
+                it.status == TransferStatus.FAILED
         }
         if (remaining.size != jobsState.value.size) {
             jobsState.update { remaining }

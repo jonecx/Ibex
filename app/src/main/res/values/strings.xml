@@ -121,6 +121,12 @@
     <!-- e.g. "12s left" -->
     <string name="transfer_eta">%1$s left</string>
     <string name="transfer_percent">%1$d%%</string>
+    <string name="transfer_failed">Failed</string>
+    <string name="transfer_retry">Retry</string>
+    <string name="transfer_dismiss">Dismiss</string>
+    <string name="transfer_failed_title_one">Transfer failed</string>
+    <string name="transfer_failed_title_many">%1$d transfers failed</string>
+    <string name="transfer_tap_retry">Tap to retry</string>
     <!-- Paste conflict dialog -->
     <string name="conflict_title_one">Item already exists</string>
     <string name="conflict_title_many">%1$d items already exist</string>

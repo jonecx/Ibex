@@ -23,6 +23,8 @@ class FakeTransferManager : TransferManager {
     val cancelledIds = mutableListOf<String>()
     val pausedIds = mutableListOf<String>()
     val resumedIds = mutableListOf<String>()
+    val retriedIds = mutableListOf<String>()
+    val dismissedIds = mutableListOf<String>()
     var cancelAllCount = 0
     var pauseAllCount = 0
     var recoverCount = 0
@@ -60,6 +62,14 @@ class FakeTransferManager : TransferManager {
 
     override fun pauseAll() {
         pauseAllCount += 1
+    }
+
+    override fun retry(jobId: String) {
+        retriedIds.add(jobId)
+    }
+
+    override fun dismiss(jobId: String) {
+        dismissedIds.add(jobId)
     }
 
     override fun recoverAndResume() {
