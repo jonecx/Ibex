@@ -120,6 +120,56 @@ class TransferEngineTest {
     }
 
     @Test
+    fun `transfer_pauseMidFile_throwsAndKeepsTempForResume`() = runTest {
+        val data = ByteArray(200_000) { it.toByte() }
+        val src = source("big.bin", data)
+        val listener = RecordingListener(pauseAfterBytes = 1)
+
+        var thrown = false
+        try {
+            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+        } catch (e: TransferPausedException) {
+            thrown = true
+        }
+
+        assertTrue(thrown)
+        // Unlike cancel, the partial temp survives so resume can continue from it.
+        assertNull(handler.files["$MEM_SCHEME/dest/big.bin"])
+        assertTrue((handler.files["$MEM_SCHEME/dest/big.bin$part"]?.size ?: 0) > 0)
+    }
+
+    @Test
+    fun `transfer_resumeAfterPause_completesFromKeptTemp`() = runTest {
+        val data = ByteArray(200_000) { it.toByte() }
+        val src = source("big.bin", data)
+        // First pass pauses partway, leaving a temp behind.
+        runCatching {
+            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener(pauseAfterBytes = 1))
+        }
+        val partialTemp = handler.files["$MEM_SCHEME/dest/big.bin$part"]?.size ?: 0
+        assertTrue(partialTemp in 1 until data.size)
+
+        // Second pass runs to the end and promotes the temp to the final file.
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener())
+
+        assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/big.bin"])
+        assertNull(handler.files["$MEM_SCHEME/dest/big.bin$part"])
+    }
+
+    @Test
+    fun `transfer_reportsFileStartWithSize`() = runTest {
+        val data = "hello world".toByteArray()
+        val src = source("a.txt", data)
+        val listener = RecordingListener()
+
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+
+        assertEquals(1, listener.fileStarts)
+        assertEquals("a.txt", listener.lastFileName)
+        assertEquals(data.size.toLong(), listener.lastFileSize)
+    }
+
+    @Test
     fun `transfer_sameHandlerMove_usesInstantRenameNoTemp`() = runTest {
         val data = "move me".toByteArray()
         val src = source("a.txt", data)
@@ -162,10 +212,22 @@ class TransferEngineTest {
         assertTrue(thrown)
     }
 
-    private class RecordingListener(private val cancelAfterBytes: Long = Long.MAX_VALUE) : TransferListener {
+    private class RecordingListener(
+        private val cancelAfterBytes: Long = Long.MAX_VALUE,
+        private val pauseAfterBytes: Long = Long.MAX_VALUE,
+    ) : TransferListener {
         var bytes = 0L
         var filesComplete = 0
+        var fileStarts = 0
+        var lastFileName: String? = null
+        var lastFileSize = -1L
         override fun isCancelled(): Boolean = bytes >= cancelAfterBytes
+        override fun isPaused(): Boolean = bytes >= pauseAfterBytes
+        override suspend fun onFileStart(name: String, size: Long) {
+            fileStarts += 1
+            lastFileName = name
+            lastFileSize = size
+        }
         override suspend fun onBytes(name: String, delta: Long) {
             bytes += delta
         }

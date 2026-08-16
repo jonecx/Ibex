@@ -21,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
+import java.io.InputStream
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -203,6 +204,138 @@ class TransferManagerTest {
         // No phantom job stuck in the bar, and the source is fully intact.
         assertFalse(manager.snapshot.value.hasActive)
         assertArrayEquals("one".toByteArray(), remoteHandler.files["smb://src/Folder/f1.txt"])
+    }
+
+    @Test
+    fun `pause_queuedJob_isNotDrainedAndStaysPaused`() = runTest {
+        seedSource("a.txt", "keep".toByteArray())
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        val jobId = manager.snapshot.value.jobs.first().id
+
+        manager.pause(jobId)
+        assertEquals(TransferStatus.PAUSED, manager.snapshot.value.jobs.first().status)
+
+        manager.runQueue()
+
+        // A paused job is skipped by the queue and left untouched, temp and all.
+        assertNull(handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertEquals(TransferStatus.PAUSED, manager.snapshot.value.jobs.first().status)
+        assertTrue(manager.snapshot.value.hasActive)
+        assertFalse(manager.hasPendingWork())
+    }
+
+    @Test
+    fun `resume_pausedJob_reschedulesAndCompletes`() = runTest {
+        seedSource("a.txt", "done".toByteArray())
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        val jobId = manager.snapshot.value.jobs.first().id
+        manager.pause(jobId)
+
+        manager.resume(jobId)
+        assertEquals(TransferStatus.QUEUED, manager.snapshot.value.jobs.first().status)
+        // enqueue scheduled once, resume schedules again.
+        assertEquals(2, scheduler.count)
+
+        manager.runQueue()
+        assertArrayEquals("done".toByteArray(), handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertFalse(manager.snapshot.value.hasActive)
+    }
+
+    @Test
+    fun `pauseAll_pausesEveryQueuedJob`() = runTest {
+        seedSource("a.txt", "a".toByteArray())
+        seedSource("b.txt", "b".toByteArray())
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        manager.enqueue(listOf(sourceItem("b.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+
+        manager.pauseAll()
+
+        assertTrue(manager.snapshot.value.jobs.all { it.status == TransferStatus.PAUSED })
+        manager.runQueue()
+        assertNull(handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertNull(handler.files["$MEM_SCHEME/dest/b.txt"])
+    }
+
+    @Test
+    fun `pausedJob_isSkipped_whileOtherJobRuns`() = runTest {
+        seedSource("a.txt", "a".toByteArray())
+        seedSource("b.txt", "b".toByteArray())
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        manager.enqueue(listOf(sourceItem("b.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        val firstId = manager.snapshot.value.jobs.first().id
+
+        manager.pause(firstId)
+        manager.runQueue()
+
+        // The queued sibling runs to completion; the paused job is left waiting.
+        assertNull(handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertArrayEquals("b".toByteArray(), handler.files["$MEM_SCHEME/dest/b.txt"])
+        assertEquals(TransferStatus.PAUSED, manager.snapshot.value.jobs.single().status)
+    }
+
+    @Test
+    fun `pausedJob_survivesReloadAndIsNotAutoResumed`() = runTest {
+        seedSource("a.txt", "later".toByteArray())
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+        val jobId = manager.snapshot.value.jobs.first().id
+        manager.pause(jobId)
+
+        // A fresh manager over the same journal simulates a process restart / reboot.
+        val restartScheduler = RecordingScheduler()
+        val restarted = DefaultTransferManager(
+            scheduler = restartScheduler,
+            engine = TransferEngine(setOf(handler, remoteHandler), dispatcher),
+            journal = TransferJournal(journalFile, dispatcher),
+            appScope = appScope,
+        )
+
+        restarted.recoverAndResume()
+
+        // Paused work is remembered but never auto-resumed.
+        assertEquals(0, restartScheduler.count)
+        assertEquals(TransferStatus.PAUSED, restarted.snapshot.value.jobs.single().status)
+        assertFalse(restarted.hasPendingWork())
+    }
+
+    @Test
+    fun `pause_midCopy_checkpointsProgressAndKeepsTempForResume`() = runTest {
+        val data = ByteArray(200_000) { it.toByte() }
+        // A handler that flips the job to paused as soon as the first chunk is read.
+        val pausingHandler = object : InMemoryProtocolHandler() {
+            var onRead: (() -> Unit)? = null
+            override suspend fun openInputStream(path: String, offset: Long): InputStream {
+                val base = super.openInputStream(path, offset)
+                return object : InputStream() {
+                    override fun read(): Int = base.read()
+                    override fun read(b: ByteArray): Int {
+                        onRead?.invoke()
+                        return base.read(b)
+                    }
+                    override fun close() = base.close()
+                }
+            }
+        }
+        pausingHandler.files["mem://src/big.bin"] = data
+        val pausingJournal = File.createTempFile("pausing-journal", ".json").apply { delete() }
+        val mgr = DefaultTransferManager(
+            scheduler = RecordingScheduler(),
+            engine = TransferEngine(setOf(pausingHandler), dispatcher),
+            journal = TransferJournal(pausingJournal, dispatcher),
+            appScope = appScope,
+        )
+        mgr.enqueue(listOf(memFileItem("mem://src/big.bin", data.size.toLong())), ClipboardOperation.COPY, "mem://dest")
+        val jobId = mgr.snapshot.value.jobs.first().id
+        pausingHandler.onRead = { mgr.pause(jobId) }
+
+        mgr.runQueue()
+
+        val job = mgr.snapshot.value.jobs.single()
+        assertEquals(TransferStatus.PAUSED, job.status)
+        // Progress checkpointed partway, the temp kept, and the final never promoted.
+        assertTrue(job.bytesDone in 1 until data.size.toLong())
+        assertTrue((pausingHandler.files["mem://dest/big.bin.ibexpart"]?.size ?: 0) > 0)
+        assertNull(pausingHandler.files["mem://dest/big.bin"])
+        pausingJournal.delete()
     }
 
     private class RecordingScheduler : TransferScheduler {

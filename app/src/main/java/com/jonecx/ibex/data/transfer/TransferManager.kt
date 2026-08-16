@@ -32,6 +32,11 @@ interface TransferManager {
     fun cancel(jobId: String)
     fun cancelAll()
 
+    // Pause one job (keeps its .ibexpart temp) / resume it from that temp / pause every running or queued job.
+    fun pause(jobId: String)
+    fun resume(jobId: String)
+    fun pauseAll()
+
     // Loads the journal on app start and resumes anything left unfinished (auto-resume).
     fun recoverAndResume()
 
@@ -64,11 +69,16 @@ class DefaultTransferManager(
         val filesDone: Int = 0,
         val currentFileName: String? = null,
         val bytesPerSecond: Long = 0L,
+        val currentFileBytes: Long = 0L,
+        val currentFileTotal: Long = 0L,
     )
 
     private val jobsState = MutableStateFlow<List<TransferJob>>(emptyList())
     private val liveState = MutableStateFlow<Map<String, Live>>(emptyMap())
     private val cancelledIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    // Jobs the user paused. Polled by the engine listener (running job) and checked in runQueue (queued job).
+    private val pausedIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     private val _completions = MutableSharedFlow<String>(extraBufferCapacity = 8)
     override val completions: SharedFlow<String> = _completions.asSharedFlow()
@@ -85,7 +95,9 @@ class DefaultTransferManager(
             if (loaded) return
             jobsState.value = journal.load()
                 .map { if (it.status == TransferStatus.RUNNING) it.copy(status = TransferStatus.QUEUED) else it }
-                .filter { it.status == TransferStatus.QUEUED }
+                .filter { it.status == TransferStatus.QUEUED || it.status == TransferStatus.PAUSED }
+            // A job that was paused before a kill/reboot stays paused (never auto-resumed); re-arm its flag.
+            jobsState.value.filter { it.status == TransferStatus.PAUSED }.forEach { pausedIds.add(it.id) }
             loaded = true
         }
     }
@@ -126,9 +138,42 @@ class DefaultTransferManager(
     override fun cancelAll() {
         jobsState.value.forEach { cancelledIds.add(it.id) }
         jobsState.update { jobs ->
-            jobs.map { if (it.status == TransferStatus.QUEUED) it.copy(status = TransferStatus.CANCELLED) else it }
+            jobs.map {
+                if (it.status == TransferStatus.QUEUED || it.status == TransferStatus.PAUSED) {
+                    it.copy(status = TransferStatus.CANCELLED)
+                } else {
+                    it
+                }
+            }
         }
         appScope.launch { pruneFinished() }
+    }
+
+    override fun pause(jobId: String) {
+        pausedIds.add(jobId)
+        // A running job is flipped to PAUSED by runJob's catch; a still-queued one never reaches the engine,
+        // so mark it here. A checkpoint of its bytes/files is already persisted; the temp stays for resume.
+        updateJob(jobId) { if (it.status == TransferStatus.QUEUED) it.copy(status = TransferStatus.PAUSED) else it }
+        appScope.launch { journal.save(jobsState.value) }
+    }
+
+    override fun resume(jobId: String) {
+        pausedIds.remove(jobId)
+        cancelledIds.remove(jobId)
+        updateJob(jobId) { if (it.status == TransferStatus.PAUSED) it.copy(status = TransferStatus.QUEUED) else it }
+        appScope.launch {
+            journal.save(jobsState.value)
+            // The engine skips already-finished files and continues from the .ibexpart temp.
+            if (jobsState.value.any { it.status == TransferStatus.QUEUED }) scheduler.ensureRunning()
+        }
+    }
+
+    override fun pauseAll() {
+        jobsState.value.forEach {
+            if (it.status == TransferStatus.QUEUED || it.status == TransferStatus.RUNNING) pausedIds.add(it.id)
+        }
+        updateJob { if (it.status == TransferStatus.QUEUED) it.copy(status = TransferStatus.PAUSED) else it }
+        appScope.launch { journal.save(jobsState.value) }
     }
 
     override fun recoverAndResume() {
@@ -170,6 +215,8 @@ class DefaultTransferManager(
         val runState = RunState()
         val listener = object : TransferListener {
             override fun isCancelled(): Boolean = job.id in cancelledIds
+            override fun isPaused(): Boolean = job.id in pausedIds
+            override suspend fun onFileStart(name: String, size: Long) = runState.onFileStart(job, name, size)
             override suspend fun onBytes(name: String, delta: Long) = runState.onBytes(job, name, delta)
             override suspend fun onFileComplete() = runState.onFileComplete(job)
         }
@@ -184,6 +231,7 @@ class DefaultTransferManager(
             val copiedSources = mutableListOf<TransferSource>()
             for (source in job.sources) {
                 if (job.id in cancelledIds) throw TransferCancelledException()
+                if (job.id in pausedIds) throw TransferPausedException()
                 val relocated = engine.transfer(source, job.destinationDir, job.operation, listener)
                 if (!relocated) copiedSources.add(source)
             }
@@ -205,6 +253,13 @@ class DefaultTransferManager(
             pruneFinished()
         } catch (e: TransferCancelledException) {
             finishCancelled(job.id)
+        } catch (e: TransferPausedException) {
+            // User paused this job: checkpoint progress, hold it PAUSED, keep its temp. Not pruned, not resumed
+            // until resume() flips it back to QUEUED. The worker moves on to any other queued job.
+            updateJob(job.id) {
+                it.copy(status = TransferStatus.PAUSED, bytesDone = runState.bytesDone, filesDone = runState.filesDone)
+            }
+            journal.save(jobsState.value)
         } catch (e: CancellationException) {
             // Whole worker was stopped (system, reboot). Checkpoint progress and leave the job QUEUED to resume.
             updateJob(job.id) {
@@ -242,15 +297,26 @@ class DefaultTransferManager(
         var filesDone = 0
             private set
         private var currentName: String? = null
+        private var currentFileBytes = 0L
+        private var currentFileTotal = 0L
         private var lastEmitMs = 0L
         private var lastCheckpointMs = System.currentTimeMillis()
         private var bytesSinceEmit = 0L
         private var smoothedBps = 0.0
 
+        // A new leaf file begins: reset its per-file counter and record its size for the sheet's file bar.
+        fun onFileStart(job: TransferJob, name: String, size: Long) {
+            currentName = name
+            currentFileBytes = 0L
+            currentFileTotal = size
+            pushLive(job)
+        }
+
         suspend fun onBytes(job: TransferJob, name: String, delta: Long) {
             bytesDone += delta
             bytesSinceEmit += delta
             currentName = name
+            currentFileBytes += delta
             val now = System.currentTimeMillis()
             val elapsed = now - lastEmitMs
             if (elapsed < EMIT_THROTTLE_MS) return
@@ -277,9 +343,15 @@ class DefaultTransferManager(
         }
 
         private fun pushLive(job: TransferJob) {
-            liveState.update {
-                it + (job.id to Live(bytesDone, filesDone, currentName, smoothedBps.toLong()))
-            }
+            val live = Live(
+                bytesDone = bytesDone,
+                filesDone = filesDone,
+                currentFileName = currentName,
+                bytesPerSecond = smoothedBps.toLong(),
+                currentFileBytes = currentFileBytes,
+                currentFileTotal = currentFileTotal,
+            )
+            liveState.update { it + (job.id to live) }
         }
     }
 
@@ -294,6 +366,9 @@ class DefaultTransferManager(
         filesDone = live?.filesDone ?: filesDone,
         currentFileName = live?.currentFileName,
         bytesPerSecond = live?.bytesPerSecond ?: 0L,
+        currentFileBytes = live?.currentFileBytes ?: 0L,
+        currentFileTotal = live?.currentFileTotal ?: 0L,
+        itemCount = sources.size,
     )
 
     // Nudge any live screen to re-list: the destination for every job, plus the source folder(s) for a
@@ -321,10 +396,18 @@ class DefaultTransferManager(
         jobsState.update { jobs -> jobs.map { if (it.id == jobId) transform(it) else it } }
     }
 
-    // Drop terminal jobs from the live queue + journal so the bar reflects only in-flight work.
+    // Transform every job (used by the "all" bulk operations).
+    private fun updateJob(transform: (TransferJob) -> TransferJob) {
+        jobsState.update { jobs -> jobs.map(transform) }
+    }
+
+    // Drop terminal jobs from the live queue + journal so the bar reflects only in-flight work; a PAUSED
+    // job is not terminal (it is waiting on the user) so it stays put with its temp.
     private suspend fun pruneFinished() {
         val remaining = jobsState.value.filter {
-            it.status == TransferStatus.QUEUED || it.status == TransferStatus.RUNNING
+            it.status == TransferStatus.QUEUED ||
+                it.status == TransferStatus.RUNNING ||
+                it.status == TransferStatus.PAUSED
         }
         if (remaining.size != jobsState.value.size) {
             jobsState.update { remaining }

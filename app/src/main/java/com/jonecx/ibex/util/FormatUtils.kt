@@ -43,6 +43,19 @@ fun formatStorageUsageSpoken(usedBytes: Long, totalBytes: Long): String =
 fun formatTransferSpeed(bytesPerSecond: Long): String =
     if (bytesPerSecond <= 0L) "" else "${formatFileSize(bytesPerSecond)}/s"
 
+// Compact remaining time for a transfer, e.g. "12s", "1m 30s", "2h 5m". Empty when unknown.
+fun formatDurationShort(totalSeconds: Long): String {
+    if (totalSeconds <= 0L) return ""
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return when {
+        hours > 0 -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m ${seconds}s"
+        else -> "${seconds}s"
+    }
+}
+
 fun formatDate(timestamp: Long): String {
     if (timestamp <= 0) return ""
     return dateFormat.get()!!.format(Date(timestamp))

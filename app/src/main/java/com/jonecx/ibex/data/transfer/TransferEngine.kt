@@ -13,13 +13,23 @@ import java.io.IOException
 import kotlin.coroutines.coroutineContext
 
 // Thrown when the user cancels a single job; distinct from coroutine CancellationException (whole-queue
-// stop, e.g. pause/reboot) so the worker knows to bin this job's temp instead of keeping it for resume.
+// stop, e.g. reboot) so the worker knows to bin this job's temp instead of keeping it for resume.
 class TransferCancelledException : Exception()
+
+// Thrown when the user pauses a single job. Unlike cancel, the half-written .ibexpart temp is KEPT so a
+// later resume continues from the last verified byte; unlike a coroutine stop, only this job is affected.
+class TransferPausedException : Exception()
 
 // Callbacks the worker supplies; the engine never touches WorkManager, Room, or UI state.
 interface TransferListener {
     // Polled between chunks so a single job can stop without cancelling the worker coroutine.
     fun isCancelled(): Boolean
+
+    // Polled between chunks so a single job can pause (temp kept) without cancelling the worker coroutine.
+    fun isPaused(): Boolean
+
+    // A leaf file is about to be copied: [size] is its total, so the sheet can show a per-file bar.
+    suspend fun onFileStart(name: String, size: Long)
 
     // Bytes written since the previous call, for the running file [name]. Worker aggregates + throttles.
     suspend fun onBytes(name: String, delta: Long)
@@ -84,6 +94,7 @@ class TransferEngine(
             srcHandler.moveFile(source.toFileItem(), destinationDir)
         ) {
             // The rename relocated the whole subtree at once; count it as a single unit (see measure()).
+            listener.onFileStart(source.name, source.size.coerceAtLeast(0))
             listener.onBytes(source.name, source.size.coerceAtLeast(0))
             listener.onFileComplete()
             return true
@@ -127,6 +138,8 @@ class TransferEngine(
         listener: TransferListener,
     ) = withContext(ioDispatcher) {
         val size = source.size
+        // Announce the file first so the sheet's per-file bar has a name and a denominator right away.
+        listener.onFileStart(source.name, size.coerceAtLeast(0))
         var finalPath = buildChildPath(destinationDir, source.name)
 
         val existingFinal = dstHandler.sizeOf(finalPath)
@@ -151,6 +164,8 @@ class TransferEngine(
                     val buffer = ByteArray(FileTypeUtils.IO_BUFFER_SIZE)
                     while (true) {
                         if (listener.isCancelled()) throw TransferCancelledException()
+                        // Pause keeps the temp (streams close/flush on the way out), so resume continues from here.
+                        if (listener.isPaused()) throw TransferPausedException()
                         coroutineContext.ensureActive()
                         val read = input.read(buffer)
                         if (read < 0) break
@@ -217,6 +232,7 @@ class TransferEngine(
 
     private suspend fun checkActive(listener: TransferListener) {
         if (listener.isCancelled()) throw TransferCancelledException()
+        if (listener.isPaused()) throw TransferPausedException()
         coroutineContext.ensureActive()
     }
 
