@@ -5,6 +5,7 @@ import com.jonecx.ibex.util.FileTypeUtils
 import com.jonecx.ibex.util.FileTypeUtils.toFileItem
 import jcifs.smb.SmbFile
 import jcifs.smb.SmbFileOutputStream
+import jcifs.smb.SmbRandomAccessFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -74,22 +75,31 @@ class SmbFileMoveManager(
         }
 
     override suspend fun openInputStream(path: String): InputStream = withContext(ioDispatcher) {
-        val context = contextForPath(path)
-            ?: throw IllegalStateException("No SMB context for path: $path")
-        SmbFile(path, context).inputStream
+        SmbFile(path, requireContext(path)).inputStream
+    }
+
+    // Resume seeks straight to [offset] via SMB random access instead of read-and-discarding every
+    // already-copied byte, so a resumed download never re-fetches what the temp already holds.
+    override suspend fun openInputStream(path: String, offset: Long): InputStream = withContext(ioDispatcher) {
+        val context = requireContext(path)
+        if (offset <= 0L) return@withContext SmbFile(path, context).inputStream
+        val randomAccess = SmbFile(path, context).openRandomAccess("r")
+        try {
+            randomAccess.seek(offset)
+        } catch (e: Exception) {
+            runCatching { randomAccess.close() }
+            throw e
+        }
+        SmbRandomAccessInputStream(randomAccess)
     }
 
     override suspend fun openOutputStream(path: String): OutputStream = withContext(ioDispatcher) {
-        val context = contextForPath(path)
-            ?: throw IllegalStateException("No SMB context for path: $path")
-        SmbFile(path, context).outputStream
+        SmbFile(path, requireContext(path)).outputStream
     }
 
     // Append when resuming: the temp file already holds exactly [offset] verified bytes.
     override suspend fun openOutputStream(path: String, offset: Long): OutputStream = withContext(ioDispatcher) {
-        val context = contextForPath(path)
-            ?: throw IllegalStateException("No SMB context for path: $path")
-        SmbFileOutputStream(SmbFile(path, context), offset > 0)
+        SmbFileOutputStream(SmbFile(path, requireContext(path)), offset > 0)
     }
 
     override suspend fun sizeOf(path: String): Long = withContext(ioDispatcher) {
@@ -119,6 +129,10 @@ class SmbFileMoveManager(
         val host = FileTypeUtils.smbExtractHost(path) ?: return null
         return smbContextProvider.get(host)
     }
+
+    // Context is required to open any stream: absence is a programming/config error, so fail loudly.
+    private fun requireContext(path: String): jcifs.CIFSContext =
+        contextForPath(path) ?: throw IllegalStateException("No SMB context for path: $path")
 
     private suspend fun withSmbSource(
         fileItem: FileItem,
@@ -172,4 +186,14 @@ class SmbFileMoveManager(
         }
         return true
     }
+}
+
+// Adapts an already-seeked SmbRandomAccessFile to InputStream so the transfer engine reads it like any
+// other stream. Closing the stream closes the underlying random-access handle.
+private class SmbRandomAccessInputStream(
+    private val randomAccess: SmbRandomAccessFile,
+) : InputStream() {
+    override fun read(): Int = randomAccess.read()
+    override fun read(b: ByteArray, off: Int, len: Int): Int = randomAccess.read(b, off, len)
+    override fun close() = randomAccess.close()
 }
