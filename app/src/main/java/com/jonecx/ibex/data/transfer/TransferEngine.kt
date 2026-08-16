@@ -85,12 +85,44 @@ class TransferEngine(
         source: TransferSource,
         destinationDir: String,
         operation: ClipboardOperation,
+        conflictPolicy: ConflictPolicy,
         listener: TransferListener,
     ): Boolean {
         val srcHandler = handlerFor(source.path)
         val dstHandler = handlerFor(destinationDir)
 
-        if (isRenameMove(source, destinationDir, operation) &&
+        // Pasting an item into the folder it already lives in: never delete or recopy it, and report it as
+        // already-relocated so a MOVE does not then delete the original. This also fences OVERWRITE off from
+        // ever deleting a source onto itself.
+        if (srcHandler === dstHandler &&
+            buildChildPath(destinationDir, source.name).trimEnd('/') == source.path.trimEnd('/')
+        ) {
+            listener.onFileStart(source.name, source.size.coerceAtLeast(0))
+            if (source.size > 0L) listener.onBytes(source.name, source.size.coerceAtLeast(0))
+            listener.onFileComplete()
+            return true
+        }
+
+        // The name this top-level item lands under. Only an explicit user choice changes it; the default
+        // path never lists the destination here, so an ordinary copy/move pays nothing for conflict handling.
+        var targetName = source.name
+        if (conflictPolicy != ConflictPolicy.AUTO) {
+            val siblings = dstHandler.listFiles(destinationDir).map { it.name }.toSet()
+            if (source.name in siblings) {
+                when (conflictPolicy) {
+                    ConflictPolicy.OVERWRITE ->
+                        dstHandler.deleteFile(minimalItem(buildChildPath(destinationDir, source.name), source.isDirectory))
+                    ConflictPolicy.RENAME ->
+                        targetName = uniqueAmong(siblings, source.name, source.isDirectory)
+                    ConflictPolicy.AUTO -> Unit
+                }
+            }
+        }
+
+        // Same-volume MOVE still relocates instantly when the name is unchanged (no collision, or OVERWRITE
+        // after the old item was removed). A RENAME to a new name falls through to copy-then-delete.
+        if (targetName == source.name &&
+            isRenameMove(source, destinationDir, operation) &&
             srcHandler.moveFile(source.toFileItem(), destinationDir)
         ) {
             // The rename relocated the whole subtree at once; count it as a single unit (see measure()).
@@ -100,7 +132,7 @@ class TransferEngine(
             return true
         }
 
-        copyTree(source, destinationDir, srcHandler, dstHandler, listener)
+        copyTree(source, destinationDir, targetName, srcHandler, dstHandler, listener)
         return false
     }
 
@@ -113,26 +145,29 @@ class TransferEngine(
     private suspend fun copyTree(
         source: TransferSource,
         destinationDir: String,
+        // Name this item lands under: the resolved name at the top level, the child's own name below.
+        targetName: String,
         srcHandler: ProtocolFileHandler,
         dstHandler: ProtocolFileHandler,
         listener: TransferListener,
     ) {
         if (!source.isDirectory) {
-            copyFileResumable(source, destinationDir, srcHandler, dstHandler, listener)
+            copyFileResumable(source, destinationDir, targetName, srcHandler, dstHandler, listener)
             listener.onFileComplete()
             return
         }
-        dstHandler.createFolder(destinationDir, source.name)
-        val childDir = buildChildPath(destinationDir, source.name)
+        dstHandler.createFolder(destinationDir, targetName)
+        val childDir = buildChildPath(destinationDir, targetName)
         for (child in srcHandler.listFiles(source.path)) {
             checkActive(listener)
-            copyTree(child.toTransferSource(), childDir, srcHandler, dstHandler, listener)
+            copyTree(child.toTransferSource(), childDir, child.name, srcHandler, dstHandler, listener)
         }
     }
 
     private suspend fun copyFileResumable(
         source: TransferSource,
         destinationDir: String,
+        targetName: String,
         srcHandler: ProtocolFileHandler,
         dstHandler: ProtocolFileHandler,
         listener: TransferListener,
@@ -140,7 +175,7 @@ class TransferEngine(
         val size = source.size
         // Announce the file first so the sheet's per-file bar has a name and a denominator right away.
         listener.onFileStart(source.name, size.coerceAtLeast(0))
-        var finalPath = buildChildPath(destinationDir, source.name)
+        var finalPath = buildChildPath(destinationDir, targetName)
 
         val existingFinal = dstHandler.sizeOf(finalPath)
         if (existingFinal >= 0L) {
@@ -149,8 +184,8 @@ class TransferEngine(
                 if (size > 0L) listener.onBytes(source.name, size)
                 return@withContext
             }
-            // A different file already owns this name. Phase 1 never overwrites: pick a free name.
-            finalPath = uniqueName(dstHandler, destinationDir, source.name)
+            // A different file already owns this name. The AUTO path never overwrites: pick a free name.
+            finalPath = uniqueName(dstHandler, destinationDir, targetName)
         }
 
         val tempPath = finalPath + PART_SUFFIX
@@ -207,6 +242,19 @@ class TransferEngine(
             if (dstHandler.sizeOf(candidate) < 0L) return candidate
         }
         throw IOException("Could not find a free name for $name in $destinationDir")
+    }
+
+    // First free "name (n)" not already among the destination's children. Works for files and directories
+    // (directories keep their whole name, files split off the extension), for the RENAME conflict policy.
+    private fun uniqueAmong(siblings: Set<String>, name: String, isDirectory: Boolean): String {
+        val dot = if (isDirectory) -1 else name.lastIndexOf('.')
+        val base = if (dot > 0) name.substring(0, dot) else name
+        val ext = if (dot > 0) name.substring(dot) else ""
+        for (i in 1..MAX_UNIQUE_ATTEMPTS) {
+            val candidate = "$base ($i)$ext"
+            if (candidate !in siblings) return candidate
+        }
+        throw IOException("Could not find a free name for $name")
     }
 
     private suspend fun walkFiles(

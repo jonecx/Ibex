@@ -2,6 +2,7 @@ package com.jonecx.ibex.fixtures
 
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.repository.ClipboardOperation
+import com.jonecx.ibex.data.transfer.ConflictPolicy
 import com.jonecx.ibex.data.transfer.TransferManager
 import com.jonecx.ibex.data.transfer.TransferSnapshot
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,6 +16,7 @@ class FakeTransferManager : TransferManager {
         val files: List<FileItem>,
         val operation: ClipboardOperation,
         val destinationDir: String,
+        val conflictPolicy: ConflictPolicy,
     )
 
     val enqueued = mutableListOf<Enqueued>()
@@ -31,8 +33,13 @@ class FakeTransferManager : TransferManager {
     private val _completions = MutableSharedFlow<String>(extraBufferCapacity = 8)
     override val completions: SharedFlow<String> = _completions
 
-    override fun enqueue(files: List<FileItem>, operation: ClipboardOperation, destinationDir: String) {
-        enqueued.add(Enqueued(files, operation, destinationDir))
+    override fun enqueue(
+        files: List<FileItem>,
+        operation: ClipboardOperation,
+        destinationDir: String,
+        conflictPolicy: ConflictPolicy,
+    ) {
+        enqueued.add(Enqueued(files, operation, destinationDir, conflictPolicy))
     }
 
     override fun cancel(jobId: String) {

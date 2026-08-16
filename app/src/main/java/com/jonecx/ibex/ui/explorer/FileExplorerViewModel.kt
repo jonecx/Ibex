@@ -21,6 +21,7 @@ import com.jonecx.ibex.data.repository.FileMoveManager
 import com.jonecx.ibex.data.repository.FileRepository
 import com.jonecx.ibex.data.repository.FileTrashManager
 import com.jonecx.ibex.data.repository.MediaType
+import com.jonecx.ibex.data.transfer.ConflictPolicy
 import com.jonecx.ibex.data.transfer.TransferManager
 import com.jonecx.ibex.di.FileRepositoryFactory
 import com.jonecx.ibex.util.launchCollect
@@ -77,6 +78,8 @@ data class FileExplorerUiState(
     val sortOption: SortOption = SortOption.DEFAULT,
     val isSearchActive: Boolean = false,
     val searchQuery: String = "",
+    // Non-null while the paste-conflict dialog is up, holding the pending paste awaiting the user's choice.
+    val conflictPrompt: ConflictPrompt? = null,
 ) {
     // Media-folder browsing (Images/Videos) reuses folder navigation but is a gallery, not a place to create folders.
     val canCreateFolder: Boolean get() = allowFolderNavigation && !isMediaFolderBrowsing
@@ -103,6 +106,19 @@ data class FileExplorerUiState(
 }
 
 val INTERNAL_STORAGE_PATH: String = Environment.getExternalStorageDirectory().absolutePath
+
+// The user's answer to a paste conflict. SKIP drops the clashing items and pastes the rest; the others
+// map to the engine's ConflictPolicy for the whole paste.
+enum class ConflictChoice { SKIP, OVERWRITE, KEEP_BOTH }
+
+// A paste held back because some items collide with existing names at the destination. Carries the full
+// pending paste so the chosen resolution can enqueue it.
+data class ConflictPrompt(
+    val conflictingNames: List<String>,
+    val files: List<FileItem>,
+    val operation: ClipboardOperation,
+    val destinationDir: String,
+)
 
 class FileExplorerViewModel(
     private val repositoryFactory: FileRepositoryFactory,
@@ -506,15 +522,75 @@ class FileExplorerViewModel(
         val operation = clipboard.operation ?: return
         if (clipboard.files.isEmpty()) return
 
-        // Hand the copy/move to the durable transfer queue; it runs in a foreground worker and
-        // survives rotation, backgrounding, and reboot. The progress bar tracks it from here.
-        transferManager.enqueue(clipboard.files, operation, destDir)
+        val destDirNorm = destDir.trimEnd('/')
+        // A MOVE of items already living in this folder is a no-op; drop them so paste does nothing odd.
+        val candidates = if (operation == ClipboardOperation.MOVE) {
+            clipboard.files.filter { it.path.trimEnd('/').substringBeforeLast('/') != destDirNorm }
+        } else {
+            clipboard.files
+        }
+        if (candidates.isEmpty()) {
+            clipboardManager.clear()
+            return
+        }
+
+        // A collision is an item whose name is taken by a *different* item already here (not itself).
+        val existingNames = _uiState.value.files.map { it.name }.toSet()
+        val conflicts = candidates.filter {
+            it.name in existingNames && it.path.trimEnd('/') != "$destDirNorm/${it.name}"
+        }
+        if (conflicts.isEmpty()) {
+            enqueuePaste(candidates, operation, destDir, ConflictPolicy.AUTO)
+        } else {
+            _uiState.update {
+                it.copy(
+                    conflictPrompt = ConflictPrompt(conflicts.map { c -> c.name }, candidates, operation, destDir),
+                )
+            }
+        }
+    }
+
+    // Apply the user's answer to a pending paste conflict, then enqueue what remains.
+    fun resolveConflict(choice: ConflictChoice) {
+        val prompt = _uiState.value.conflictPrompt ?: return
+        _uiState.update { it.copy(conflictPrompt = null) }
+        when (choice) {
+            ConflictChoice.SKIP -> {
+                val clashing = prompt.conflictingNames.toSet()
+                val remaining = prompt.files.filter { it.name !in clashing }
+                if (remaining.isNotEmpty()) {
+                    enqueuePaste(remaining, prompt.operation, prompt.destinationDir, ConflictPolicy.AUTO)
+                } else {
+                    clipboardManager.clear()
+                }
+            }
+            ConflictChoice.OVERWRITE ->
+                enqueuePaste(prompt.files, prompt.operation, prompt.destinationDir, ConflictPolicy.OVERWRITE)
+            ConflictChoice.KEEP_BOTH ->
+                enqueuePaste(prompt.files, prompt.operation, prompt.destinationDir, ConflictPolicy.RENAME)
+        }
+    }
+
+    // Dismiss the dialog without pasting; the clipboard is kept so the user can retry or navigate away.
+    fun dismissConflict() {
+        _uiState.update { it.copy(conflictPrompt = null) }
+    }
+
+    // Hand the copy/move to the durable transfer queue; it runs in a foreground worker and survives
+    // rotation, backgrounding, and reboot. The progress bar tracks it from here.
+    private fun enqueuePaste(
+        files: List<FileItem>,
+        operation: ClipboardOperation,
+        destDir: String,
+        conflictPolicy: ConflictPolicy,
+    ) {
+        transferManager.enqueue(files, operation, destDir, conflictPolicy)
         analyticsManager.trackPaste(
             operation = operation,
             sourceType = sourceType,
             isRemote = isRemote,
-            itemCount = clipboard.files.size,
-            sizeBytes = clipboard.files.sumOf { it.size },
+            itemCount = files.size,
+            sizeBytes = files.sumOf { it.size },
             success = true,
             durationMs = 0L,
         )

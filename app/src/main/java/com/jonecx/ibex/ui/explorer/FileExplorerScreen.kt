@@ -77,6 +77,7 @@ import com.jonecx.ibex.ui.components.ErrorView
 import com.jonecx.ibex.ui.components.FastScroller
 import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.components.LoadingView
+import com.jonecx.ibex.ui.components.TransferConflictDialog
 import com.jonecx.ibex.ui.explorer.components.BreadcrumbBar
 import com.jonecx.ibex.ui.explorer.components.FileDetailPane
 import com.jonecx.ibex.ui.explorer.components.FileGridItem
@@ -164,6 +165,8 @@ fun FileExplorerScreen(
                     onRenameSelected = { newName -> viewModel.renameSelectedFile(newName) },
                     onCreateFolder = { name -> viewModel.createFolder(name) },
                     onPaste = { viewModel.pasteFiles() },
+                    onResolveConflict = { viewModel.resolveConflict(it) },
+                    onDismissConflict = { viewModel.dismissConflict() },
                     onCancelClipboard = { viewModel.cancelClipboard() },
                     onSortOptionSelected = { viewModel.setSortOption(it) },
                     onRecentFolderClick = { path -> viewModel.navigateToPath(path) },
@@ -211,6 +214,8 @@ private fun FileListPane(
     onRenameSelected: (String) -> Unit,
     onCreateFolder: (String) -> Unit,
     onPaste: () -> Unit,
+    onResolveConflict: (ConflictChoice) -> Unit,
+    onDismissConflict: () -> Unit,
     onCancelClipboard: () -> Unit,
     onSortOptionSelected: (SortOption) -> Unit,
     onRecentFolderClick: (String) -> Unit,
@@ -474,6 +479,17 @@ private fun FileListPane(
                     onCreateFolder(name)
                 },
                 onDismiss = { showCreateFolderDialog = false },
+            )
+        }
+
+        uiState.conflictPrompt?.let { prompt ->
+            TransferConflictDialog(
+                conflictCount = prompt.conflictingNames.size,
+                sampleName = prompt.conflictingNames.first(),
+                onKeepBoth = { onResolveConflict(ConflictChoice.KEEP_BOTH) },
+                onOverwrite = { onResolveConflict(ConflictChoice.OVERWRITE) },
+                onSkip = { onResolveConflict(ConflictChoice.SKIP) },
+                onDismiss = onDismissConflict,
             )
         }
 

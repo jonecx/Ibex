@@ -121,6 +121,14 @@
     <!-- e.g. "12s left" -->
     <string name="transfer_eta">%1$s left</string>
     <string name="transfer_percent">%1$d%%</string>
+    <!-- Paste conflict dialog -->
+    <string name="conflict_title_one">Item already exists</string>
+    <string name="conflict_title_many">%1$d items already exist</string>
+    <string name="conflict_message_one">\"%1$s\" already exists in this folder. What would you like to do?</string>
+    <string name="conflict_message_many">%1$d items already exist in this folder, starting with \"%2$s\". What would you like to do?</string>
+    <string name="conflict_keep_both">Keep both</string>
+    <string name="conflict_overwrite">Overwrite</string>
+    <string name="conflict_skip">Skip</string>
     <string name="rename_dialog_title">Rename</string>
     <string name="rename_dialog_hint">New name</string>
     <string name="rename_dialog_confirm">Rename</string>

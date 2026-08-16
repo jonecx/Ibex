@@ -11,6 +11,7 @@ import com.jonecx.ibex.data.model.SortOption
 import com.jonecx.ibex.data.model.ViewMode
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import com.jonecx.ibex.data.repository.MediaType
+import com.jonecx.ibex.data.transfer.ConflictPolicy
 import com.jonecx.ibex.fixtures.FakeFileClipboardManager
 import com.jonecx.ibex.fixtures.FakeFileMoveManager
 import com.jonecx.ibex.fixtures.FakeFileRepository
@@ -543,13 +544,16 @@ class FileExplorerViewModelTest {
 
     @Test
     fun `pasteFiles with MOVE enqueues a move transfer and clears clipboard`() = runTest {
-        val file1 = testFileItem("a.txt")
-        val file2 = testFileItem("b.txt")
-        createViewModelWithFiles(file1, file2)
+        // Paste from another folder into this one, with no name collision, so it enqueues straight through.
+        createViewModelWithFiles(testDirectoryFileItem("subdir"))
+        fakeClipboardManager.setClipboard(
+            listOf(
+                testFileItem("a.txt", path = "/other/a.txt"),
+                testFileItem("b.txt", path = "/other/b.txt"),
+            ),
+            ClipboardOperation.MOVE,
+        )
 
-        viewModel.enterSelectionMode(file1)
-        viewModel.toggleFileSelection(file2)
-        viewModel.moveToClipboard()
         viewModel.pasteFiles()
 
         assertEquals(1, fakeTransferManager.enqueued.size)
@@ -1211,11 +1215,13 @@ class FileExplorerViewModelTest {
 
     @Test
     fun `pasteFiles with COPY enqueues a copy transfer and clears clipboard`() = runTest {
-        val file1 = testFileItem("a.txt")
-        createViewModelWithFiles(file1)
+        // Paste from another folder into this one, with no name collision, so it enqueues straight through.
+        createViewModelWithFiles(testDirectoryFileItem("subdir"))
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("a.txt", path = "/other/a.txt")),
+            ClipboardOperation.COPY,
+        )
 
-        viewModel.enterSelectionMode(file1)
-        viewModel.copyToClipboard()
         viewModel.pasteFiles()
 
         assertEquals(1, fakeTransferManager.enqueued.size)
@@ -1309,5 +1315,140 @@ class FileExplorerViewModelTest {
         assertEquals(1, recents.size)
         assertEquals(FileSourceType.SMB.name, recents.first().sourceType)
         assertEquals(TEST_SMB_CONNECTION_ID, recents.first().connectionId)
+    }
+
+    @Test
+    fun `pasteFiles_noConflict_enqueuesWithAutoPolicy`() = runTest {
+        createViewModelWithFiles(testFileItem("existing.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("new.txt", path = "/downloads/new.txt")),
+            ClipboardOperation.COPY,
+        )
+
+        viewModel.pasteFiles()
+
+        assertEquals(1, fakeTransferManager.enqueued.size)
+        assertEquals(ConflictPolicy.AUTO, fakeTransferManager.enqueued.first().conflictPolicy)
+        assertNull(viewModel.uiState.value.conflictPrompt)
+        assertFalse(fakeClipboardManager.state.value.hasContent)
+    }
+
+    @Test
+    fun `pasteFiles_nameCollision_showsPromptAndDoesNotEnqueue`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("a.txt", path = "/downloads/a.txt")),
+            ClipboardOperation.COPY,
+        )
+
+        viewModel.pasteFiles()
+
+        val prompt = viewModel.uiState.value.conflictPrompt
+        assertNotNull(prompt)
+        assertEquals(listOf("a.txt"), prompt!!.conflictingNames)
+        assertTrue(fakeTransferManager.enqueued.isEmpty())
+        // Clipboard is kept until the user resolves the conflict.
+        assertTrue(fakeClipboardManager.state.value.hasContent)
+    }
+
+    @Test
+    fun `resolveConflict_overwrite_enqueuesAllWithOverwritePolicy`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(
+                testFileItem("a.txt", path = "/downloads/a.txt"),
+                testFileItem("b.txt", path = "/downloads/b.txt"),
+            ),
+            ClipboardOperation.COPY,
+        )
+        viewModel.pasteFiles()
+
+        viewModel.resolveConflict(ConflictChoice.OVERWRITE)
+
+        val enqueued = fakeTransferManager.enqueued.single()
+        assertEquals(2, enqueued.files.size)
+        assertEquals(ConflictPolicy.OVERWRITE, enqueued.conflictPolicy)
+        assertNull(viewModel.uiState.value.conflictPrompt)
+    }
+
+    @Test
+    fun `resolveConflict_keepBoth_enqueuesAllWithRenamePolicy`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("a.txt", path = "/downloads/a.txt")),
+            ClipboardOperation.COPY,
+        )
+        viewModel.pasteFiles()
+
+        viewModel.resolveConflict(ConflictChoice.KEEP_BOTH)
+
+        assertEquals(ConflictPolicy.RENAME, fakeTransferManager.enqueued.single().conflictPolicy)
+    }
+
+    @Test
+    fun `resolveConflict_skip_enqueuesOnlyNonConflictingWithAutoPolicy`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(
+                testFileItem("a.txt", path = "/downloads/a.txt"),
+                testFileItem("b.txt", path = "/downloads/b.txt"),
+            ),
+            ClipboardOperation.COPY,
+        )
+        viewModel.pasteFiles()
+
+        viewModel.resolveConflict(ConflictChoice.SKIP)
+
+        val enqueued = fakeTransferManager.enqueued.single()
+        assertEquals(listOf("b.txt"), enqueued.files.map { it.name })
+        assertEquals(ConflictPolicy.AUTO, enqueued.conflictPolicy)
+    }
+
+    @Test
+    fun `resolveConflict_skip_allConflicting_enqueuesNothing`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("a.txt", path = "/downloads/a.txt")),
+            ClipboardOperation.COPY,
+        )
+        viewModel.pasteFiles()
+
+        viewModel.resolveConflict(ConflictChoice.SKIP)
+
+        assertTrue(fakeTransferManager.enqueued.isEmpty())
+        assertNull(viewModel.uiState.value.conflictPrompt)
+        assertFalse(fakeClipboardManager.state.value.hasContent)
+    }
+
+    @Test
+    fun `dismissConflict_keepsClipboardAndEnqueuesNothing`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("a.txt", path = "/downloads/a.txt")),
+            ClipboardOperation.COPY,
+        )
+        viewModel.pasteFiles()
+
+        viewModel.dismissConflict()
+
+        assertNull(viewModel.uiState.value.conflictPrompt)
+        assertTrue(fakeTransferManager.enqueued.isEmpty())
+        assertTrue(fakeClipboardManager.state.value.hasContent)
+    }
+
+    @Test
+    fun `pasteFiles_moveIntoSameFolder_isNoOp`() = runTest {
+        createViewModelWithFiles(testFileItem("a.txt"))
+        val destDir = viewModel.uiState.value.currentPath
+        fakeClipboardManager.setClipboard(
+            listOf(testFileItem("a.txt", path = "$destDir/a.txt")),
+            ClipboardOperation.MOVE,
+        )
+
+        viewModel.pasteFiles()
+
+        assertTrue(fakeTransferManager.enqueued.isEmpty())
+        assertNull(viewModel.uiState.value.conflictPrompt)
+        assertFalse(fakeClipboardManager.state.value.hasContent)
     }
 }

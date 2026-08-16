@@ -28,7 +28,12 @@ interface TransferManager {
     // Emits the destination dir of a job that just finished, so a screen showing that folder can refresh.
     val completions: SharedFlow<String>
 
-    fun enqueue(files: List<FileItem>, operation: ClipboardOperation, destinationDir: String)
+    fun enqueue(
+        files: List<FileItem>,
+        operation: ClipboardOperation,
+        destinationDir: String,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.AUTO,
+    )
     fun cancel(jobId: String)
     fun cancelAll()
 
@@ -107,7 +112,12 @@ class DefaultTransferManager(
             TransferSnapshot(jobs.map { it.toProgress(live[it.id]) })
         }.stateIn(appScope, SharingStarted.Eagerly, TransferSnapshot())
 
-    override fun enqueue(files: List<FileItem>, operation: ClipboardOperation, destinationDir: String) {
+    override fun enqueue(
+        files: List<FileItem>,
+        operation: ClipboardOperation,
+        destinationDir: String,
+        conflictPolicy: ConflictPolicy,
+    ) {
         if (files.isEmpty()) return
         val job = TransferJob(
             id = UUID.randomUUID().toString(),
@@ -117,6 +127,7 @@ class DefaultTransferManager(
             createdAt = System.currentTimeMillis(),
             touchesRemote = destinationDir.startsWith(FileTypeUtils.SMB_SCHEME_PREFIX) ||
                 files.any { it.path.startsWith(FileTypeUtils.SMB_SCHEME_PREFIX) },
+            conflictPolicy = conflictPolicy,
         )
         appScope.launch {
             ensureLoaded()
@@ -232,7 +243,7 @@ class DefaultTransferManager(
             for (source in job.sources) {
                 if (job.id in cancelledIds) throw TransferCancelledException()
                 if (job.id in pausedIds) throw TransferPausedException()
-                val relocated = engine.transfer(source, job.destinationDir, job.operation, listener)
+                val relocated = engine.transfer(source, job.destinationDir, job.operation, job.conflictPolicy, listener)
                 if (!relocated) copiedSources.add(source)
             }
             // Only now, with every source copied without error, remove the originals for a MOVE — and only

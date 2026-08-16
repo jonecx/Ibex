@@ -36,7 +36,7 @@ class TransferEngineTest {
         val src = source("a.txt", data)
         val listener = RecordingListener()
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, listener)
 
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a.txt"])
         assertNull(handler.files["$MEM_SCHEME/dest/a.txt$part"])
@@ -51,7 +51,7 @@ class TransferEngineTest {
         // Pretend a prior run wrote the first 5 bytes into the temp before dying.
         handler.files["$MEM_SCHEME/dest/a.txt$part"] = "01234".toByteArray()
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener())
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener())
 
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a.txt"])
         assertNull(handler.files["$MEM_SCHEME/dest/a.txt$part"])
@@ -64,7 +64,7 @@ class TransferEngineTest {
         handler.files["$MEM_SCHEME/dest/a.txt"] = data.copyOf()
         val listener = RecordingListener()
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, listener)
 
         // Counted as done, but never re-read (no temp created).
         assertNull(handler.files["$MEM_SCHEME/dest/a.txt$part"])
@@ -79,7 +79,7 @@ class TransferEngineTest {
         val data = "new content here".toByteArray()
         val src = source("a.txt", data)
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener())
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener())
 
         assertArrayEquals(existing, handler.files["$MEM_SCHEME/dest/a.txt"])
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a (1).txt"])
@@ -93,7 +93,7 @@ class TransferEngineTest {
         val src = source("a.txt", data)
         handler.files["$MEM_SCHEME/dest/a (1).txt$part"] = "01234".toByteArray()
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener())
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener())
 
         // Resumed into the existing temp: final is complete and no stray ".ibexpart" is left behind.
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a (1).txt"])
@@ -109,7 +109,7 @@ class TransferEngineTest {
 
         var thrown = false
         try {
-            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, listener)
         } catch (e: TransferCancelledException) {
             thrown = true
         }
@@ -127,7 +127,7 @@ class TransferEngineTest {
 
         var thrown = false
         try {
-            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, listener)
         } catch (e: TransferPausedException) {
             thrown = true
         }
@@ -144,13 +144,13 @@ class TransferEngineTest {
         val src = source("big.bin", data)
         // First pass pauses partway, leaving a temp behind.
         runCatching {
-            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener(pauseAfterBytes = 1))
+            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener(pauseAfterBytes = 1))
         }
         val partialTemp = handler.files["$MEM_SCHEME/dest/big.bin$part"]?.size ?: 0
         assertTrue(partialTemp in 1 until data.size)
 
         // Second pass runs to the end and promotes the temp to the final file.
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener())
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener())
 
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/big.bin"])
         assertNull(handler.files["$MEM_SCHEME/dest/big.bin$part"])
@@ -162,7 +162,7 @@ class TransferEngineTest {
         val src = source("a.txt", data)
         val listener = RecordingListener()
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, listener)
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, listener)
 
         assertEquals(1, listener.fileStarts)
         assertEquals("a.txt", listener.lastFileName)
@@ -174,7 +174,7 @@ class TransferEngineTest {
         val data = "move me".toByteArray()
         val src = source("a.txt", data)
 
-        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, RecordingListener())
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.AUTO, RecordingListener())
 
         assertEquals(1, handler.moveCalls)
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a.txt"])
@@ -189,7 +189,7 @@ class TransferEngineTest {
         remote.files["smb://src/a.txt"] = "hi".toByteArray()
         val src = TransferSource("smb://src/a.txt", "a.txt", 2L, false)
 
-        val relocated = crossEngine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, RecordingListener())
+        val relocated = crossEngine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.AUTO, RecordingListener())
 
         // Copied (not renamed), and the engine leaves the source for the caller to delete after verifying.
         assertFalse(relocated)
@@ -205,11 +205,79 @@ class TransferEngineTest {
 
         var thrown = false
         try {
-            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, RecordingListener())
+            engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener())
         } catch (e: IOException) {
             thrown = true
         }
         assertTrue(thrown)
+    }
+
+    @Test
+    fun `transfer_overwritePolicy_replacesExistingFile`() = runTest {
+        handler.files["$MEM_SCHEME/dest/a.txt"] = "old".toByteArray()
+        val data = "new content".toByteArray()
+        val src = source("a.txt", data)
+
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.OVERWRITE, RecordingListener())
+
+        assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertNull(handler.files["$MEM_SCHEME/dest/a (1).txt"])
+    }
+
+    @Test
+    fun `transfer_renamePolicy_keepsBothEvenWhenSizesMatch`() = runTest {
+        // Same size would make the AUTO path skip; an explicit RENAME must still write a second copy.
+        handler.files["$MEM_SCHEME/dest/a.txt"] = "1234".toByteArray()
+        val data = "abcd".toByteArray()
+        val src = source("a.txt", data)
+
+        engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.RENAME, RecordingListener())
+
+        assertArrayEquals("1234".toByteArray(), handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a (1).txt"])
+    }
+
+    @Test
+    fun `transfer_renamePolicy_directory_keepsBothTrees`() = runTest {
+        handler.dirs.add("$MEM_SCHEME/dest/Folder")
+        handler.files["$MEM_SCHEME/dest/Folder/old.txt"] = "old".toByteArray()
+        handler.dirs.add("$MEM_SCHEME/src/Folder")
+        handler.files["$MEM_SCHEME/src/Folder/new.txt"] = "new".toByteArray()
+        val srcDir = TransferSource("$MEM_SCHEME/src/Folder", "Folder", 0L, true)
+
+        engine.transfer(srcDir, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.RENAME, RecordingListener())
+
+        assertArrayEquals("old".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder/old.txt"])
+        assertArrayEquals("new".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder (1)/new.txt"])
+    }
+
+    @Test
+    fun `transfer_overwritePolicy_directory_replacesTree`() = runTest {
+        handler.dirs.add("$MEM_SCHEME/dest/Folder")
+        handler.files["$MEM_SCHEME/dest/Folder/old.txt"] = "old".toByteArray()
+        handler.dirs.add("$MEM_SCHEME/src/Folder")
+        handler.files["$MEM_SCHEME/src/Folder/new.txt"] = "new".toByteArray()
+        val srcDir = TransferSource("$MEM_SCHEME/src/Folder", "Folder", 0L, true)
+
+        engine.transfer(srcDir, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.OVERWRITE, RecordingListener())
+
+        assertNull(handler.files["$MEM_SCHEME/dest/Folder/old.txt"])
+        assertArrayEquals("new".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder/new.txt"])
+    }
+
+    @Test
+    fun `transfer_intoSameFolder_isNoOpAndNeverDeletesSource`() = runTest {
+        // The source IS the file already at the destination. Even OVERWRITE must not delete it onto itself.
+        val data = "stay".toByteArray()
+        handler.files["$MEM_SCHEME/dest/a.txt"] = data
+        val src = TransferSource("$MEM_SCHEME/dest/a.txt", "a.txt", data.size.toLong(), false)
+        val listener = RecordingListener()
+
+        val relocated = engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.OVERWRITE, listener)
+
+        assertTrue(relocated)
+        assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertEquals(1, listener.filesComplete)
     }
 
     private class RecordingListener(

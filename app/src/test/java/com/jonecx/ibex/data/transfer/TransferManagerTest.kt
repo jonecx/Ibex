@@ -338,6 +338,23 @@ class TransferManagerTest {
         pausingJournal.delete()
     }
 
+    @Test
+    fun `runQueue_overwritePolicy_replacesExistingDestination`() = runTest {
+        handler.files["$MEM_SCHEME/dest/a.txt"] = "old".toByteArray()
+        seedSource("a.txt", "new".toByteArray())
+        manager.enqueue(
+            listOf(sourceItem("a.txt")),
+            ClipboardOperation.COPY,
+            "$MEM_SCHEME/dest",
+            ConflictPolicy.OVERWRITE,
+        )
+
+        manager.runQueue()
+
+        assertArrayEquals("new".toByteArray(), handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertNull(handler.files["$MEM_SCHEME/dest/a (1).txt"])
+    }
+
     private class RecordingScheduler : TransferScheduler {
         var count = 0
         override fun ensureRunning() {

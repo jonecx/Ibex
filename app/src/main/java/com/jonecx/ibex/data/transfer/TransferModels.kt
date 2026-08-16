@@ -20,6 +20,16 @@ enum class TransferStatus {
     CANCELLED,
 }
 
+// How a top-level name collision at the destination is handled. AUTO is the default (no collision, or a
+// resumed job's own files): skip a byte-identical file, otherwise pick a free "name (n)". OVERWRITE and
+// RENAME are the user's explicit choices when a paste collides with existing items.
+@Serializable
+enum class ConflictPolicy {
+    AUTO,
+    OVERWRITE,
+    RENAME,
+}
+
 // One top-level item the user picked. The tree under a directory is re-walked at run time,
 // so the journal stays tiny even for a folder holding 100k files.
 @Serializable
@@ -46,6 +56,8 @@ data class TransferJob(
     val filesDone: Int = 0,
     // Any source or the destination is remote (smb://): the worker holds a WifiLock while it runs.
     val touchesRemote: Boolean = false,
+    // How to resolve a top-level name collision at the destination (see ConflictPolicy).
+    val conflictPolicy: ConflictPolicy = ConflictPolicy.AUTO,
 )
 
 // Live, in-memory view of a job for the UI. Fast-moving fields (currentFile*, bytesPerSecond)
