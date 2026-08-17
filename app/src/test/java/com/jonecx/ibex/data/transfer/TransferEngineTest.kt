@@ -183,16 +183,47 @@ class TransferEngineTest {
     }
 
     @Test
+    fun `transfer_directoryTree_measuresLeafFilesAndBytesDuringCopy`() = runTest {
+        // The count now comes from the copy walk itself, so a nested tree must report every leaf once.
+        handler.dirs.add("$MEM_SCHEME/src/Folder")
+        handler.dirs.add("$MEM_SCHEME/src/Folder/Sub")
+        handler.files["$MEM_SCHEME/src/Folder/a.txt"] = "aa".toByteArray()
+        handler.files["$MEM_SCHEME/src/Folder/Sub/b.txt"] = "bbbb".toByteArray()
+        val srcDir = TransferSource("$MEM_SCHEME/src/Folder", "Folder", 0L, true)
+
+        val outcome = engine.transfer(srcDir, "$MEM_SCHEME/dest", ClipboardOperation.COPY, ConflictPolicy.AUTO, RecordingListener())
+
+        assertFalse(outcome.relocated)
+        assertEquals(2, outcome.measured.files)
+        assertEquals(6L, outcome.measured.bytes)
+        assertArrayEquals("aa".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder/a.txt"])
+        assertArrayEquals("bbbb".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder/Sub/b.txt"])
+    }
+
+    @Test
+    fun `transfer_sameHandlerMove_measuresRelocatedSubtreeAsSingleUnit`() = runTest {
+        val data = "move me".toByteArray()
+        val src = source("a.txt", data)
+
+        val outcome = engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.AUTO, RecordingListener())
+
+        // An instant rename relocates the whole item at once, counted as one unit (see the move-complete check).
+        assertTrue(outcome.relocated)
+        assertEquals(1, outcome.measured.files)
+        assertEquals(data.size.toLong(), outcome.measured.bytes)
+    }
+
+    @Test
     fun `transfer_crossHandlerMove_copiesButDoesNotDeleteSource`() = runTest {
         val remote = InMemoryProtocolHandler("smb:/")
         val crossEngine = TransferEngine(setOf(handler, remote), UnconfinedTestDispatcher())
         remote.files["smb://src/a.txt"] = "hi".toByteArray()
         val src = TransferSource("smb://src/a.txt", "a.txt", 2L, false)
 
-        val relocated = crossEngine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.AUTO, RecordingListener())
+        val outcome = crossEngine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.AUTO, RecordingListener())
 
         // Copied (not renamed), and the engine leaves the source for the caller to delete after verifying.
-        assertFalse(relocated)
+        assertFalse(outcome.relocated)
         assertArrayEquals("hi".toByteArray(), handler.files["$MEM_SCHEME/dest/a.txt"])
         assertArrayEquals("hi".toByteArray(), remote.files["smb://src/a.txt"])
     }
@@ -273,9 +304,9 @@ class TransferEngineTest {
         val src = TransferSource("$MEM_SCHEME/dest/a.txt", "a.txt", data.size.toLong(), false)
         val listener = RecordingListener()
 
-        val relocated = engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.OVERWRITE, listener)
+        val outcome = engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.OVERWRITE, listener)
 
-        assertTrue(relocated)
+        assertTrue(outcome.relocated)
         assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a.txt"])
         assertEquals(1, listener.filesComplete)
     }

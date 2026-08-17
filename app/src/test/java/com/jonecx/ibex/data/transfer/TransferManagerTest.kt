@@ -83,6 +83,51 @@ class TransferManagerTest {
     }
 
     @Test
+    fun `runQueue_folderCopy_totalsDiscoveredFromCopyPassNotPreWalk`() = runTest {
+        handler.dirs.add("$MEM_SCHEME/src/Folder")
+        handler.files["$MEM_SCHEME/src/Folder/f1.txt"] = "one".toByteArray()
+        handler.files["$MEM_SCHEME/src/Folder/f2.txt"] = "four".toByteArray()
+        val seen = mutableListOf<TransferSnapshot>()
+        val collector = launch(dispatcher) { manager.snapshot.collect { seen.add(it) } }
+
+        manager.enqueue(
+            listOf(memFileItem("$MEM_SCHEME/src/Folder", 0L, isDirectory = true)),
+            ClipboardOperation.COPY,
+            "$MEM_SCHEME/dest",
+        )
+        manager.runQueue()
+
+        // The total is never pre-walked; it appears only once the copy pass has enumerated the tree (3 + 4).
+        assertTrue(seen.any { it.totalBytes == 7L && it.totalFiles == 2 })
+        assertArrayEquals("one".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder/f1.txt"])
+        assertArrayEquals("four".toByteArray(), handler.files["$MEM_SCHEME/dest/Folder/f2.txt"])
+        collector.cancel()
+    }
+
+    @Test
+    fun `runQueue_multipleSources_totalsAccumulateProgressively`() = runTest {
+        seedSource("a.txt", "aa".toByteArray())
+        seedSource("b.txt", "bbb".toByteArray())
+        seedSource("c.txt", "cccc".toByteArray())
+        val seen = mutableListOf<TransferSnapshot>()
+        val collector = launch(dispatcher) { manager.snapshot.collect { seen.add(it) } }
+
+        manager.enqueue(
+            listOf(sourceItem("a.txt"), sourceItem("b.txt"), sourceItem("c.txt")),
+            ClipboardOperation.COPY,
+            "$MEM_SCHEME/dest",
+        )
+        manager.runQueue()
+
+        // Totals grow as each top-level item is walked: partial totals appear before the full 2 + 3 + 4.
+        assertTrue(seen.any { it.totalBytes == 2L && it.totalFiles == 1 })
+        assertTrue(seen.any { it.totalBytes == 5L && it.totalFiles == 2 })
+        assertTrue(seen.any { it.totalBytes == 9L && it.totalFiles == 3 })
+        assertArrayEquals("cccc".toByteArray(), handler.files["$MEM_SCHEME/dest/c.txt"])
+        collector.cancel()
+    }
+
+    @Test
     fun `runQueue_moveRemovesSource`() = runTest {
         seedSource("a.txt", "move".toByteArray())
         manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.MOVE, "$MEM_SCHEME/dest")

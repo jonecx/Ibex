@@ -57,37 +57,16 @@ class TransferEngine(
     private fun isRenameMove(source: TransferSource, destinationDir: String, operation: ClipboardOperation) =
         operation == ClipboardOperation.MOVE && handlerFor(source.path) === handlerFor(destinationDir)
 
-    // What transfer() will report for this source, so the progress bar's total matches the work done.
-    suspend fun measure(
-        source: TransferSource,
-        destinationDir: String,
-        operation: ClipboardOperation,
-        isCancelled: () -> Boolean,
-    ): Measurement {
-        if (isRenameMove(source, destinationDir, operation) || !source.isDirectory) {
-            return Measurement(files = 1, bytes = source.size.coerceAtLeast(0))
-        }
-        var files = 0
-        var bytes = 0L
-        walkFiles(source, handlerFor(source.path), isCancelled) { child ->
-            files += 1
-            bytes += child.size.coerceAtLeast(0)
-        }
-        return Measurement(files, bytes)
-    }
-
-    // Copies one top-level source into destinationDir. Returns true if a same-volume MOVE relocated it
-    // via an instant rename (source is already gone); false if it was copied and the source still exists.
-    // A copied MOVE source is deleted by the caller ONLY after the whole job verifies complete, so a
-    // partial or failed copy can never orphan the destination or, worse, empty the source.
-    // Cancellable two ways (see TransferListener).
+    // Copies one top-level source into destinationDir and returns a TransferOutcome: relocated is true when a
+    // same-volume MOVE was an instant rename (source already gone); measured is the file/byte count found while
+    // walking this source, so the caller gets the total from the copy pass with no separate remote walk.
     suspend fun transfer(
         source: TransferSource,
         destinationDir: String,
         operation: ClipboardOperation,
         conflictPolicy: ConflictPolicy,
         listener: TransferListener,
-    ): Boolean {
+    ): TransferOutcome {
         val srcHandler = handlerFor(source.path)
         val dstHandler = handlerFor(destinationDir)
 
@@ -100,7 +79,7 @@ class TransferEngine(
             listener.onFileStart(source.name, source.size.coerceAtLeast(0))
             if (source.size > 0L) listener.onBytes(source.name, source.size.coerceAtLeast(0))
             listener.onFileComplete()
-            return true
+            return TransferOutcome(relocated = true, measured = singleUnit(source))
         }
 
         // The name this top-level item lands under. Only an explicit user choice changes it; the default
@@ -125,15 +104,15 @@ class TransferEngine(
             isRenameMove(source, destinationDir, operation) &&
             srcHandler.moveFile(source.toFileItem(), destinationDir)
         ) {
-            // The rename relocated the whole subtree at once; count it as a single unit (see measure()).
+            // The rename relocated the whole subtree at once; count it as a single unit.
             listener.onFileStart(source.name, source.size.coerceAtLeast(0))
             listener.onBytes(source.name, source.size.coerceAtLeast(0))
             listener.onFileComplete()
-            return true
+            return TransferOutcome(relocated = true, measured = singleUnit(source))
         }
 
-        copyTree(source, destinationDir, targetName, srcHandler, dstHandler, listener)
-        return false
+        val measured = copyTree(source, destinationDir, targetName, srcHandler, dstHandler, listener)
+        return TransferOutcome(relocated = false, measured = measured)
     }
 
     // Removes a source after its copy has been verified complete by the caller. Never call this
@@ -142,6 +121,8 @@ class TransferEngine(
         handlerFor(source.path).deleteFile(source.toFileItem())
     }
 
+    // Copies the subtree and returns what it enumerated (leaf files + their declared bytes). The count comes
+    // from this same walk, so a remote directory is listed once, not once to measure and again to copy.
     private suspend fun copyTree(
         source: TransferSource,
         destinationDir: String,
@@ -150,18 +131,23 @@ class TransferEngine(
         srcHandler: ProtocolFileHandler,
         dstHandler: ProtocolFileHandler,
         listener: TransferListener,
-    ) {
+    ): Measurement {
         if (!source.isDirectory) {
             copyFileResumable(source, destinationDir, targetName, srcHandler, dstHandler, listener)
             listener.onFileComplete()
-            return
+            return singleUnit(source)
         }
         dstHandler.createFolder(destinationDir, targetName)
         val childDir = buildChildPath(destinationDir, targetName)
+        var files = 0
+        var bytes = 0L
         for (child in srcHandler.listFiles(source.path)) {
             checkActive(listener)
-            copyTree(child.toTransferSource(), childDir, child.name, srcHandler, dstHandler, listener)
+            val childMeasure = copyTree(child.toTransferSource(), childDir, child.name, srcHandler, dstHandler, listener)
+            files += childMeasure.files
+            bytes += childMeasure.bytes
         }
+        return Measurement(files, bytes)
     }
 
     private suspend fun copyFileResumable(
@@ -257,32 +243,15 @@ class TransferEngine(
         throw IOException("Could not find a free name for $name")
     }
 
-    private suspend fun walkFiles(
-        source: TransferSource,
-        srcHandler: ProtocolFileHandler,
-        isCancelled: () -> Boolean,
-        onFile: (FileItem) -> Unit,
-    ) {
-        if (!source.isDirectory) {
-            onFile(source.toFileItem())
-            return
-        }
-        for (child in srcHandler.listFiles(source.path)) {
-            if (isCancelled()) throw TransferCancelledException()
-            coroutineContext.ensureActive()
-            if (child.isDirectory) {
-                walkFiles(child.toTransferSource(), srcHandler, isCancelled, onFile)
-            } else {
-                onFile(child)
-            }
-        }
-    }
-
     private suspend fun checkActive(listener: TransferListener) {
         if (listener.isCancelled()) throw TransferCancelledException()
         if (listener.isPaused()) throw TransferPausedException()
         coroutineContext.ensureActive()
     }
+
+    // One item counted as a single unit: a leaf file, or a whole subtree relocated by an instant rename.
+    private fun singleUnit(source: TransferSource): Measurement =
+        Measurement(files = 1, bytes = source.size.coerceAtLeast(0))
 
     private fun buildChildPath(parentDir: String, name: String): String =
         "${parentDir.trimEnd('/')}/$name"
@@ -303,4 +272,8 @@ class TransferEngine(
         TransferSource(path = path, name = name, size = size, isDirectory = isDirectory)
 
     data class Measurement(val files: Int, val bytes: Long)
+
+    // Result of transferring one top-level source: whether an instant rename relocated it, plus the
+    // file/byte count discovered during the copy so the caller needs no separate measure walk.
+    data class TransferOutcome(val relocated: Boolean, val measured: Measurement)
 }

@@ -263,23 +263,29 @@ class DefaultTransferManager(
         }
 
         try {
-            // Measuring walks the source tree; a listing failure here must fail the job, not escape it,
-            // or the job would be left stuck RUNNING with a phantom entry in the progress bar.
-            val measured = measure(job)
-            updateJob(job.id) { it.copy(totalFiles = measured.files, totalBytes = measured.bytes) }
-            journal.save(jobsState.value)
-
+            // The count is produced by the copy pass itself (engine.transfer returns what it walked), so a
+            // remote directory is listed once, not measured and then copied. Totals stay 0 until a source's
+            // subtree is walked, so the bar shows "Preparing…" (isCounting) until then. A listing failure
+            // surfaces from the copy as a normal job failure, never as a phantom empty tree.
             val copiedSources = mutableListOf<TransferSource>()
+            var measuredFiles = 0
+            var measuredBytes = 0L
             for (source in job.sources) {
                 if (job.id in cancelledIds) throw TransferCancelledException()
                 if (job.id in pausedIds) throw TransferPausedException()
-                val relocated = engine.transfer(source, job.destinationDir, job.operation, job.conflictPolicy, listener)
-                if (!relocated) copiedSources.add(source)
+                val outcome = engine.transfer(source, job.destinationDir, job.operation, job.conflictPolicy, listener)
+                measuredFiles += outcome.measured.files
+                measuredBytes += outcome.measured.bytes
+                if (!outcome.relocated) copiedSources.add(source)
+                // Firm up the total as each top-level item's subtree is counted; the bar leaves "Preparing…" then.
+                updateJob(job.id) { it.copy(totalFiles = measuredFiles, totalBytes = measuredBytes) }
             }
+            journal.save(jobsState.value)
+
             // Only now, with every source copied without error, remove the originals for a MOVE — and only
             // if the byte/file counts prove the copy is actually complete. A partial copy keeps the source.
             if (job.operation == ClipboardOperation.MOVE && copiedSources.isNotEmpty()) {
-                val complete = runState.filesDone >= measured.files && runState.bytesDone >= measured.bytes
+                val complete = runState.filesDone >= measuredFiles && runState.bytesDone >= measuredBytes
                 if (!complete) throw IOException("Copy incomplete; keeping sources")
                 copiedSources.forEach { source ->
                     // A delete stumble after a verified copy is not data loss (the bytes are safely at the
@@ -318,18 +324,6 @@ class DefaultTransferManager(
         } finally {
             liveState.update { it - job.id }
         }
-    }
-
-    private suspend fun measure(job: TransferJob): TransferEngine.Measurement {
-        var files = 0
-        var bytes = 0L
-        for (source in job.sources) {
-            if (job.id in cancelledIds) throw TransferCancelledException()
-            val m = engine.measure(source, job.destinationDir, job.operation) { job.id in cancelledIds }
-            files += m.files
-            bytes += m.bytes
-        }
-        return TransferEngine.Measurement(files, bytes)
     }
 
     // Per-job accumulator. The engine runs one file at a time on one coroutine, so plain vars are safe here.
