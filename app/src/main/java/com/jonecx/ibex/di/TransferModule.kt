@@ -25,6 +25,7 @@ val transferModule = module {
             engine = get(),
             journal = get(),
             appScope = get(ApplicationScope),
+            analytics = get(),
         )
     }
 }

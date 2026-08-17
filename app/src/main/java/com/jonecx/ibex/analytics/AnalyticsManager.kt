@@ -189,6 +189,42 @@ class AnalyticsManager(
         }
     }
 
+    // A queued transfer reached a terminal state in the worker: this is the truthful outcome and real
+    // duration, unlike trackPaste which fires optimistically at enqueue. Remote jobs also emit a QoE
+    // metric so end-to-end throughput is queryable in Axiom.
+    fun trackTransferComplete(
+        operation: ClipboardOperation,
+        isRemote: Boolean,
+        itemCount: Int,
+        sizeBytes: Long,
+        success: Boolean,
+        durationMs: Long,
+    ) {
+        capture(
+            "transfer_complete",
+            props(
+                "operation" to operation.wire(),
+                "is_remote" to isRemote,
+                "item_count" to itemCount,
+                "size_bytes" to sizeBytes,
+                "result" to result(success),
+                "duration_ms" to durationMs,
+            ),
+        )
+        if (isRemote) {
+            trackMetric(
+                "file_transfer_complete",
+                props(
+                    "operation" to operation.wire(),
+                    "item_count" to itemCount,
+                    "size_bytes" to sizeBytes,
+                    "duration_ms" to durationMs,
+                    "result" to result(success),
+                ),
+            )
+        }
+    }
+
     fun trackFileDelete(
         sourceType: FileSourceType,
         isRemote: Boolean,

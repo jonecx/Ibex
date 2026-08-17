@@ -1,5 +1,6 @@
 package com.jonecx.ibex.data.transfer
 
+import com.jonecx.ibex.analytics.AnalyticsManager
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import com.jonecx.ibex.util.FileTypeUtils
@@ -65,6 +66,7 @@ class DefaultTransferManager(
     private val engine: TransferEngine,
     private val journal: TransferJournal,
     private val appScope: CoroutineScope,
+    private val analytics: AnalyticsManager,
 ) : TransferManager {
 
     private companion object {
@@ -253,6 +255,11 @@ class DefaultTransferManager(
         setStatus(job.id, TransferStatus.RUNNING)
         liveState.update { it + (job.id to Live()) }
 
+        // Terminal-outcome telemetry: null until the job reaches COMPLETED/FAILED, so pause, cancel, and a
+        // whole-worker stop (which leave the job to resume) never emit a completion event.
+        val runStartMs = System.currentTimeMillis()
+        fun runMs() = System.currentTimeMillis() - runStartMs
+        var completedSuccess: Boolean? = null
         val runState = RunState()
         val listener = object : TransferListener {
             override fun isCancelled(): Boolean = job.id in cancelledIds
@@ -298,31 +305,58 @@ class DefaultTransferManager(
             journal.save(jobsState.value)
             emitCompletions(job)
             pruneFinished()
+            completedSuccess = true
         } catch (e: TransferCancelledException) {
             finishCancelled(job.id)
         } catch (e: TransferPausedException) {
             // User paused this job: checkpoint progress, hold it PAUSED, keep its temp. Not pruned, not resumed
             // until resume() flips it back to QUEUED. The worker moves on to any other queued job.
             updateJob(job.id) {
-                it.copy(status = TransferStatus.PAUSED, bytesDone = runState.bytesDone, filesDone = runState.filesDone)
+                it.copy(
+                    status = TransferStatus.PAUSED,
+                    bytesDone = runState.bytesDone,
+                    filesDone = runState.filesDone,
+                    elapsedMs = it.elapsedMs + runMs(),
+                )
             }
             journal.save(jobsState.value)
         } catch (e: CancellationException) {
             // Whole worker was stopped (system, reboot). Checkpoint progress and leave the job QUEUED to resume.
             updateJob(job.id) {
-                it.copy(status = TransferStatus.QUEUED, bytesDone = runState.bytesDone, filesDone = runState.filesDone)
+                it.copy(
+                    status = TransferStatus.QUEUED,
+                    bytesDone = runState.bytesDone,
+                    filesDone = runState.filesDone,
+                    elapsedMs = it.elapsedMs + runMs(),
+                )
             }
             journal.save(jobsState.value)
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Transfer job failed: ${job.id}")
-            setStatus(job.id, TransferStatus.FAILED)
+            updateJob(job.id) { it.copy(status = TransferStatus.FAILED, elapsedMs = it.elapsedMs + runMs()) }
             journal.save(jobsState.value)
             // Keep the FAILED job (and its .ibexpart temp) so the sheet can offer a retry; pruneFinished
             // clears only COMPLETED/CANCELLED.
             pruneFinished()
+            completedSuccess = false
         } finally {
             liveState.update { it - job.id }
+            // Fire once the outcome is known; wrapped so a telemetry hiccup never fails an otherwise-done job.
+            completedSuccess?.let { success ->
+                runCatching {
+                    analytics.trackTransferComplete(
+                        operation = job.operation,
+                        isRemote = job.touchesRemote,
+                        itemCount = job.sources.size,
+                        // Whole-job bytes: on resume the engine re-reports already-copied bytes, so the final
+                        // run's bytesDone sums to the full total. Duration adds this run onto prior runs' time.
+                        sizeBytes = runState.bytesDone,
+                        success = success,
+                        durationMs = job.elapsedMs + runMs(),
+                    )
+                }.onFailure { Timber.e(it, "Failed to emit transfer telemetry") }
+            }
         }
     }
 

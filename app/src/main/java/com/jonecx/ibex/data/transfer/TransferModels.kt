@@ -54,6 +54,9 @@ data class TransferJob(
     val totalFiles: Int = 0,
     val bytesDone: Long = 0L,
     val filesDone: Int = 0,
+    // Active transfer time summed across runs, so a paused-and-resumed job reports total time, not just its
+    // last leg. Accumulated at each run boundary; coarse like the other checkpoints. Used by completion telemetry.
+    val elapsedMs: Long = 0L,
     // Any source or the destination is remote (smb://): the worker holds a WifiLock while it runs.
     val touchesRemote: Boolean = false,
     // How to resolve a top-level name collision at the destination (see ConflictPolicy).

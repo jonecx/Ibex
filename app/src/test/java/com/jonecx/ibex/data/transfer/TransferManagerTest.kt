@@ -3,6 +3,7 @@ package com.jonecx.ibex.data.transfer
 import com.jonecx.ibex.data.repository.ClipboardOperation
 import com.jonecx.ibex.fixtures.InMemoryProtocolHandler
 import com.jonecx.ibex.fixtures.MEM_SCHEME
+import com.jonecx.ibex.fixtures.RecordingAnalytics
 import com.jonecx.ibex.fixtures.memFileItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,12 +15,14 @@ import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import java.io.File
 import java.io.InputStream
 
@@ -33,6 +36,7 @@ class TransferManagerTest {
     private lateinit var journalFile: File
     private lateinit var appScope: CoroutineScope
     private lateinit var scheduler: RecordingScheduler
+    private lateinit var recordingAnalytics: RecordingAnalytics
     private lateinit var manager: DefaultTransferManager
 
     @Before
@@ -40,11 +44,13 @@ class TransferManagerTest {
         journalFile = File.createTempFile("mgr-journal", ".json").apply { delete() }
         appScope = CoroutineScope(dispatcher)
         scheduler = RecordingScheduler()
+        recordingAnalytics = RecordingAnalytics(RuntimeEnvironment.getApplication())
         manager = DefaultTransferManager(
             scheduler = scheduler,
             engine = TransferEngine(setOf(handler, remoteHandler), dispatcher),
             journal = TransferJournal(journalFile, dispatcher),
             appScope = appScope,
+            analytics = recordingAnalytics.manager,
         )
     }
 
@@ -332,6 +338,7 @@ class TransferManagerTest {
             engine = TransferEngine(setOf(handler, remoteHandler), dispatcher),
             journal = TransferJournal(journalFile, dispatcher),
             appScope = appScope,
+            analytics = recordingAnalytics.manager,
         )
 
         restarted.recoverAndResume()
@@ -367,6 +374,7 @@ class TransferManagerTest {
             engine = TransferEngine(setOf(pausingHandler), dispatcher),
             journal = TransferJournal(pausingJournal, dispatcher),
             appScope = appScope,
+            analytics = recordingAnalytics.manager,
         )
         mgr.enqueue(listOf(memFileItem("mem://src/big.bin", data.size.toLong())), ClipboardOperation.COPY, "mem://dest")
         val jobId = mgr.snapshot.value.jobs.first().id
@@ -380,6 +388,8 @@ class TransferManagerTest {
         assertTrue(job.bytesDone in 1 until data.size.toLong())
         assertTrue((pausingHandler.files["mem://dest/big.bin.ibexpart"]?.size ?: 0) > 0)
         assertNull(pausingHandler.files["mem://dest/big.bin"])
+        // A pause is not a terminal outcome, so no completion event is emitted.
+        assertFalse(recordingAnalytics.eventNames().contains("transfer_complete"))
         pausingJournal.delete()
     }
 
@@ -438,6 +448,7 @@ class TransferManagerTest {
             engine = TransferEngine(setOf(handler, remoteHandler), dispatcher),
             journal = TransferJournal(journalFile, dispatcher),
             appScope = appScope,
+            analytics = recordingAnalytics.manager,
         )
         restarted.recoverAndResume()
 
@@ -461,6 +472,105 @@ class TransferManagerTest {
 
         assertArrayEquals("new".toByteArray(), handler.files["$MEM_SCHEME/dest/a.txt"])
         assertNull(handler.files["$MEM_SCHEME/dest/a (1).txt"])
+    }
+
+    @Test
+    fun `runQueue_completedCopy_emitsSuccessCompletionEvent`() = runTest {
+        seedSource("a.txt", "hello".toByteArray())
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+
+        manager.runQueue()
+
+        val event = recordingAnalytics.event("transfer_complete")
+        assertNotNull(event)
+        assertEquals("copy", event?.get("operation"))
+        assertEquals("success", event?.get("result"))
+        assertEquals(false, event?.get("is_remote"))
+        assertEquals(1, event?.get("item_count"))
+        assertEquals(5L, event?.get("size_bytes"))
+        assertTrue(event?.containsKey("duration_ms") == true)
+        // A local job stays off the remote QoE metric.
+        assertNull(recordingAnalytics.metric("file_transfer_complete"))
+    }
+
+    @Test
+    fun `runQueue_failedJob_emitsFailureCompletionEvent`() = runTest {
+        seedSource("a.txt", "data".toByteArray())
+        handler.failReadPaths.add("$MEM_SCHEME/src/a.txt")
+        manager.enqueue(listOf(sourceItem("a.txt")), ClipboardOperation.COPY, "$MEM_SCHEME/dest")
+
+        manager.runQueue()
+
+        val event = recordingAnalytics.event("transfer_complete")
+        assertNotNull(event)
+        assertEquals("failure", event?.get("result"))
+        assertEquals("copy", event?.get("operation"))
+    }
+
+    @Test
+    fun `runQueue_remoteMove_alsoEmitsCompletionQoeMetric`() = runTest {
+        remoteHandler.dirs.add("smb://src/Folder")
+        remoteHandler.files["smb://src/Folder/f1.txt"] = "one".toByteArray()
+        val folder = memFileItem("smb://src/Folder", 0L, isDirectory = true)
+        manager.enqueue(listOf(folder), ClipboardOperation.MOVE, "$MEM_SCHEME/dest")
+
+        manager.runQueue()
+
+        val event = recordingAnalytics.event("transfer_complete")
+        assertEquals(true, event?.get("is_remote"))
+        assertEquals("move", event?.get("operation"))
+        // Remote jobs also surface a QoE metric so throughput is queryable in Axiom.
+        val metric = recordingAnalytics.metric("file_transfer_complete")
+        assertNotNull(metric)
+        assertEquals("success", metric?.get("result"))
+    }
+
+    @Test
+    fun `resumedJob_completion_emitsSingleSuccessEventAfterPause`() = runTest {
+        val data = ByteArray(200_000) { it.toByte() }
+        val pausingHandler = object : InMemoryProtocolHandler() {
+            var onRead: (() -> Unit)? = null
+            override suspend fun openInputStream(path: String, offset: Long): InputStream {
+                val base = super.openInputStream(path, offset)
+                return object : InputStream() {
+                    override fun read(): Int = base.read()
+                    override fun read(b: ByteArray): Int {
+                        onRead?.invoke()
+                        return base.read(b)
+                    }
+                    override fun close() = base.close()
+                }
+            }
+        }
+        pausingHandler.files["mem://src/big.bin"] = data
+        val pausingJournal = File.createTempFile("resume-journal", ".json").apply { delete() }
+        val mgr = DefaultTransferManager(
+            scheduler = RecordingScheduler(),
+            engine = TransferEngine(setOf(pausingHandler), dispatcher),
+            journal = TransferJournal(pausingJournal, dispatcher),
+            appScope = appScope,
+            analytics = recordingAnalytics.manager,
+        )
+        mgr.enqueue(listOf(memFileItem("mem://src/big.bin", data.size.toLong())), ClipboardOperation.COPY, "mem://dest")
+        val jobId = mgr.snapshot.value.jobs.first().id
+
+        // First run pauses mid-copy: no completion event yet.
+        pausingHandler.onRead = { mgr.pause(jobId) }
+        mgr.runQueue()
+        assertFalse(recordingAnalytics.eventNames().contains("transfer_complete"))
+
+        // Resume and finish: exactly one success event fires, carrying the summed duration.
+        pausingHandler.onRead = null
+        mgr.resume(jobId)
+        mgr.runQueue()
+
+        assertArrayEquals(data, pausingHandler.files["mem://dest/big.bin"])
+        assertEquals(1, recordingAnalytics.eventNames().count { it == "transfer_complete" })
+        val event = recordingAnalytics.event("transfer_complete")
+        assertEquals("success", event?.get("result"))
+        assertEquals(data.size.toLong(), event?.get("size_bytes"))
+        assertTrue(event?.containsKey("duration_ms") == true)
+        pausingJournal.delete()
     }
 
     private class RecordingScheduler : TransferScheduler {
