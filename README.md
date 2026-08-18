@@ -10,9 +10,9 @@ A modern Android file manager built with Jetpack Compose and Material 3. Browse 
 | ----------- | ----------------------------------------------------------------------- |
 | UI          | Jetpack Compose, Material 3, Material 3 Adaptive                        |
 | Navigation  | Navigation Compose                                                      |
-| DI          | Dagger Hilt (constructor injection, multibindings)                      |
+| DI          | Koin (constructor injection, multibindings)                            |
 | Async       | Kotlin Coroutines + Flow                                                |
-| Media       | Media3 ExoPlayer (local + SMB streaming)                                |
+| Media       | Azmaree (Media3 engine, local + SMB)                                    |
 | Images      | Coil (with custom SMB fetcher)                                          |
 | Network     | jcifs-ng (SMB2/3)                                                       |
 | Persistence | DataStore Preferences                                                   |
@@ -50,7 +50,7 @@ app/src/main/java/com/jonecx/ibex/
     model/            # FileItem, FileSource, NetworkConnection, SortOption
     preferences/      # DataStore (settings, network connections)
     repository/       # File repos, SMB, storage analyzer, trash, clipboard
-  di/                 # Hilt modules (11 modules)
+  di/                 # Koin modules (13 modules)
   logging/            # AppLogger interface + Timber impl
   ui/
     analysis/         # Storage breakdown pie chart
@@ -60,7 +60,7 @@ app/src/main/java/com/jonecx/ibex/
     navigation/       # NavHost + route definitions
     network/          # Add/edit/list SMB connections
     permission/       # Storage permission flow
-    player/           # ExoPlayer + SMB DataSource + playback controls
+    player/           # Azmaree video player + playback controls
     settings/         # View mode, grid columns, sort, analytics toggle
     theme/            # Colors, typography, shapes
     viewer/           # Full-screen media viewer (images + video)
