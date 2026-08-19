@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787117626786,
+  "lastUpdate": 1787155510222,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex APK Size": [
@@ -1951,6 +1951,50 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/jonecx/Ibex/commit/612d4c18f268f4aee93ec0437ef165e0ca73232b"
         },
         "date": 1787117625723,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "APK / total",
+            "value": 13469805,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / dex (code)",
+            "value": 8020028,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / resources",
+            "value": 853108,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / native libs",
+            "value": 3058872,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "74b331103c1f35798b90c9dfeca7740f1b48b86d",
+          "message": "fix(benchmark): scroll by display coordinates to avoid stale grid nodes",
+          "timestamp": "2026-08-19T08:21:53-07:00",
+          "tree_id": "57c78f7fb2e52cee820fef9916a22cd2a36c2458",
+          "url": "https://github.com/jonecx/Ibex/commit/74b331103c1f35798b90c9dfeca7740f1b48b86d"
+        },
+        "date": 1787155509274,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
