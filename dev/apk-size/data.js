@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787158485995,
+  "lastUpdate": 1787180693421,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex APK Size": [
@@ -2044,6 +2044,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "APK / total",
             "value": 13469805,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / dex (code)",
+            "value": 8020028,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / resources",
+            "value": 853108,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / native libs",
+            "value": 3058872,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "b689e523f76d17d128d053d754b839dcf3bb4eb3",
+          "message": "stop recreating main activity on rotation",
+          "timestamp": "2026-08-19T15:42:04-07:00",
+          "tree_id": "30e8b106e8844b9a732475bd7c8b842c8723ecba",
+          "url": "https://github.com/jonecx/Ibex/commit/b689e523f76d17d128d053d754b839dcf3bb4eb3"
+        },
+        "date": 1787180692595,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "APK / total",
+            "value": 13469837,
             "unit": "bytes"
           },
           {
