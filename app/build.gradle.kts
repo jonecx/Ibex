@@ -47,7 +47,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -60,6 +61,10 @@ android {
                 signingConfig = signingConfigs.getByName("debug")
                 matchingFallbacks += listOf("release")
                 isDebuggable = false
+                // Keep the perf/baseline pipeline on un-minified code so its numbers stay comparable.
+                // Turning R8 on for benchmark is a deliberate follow-up, not a side effect of this change.
+                isMinifyEnabled = false
+                isShrinkResources = false
                 buildConfigField("boolean", "SKIP_PERMISSION_CHECK", "true")
             }
         }
