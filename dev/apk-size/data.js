@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787155510222,
+  "lastUpdate": 1787158485995,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex APK Size": [
@@ -1995,6 +1995,50 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/jonecx/Ibex/commit/74b331103c1f35798b90c9dfeca7740f1b48b86d"
         },
         "date": 1787155509274,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "APK / total",
+            "value": 13469805,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / dex (code)",
+            "value": 8020028,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / resources",
+            "value": 853108,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / native libs",
+            "value": 3058872,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "3a52b51de82a5652a654c56063be64afbcd20504",
+          "message": "fix(benchmark): retry navigation clicks to survive stale album nodes",
+          "timestamp": "2026-08-19T09:03:38-07:00",
+          "tree_id": "142d829c9d7683b53565693a4e29dfb8da37c88f",
+          "url": "https://github.com/jonecx/Ibex/commit/3a52b51de82a5652a654c56063be64afbcd20504"
+        },
+        "date": 1787158485470,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
