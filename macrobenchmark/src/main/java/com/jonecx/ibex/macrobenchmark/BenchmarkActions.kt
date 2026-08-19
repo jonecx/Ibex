@@ -3,6 +3,7 @@ package com.jonecx.ibex.macrobenchmark
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 
 fun MacrobenchmarkScope.grantStoragePermission() {
@@ -45,13 +46,26 @@ fun MacrobenchmarkScope.openMediaAlbum(tileName: String, album: String) {
 }
 
 fun MacrobenchmarkScope.scrollContent(tileName: String) {
-    val list = device.wait(Until.findObject(By.scrollable(true)), 10_000L)
-    requireNotNull(list) {
-        "No scrollable content in '$tileName' — is MANAGE_EXTERNAL_STORAGE granted?"
+    // Re-find the list before each fling: after one fling the lazy grid re-lays-out and a reused
+    // UiObject2 goes stale (StaleObjectException). A fresh lookup per gesture avoids that.
+    fling(tileName, Direction.DOWN)
+    fling(tileName, Direction.UP)
+}
+
+private fun MacrobenchmarkScope.fling(tileName: String, direction: Direction) {
+    repeat(2) { attempt ->
+        val list = device.wait(Until.findObject(By.scrollable(true)), 10_000L)
+        requireNotNull(list) {
+            "No scrollable content in '$tileName' — is MANAGE_EXTERNAL_STORAGE granted?"
+        }
+        list.setGestureMargin(device.displayWidth / 5)
+        try {
+            list.fling(direction)
+            device.waitForIdle()
+            return
+        } catch (e: StaleObjectException) {
+            if (attempt == 1) throw e
+            device.waitForIdle()
+        }
     }
-    list.setGestureMargin(device.displayWidth / 5)
-    list.fling(Direction.DOWN)
-    device.waitForIdle()
-    list.fling(Direction.UP)
-    device.waitForIdle()
 }
