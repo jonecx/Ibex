@@ -1,5 +1,7 @@
 <img width="1522" height="1094" alt="Screenshot 2026-03-22 at 4 52 59 PM" src="https://github.com/user-attachments/assets/acb5dc4c-cc7f-4c67-9ddc-17afb94c4783" />
 
+[Macrobenchmark dashboard](https://jonecx.github.io/Ibex/dev/bench/) · [APK size dashboard](https://jonecx.github.io/Ibex/dev/apk-size/)
+
 # Ibex
 
 A modern Android file manager built with Jetpack Compose and Material 3. Browse local storage, connect to SMB network shares, manage files with move/copy/rename/delete, view images with zoom, stream videos with full playback controls, and analyze storage usage — all from a single app.
