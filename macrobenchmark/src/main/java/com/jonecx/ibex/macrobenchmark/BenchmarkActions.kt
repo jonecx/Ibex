@@ -53,19 +53,26 @@ fun MacrobenchmarkScope.scrollContent(tileName: String) {
 }
 
 private fun MacrobenchmarkScope.fling(tileName: String, direction: Direction) {
-    repeat(2) { attempt ->
+    // The lazy grid keeps recomposing as thumbnails load, so a UiObject2 can go stale between find
+    // and fling even after waitForIdle. Re-find fresh on every stale and retry until the deadline.
+    val deadline = System.currentTimeMillis() + FLING_RETRY_TIMEOUT_MS
+    var lastStale: StaleObjectException? = null
+    do {
         val list = device.wait(Until.findObject(By.scrollable(true)), 10_000L)
         requireNotNull(list) {
             "No scrollable content in '$tileName' — is MANAGE_EXTERNAL_STORAGE granted?"
         }
-        list.setGestureMargin(device.displayWidth / 5)
         try {
+            list.setGestureMargin(device.displayWidth / 5)
             list.fling(direction)
             device.waitForIdle()
             return
         } catch (e: StaleObjectException) {
-            if (attempt == 1) throw e
+            lastStale = e
             device.waitForIdle()
         }
-    }
+    } while (System.currentTimeMillis() < deadline)
+    throw requireNotNull(lastStale)
 }
+
+private const val FLING_RETRY_TIMEOUT_MS = 15_000L
