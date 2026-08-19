@@ -11,6 +11,7 @@ import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures.cloudConnection
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures.ftpConnection
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures.smbConnection
+import com.jonecx.ibex.util.openHomeTile
 import com.jonecx.ibex.util.runOnUiThreadBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -36,8 +37,7 @@ class NetworkConnectionsScreenTest : KoinTest {
     }
 
     private fun navigateToNetworkConnections() {
-        composeTestRule.onNodeWithText("SMB/CIFS").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.openHomeTile("SMB/CIFS")
     }
 
     @Test

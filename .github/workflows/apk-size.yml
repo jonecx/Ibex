@@ -40,9 +40,9 @@ jobs:
           echo "POSTHOG_API_KEY=" >> local.properties
           echo "POSTHOG_HOST=https://us.i.posthog.com" >> local.properties
 
-      # Skip the Sentry source-bundle upload: it has no auth token in CI and would fail the build.
+      # Sentry mapping/source uploads self-disable without SENTRY_AUTH_TOKEN (see app/build.gradle.kts).
       - name: Assemble minified release
-        run: ./gradlew :app:assembleRelease -x sentryUploadSourceBundleRelease
+        run: ./gradlew :app:assembleRelease
 
       - name: Measure APK size for github-action-benchmark
         run: python3 benchmarks/apk_size_to_gha.py --apk app/build/outputs/apk/release/app-release.apk --output apk-size-gha.json

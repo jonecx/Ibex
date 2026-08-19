@@ -12,6 +12,7 @@ import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.data.model.NetworkConnection
 import com.jonecx.ibex.data.model.NetworkProtocol
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
+import com.jonecx.ibex.util.openHomeTile
 import com.jonecx.ibex.util.runOnUiThreadBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -31,8 +32,7 @@ class AddNetworkConnectionScreenTest : KoinTest {
     }
 
     private fun navigateToAddConnection(tileName: String = "SMB/CIFS") {
-        composeTestRule.onNodeWithText(tileName).performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.openHomeTile(tileName)
         composeTestRule.onNodeWithContentDescription("Add connection").performClick()
         composeTestRule.waitForIdle()
     }
@@ -59,8 +59,7 @@ class AddNetworkConnectionScreenTest : KoinTest {
             username = "user",
         )
         seedConnections(connection)
-        composeTestRule.onNodeWithText("SMB/CIFS").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.openHomeTile("SMB/CIFS")
         composeTestRule.onNodeWithContentDescription("Edit connection").performClick()
         composeTestRule.waitForIdle()
 
@@ -195,8 +194,7 @@ class AddNetworkConnectionScreenTest : KoinTest {
             username = "ftpuser",
         )
         seedConnections(connection)
-        composeTestRule.onNodeWithText("FTP").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.openHomeTile("FTP")
         composeTestRule.onNodeWithContentDescription("Edit connection").performClick()
         composeTestRule.waitForIdle()
 

@@ -6,7 +6,11 @@ import com.jonecx.ibex.data.model.FileType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
-class FakeFileRepository : FileRepository {
+// [mediaFolderType] mirrors MediaFolderRepository: Images/Videos start at the storage root and surface their
+// loose media directly, so a folder-browsing fake serves that media list regardless of the queried path.
+class FakeFileRepository(
+    private val mediaFolderType: MediaType? = null,
+) : FileRepository {
 
     private val storageFiles = listOf(
         createFileItem("Alarms", "/storage/emulated/0/Alarms", isDirectory = true, fileType = FileType.DIRECTORY, childCount = 0),
@@ -77,6 +81,9 @@ class FakeFileRepository : FileRepository {
     private val dcimFiles = dcimDirs + dcimImages
 
     override fun getFiles(path: String): Flow<List<FileItem>> {
+        mediaFolderType?.let { type ->
+            return flowOf(if (type == MediaType.VIDEOS) videoFiles else imageFiles)
+        }
         return when {
             path.contains("Download", ignoreCase = true) -> flowOf(downloadFiles)
             path.contains("Image", ignoreCase = true) -> flowOf(imageFiles)

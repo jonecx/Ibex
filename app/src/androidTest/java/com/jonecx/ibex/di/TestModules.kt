@@ -78,7 +78,12 @@ val testOverridesModule = module {
     single { FakeHomeSourceStatsRepository() }
     single<HomeSourceStatsRepository> { get<FakeHomeSourceStatsRepository>() }
 
-    single<FileRepositoryFactory> { FakeFileRepositoryFactory(FakeFileRepository()) }
+    single<FileRepositoryFactory> {
+        FakeFileRepositoryFactory(
+            repository = FakeFileRepository(),
+            mediaFolderRepositoryProvider = { type -> FakeFileRepository(mediaFolderType = type) },
+        )
+    }
     single<FileTrashManager> { FakeFileTrashManager() }
     single<FileMoveManager> { FakeFileMoveManager() }
     single<FileClipboardManager> { FakeFileClipboardManager() }

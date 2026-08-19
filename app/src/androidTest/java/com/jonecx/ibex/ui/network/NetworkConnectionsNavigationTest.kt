@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.jonecx.ibex.MainActivity
+import com.jonecx.ibex.util.openHomeTile
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -19,8 +20,7 @@ class NetworkConnectionsNavigationTest {
     }
 
     private fun navigateToConnections(tileName: String = "SMB/CIFS") {
-        composeTestRule.onNodeWithText(tileName).performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.openHomeTile(tileName)
     }
 
     private fun navigateToAddForm(tileName: String = "SMB/CIFS") {

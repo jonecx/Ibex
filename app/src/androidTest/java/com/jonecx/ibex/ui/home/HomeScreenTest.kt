@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.jonecx.ibex.MainActivity
+import com.jonecx.ibex.util.scrollToHomeTile
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -28,6 +29,7 @@ class HomeScreenTest {
 
     @Test
     fun displaysRemoteSection() {
+        composeTestRule.scrollToHomeTile("Remote")
         composeTestRule.onNodeWithText("Remote").assertIsDisplayed()
     }
 
@@ -47,8 +49,11 @@ class HomeScreenTest {
 
     @Test
     fun displaysAllRemoteSourceTiles() {
+        composeTestRule.scrollToHomeTile("Cloud")
         composeTestRule.onNodeWithText("Cloud").assertIsDisplayed()
+        composeTestRule.scrollToHomeTile("SMB/CIFS")
         composeTestRule.onNodeWithText("SMB/CIFS").assertIsDisplayed()
+        composeTestRule.scrollToHomeTile("FTP")
         composeTestRule.onNodeWithText("FTP").assertIsDisplayed()
     }
 

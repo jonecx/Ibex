@@ -13,6 +13,7 @@ import coil.ImageLoader
 import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.fixtures.FakeNetworkConnectionsPreferences
 import com.jonecx.ibex.fixtures.NetworkConnectionFixtures
+import com.jonecx.ibex.util.openHomeTile
 import com.jonecx.ibex.util.runOnUiThreadBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -40,8 +41,7 @@ class SmbFileExplorerTest : KoinTest {
             fakeNetworkPreferences.addConnection(NetworkConnectionFixtures.smbConnection)
         }
 
-        composeTestRule.onNodeWithText("SMB/CIFS").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.openHomeTile("SMB/CIFS")
 
         composeTestRule.onNodeWithText(NetworkConnectionFixtures.smbConnection.displayName)
             .performClick()

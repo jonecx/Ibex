@@ -1,10 +1,10 @@
 package com.jonecx.ibex.ui.explorer
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
@@ -58,7 +58,7 @@ class SortIntegrationTest : KoinTest {
         composeTestRule.waitForIdle()
 
         // Smallest file: CS8391-DS.docx (50,585 bytes)
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(0)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(0)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("CS8391-DS.docx").assertIsDisplayed()
@@ -77,7 +77,7 @@ class SortIntegrationTest : KoinTest {
         composeTestRule.waitForIdle()
 
         // Largest file: Headphone.mp4 (115,343,360 bytes)
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(0)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(0)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Headphone.mp4").assertIsDisplayed()
@@ -92,7 +92,7 @@ class SortIntegrationTest : KoinTest {
         composeTestRule.waitForIdle()
 
         // Last alphabetically: PDF_DS.pdf
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(0)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(0)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("PDF_DS.pdf").assertIsDisplayed()
@@ -115,7 +115,7 @@ class SortIntegrationTest : KoinTest {
         composeTestRule.waitForIdle()
 
         // Sort should still be size ascending — smallest first
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(0)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(0)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("CS8391-DS.docx").assertIsDisplayed()

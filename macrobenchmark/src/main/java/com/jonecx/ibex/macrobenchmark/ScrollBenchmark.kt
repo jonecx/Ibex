@@ -23,24 +23,25 @@ class ScrollBenchmark {
 
     @Test
     fun scrollImagesGridCompilationNone() =
-        scrollSource("Images", useGrid = true, CompilationMode.None())
+        scrollSource("Images", album = IMAGES_ALBUM, useGrid = true, CompilationMode.None())
 
     @Test
     fun scrollImagesGridBaselineProfile() =
-        scrollSource("Images", useGrid = true, CompilationMode.Partial())
+        scrollSource("Images", album = IMAGES_ALBUM, useGrid = true, CompilationMode.Partial())
 
     // --- Videos (grid view) ---
 
     @Test
     fun scrollVideosGridCompilationNone() =
-        scrollSource("Videos", useGrid = true, CompilationMode.None())
+        scrollSource("Videos", album = VIDEOS_ALBUM, useGrid = true, CompilationMode.None())
 
     @Test
     fun scrollVideosGridBaselineProfile() =
-        scrollSource("Videos", useGrid = true, CompilationMode.Partial())
+        scrollSource("Videos", album = VIDEOS_ALBUM, useGrid = true, CompilationMode.Partial())
 
     private fun scrollSource(
         tileName: String,
+        album: String,
         useGrid: Boolean,
         compilationMode: CompilationMode,
     ) {
@@ -60,9 +61,7 @@ class ScrollBenchmark {
                     gridEnabled = true
                 }
 
-                val tile = device.wait(Until.findObject(By.text(tileName)), 5_000L)
-                requireNotNull(tile) { "Tile '$tileName' not found on HomeScreen" }
-                tile.click()
+                openMediaAlbum(tileName, album)
 
                 device.wait(Until.findObject(By.scrollable(true)), 10_000L)
             },

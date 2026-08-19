@@ -1,9 +1,9 @@
 package com.jonecx.ibex.ui.explorer
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
@@ -41,7 +41,7 @@ class ScrollRestorationTest : KoinTest {
 
         composeTestRule.onNodeWithText("Camera").assertIsDisplayed()
 
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(3)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(3)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Screenshots").assertIsDisplayed()
@@ -59,10 +59,10 @@ class ScrollRestorationTest : KoinTest {
     fun scrollPositionResetsWhenEnteringNewDirectory() {
         navigateToStorageDcim()
 
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(15)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(15)
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNode(hasScrollAction()).performScrollToIndex(0)
+        composeTestRule.onNodeWithTag("file_list").performScrollToIndex(0)
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Camera").performClick()

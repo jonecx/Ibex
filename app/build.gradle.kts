@@ -94,12 +94,16 @@ composeCompiler {
 }
 
 // Uploads R8/ProGuard mappings + source context on release builds so Sentry stack traces
-// stay readable once minification is enabled. No-ops without SENTRY_AUTH_TOKEN.
+// stay readable once minification is enabled. No-ops without SENTRY_AUTH_TOKEN (e.g. CI).
+val sentryAuthToken = localProperties.getProperty("SENTRY_AUTH_TOKEN") ?: System.getenv("SENTRY_AUTH_TOKEN") ?: ""
 sentry {
     org.set(localProperties.getProperty("SENTRY_ORG") ?: System.getenv("SENTRY_ORG") ?: "")
     projectName.set(localProperties.getProperty("SENTRY_PROJECT") ?: System.getenv("SENTRY_PROJECT") ?: "")
-    authToken.set(localProperties.getProperty("SENTRY_AUTH_TOKEN") ?: System.getenv("SENTRY_AUTH_TOKEN") ?: "")
-    includeSourceContext.set(true)
+    authToken.set(sentryAuthToken)
+    // Auto-uploads need auth; gate them so tokenless CI release builds do not fail.
+    includeSourceContext.set(sentryAuthToken.isNotEmpty())
+    autoUploadProguardMapping.set(sentryAuthToken.isNotEmpty())
+    autoUploadSourceContext.set(sentryAuthToken.isNotEmpty())
 }
 
 baselineProfile {

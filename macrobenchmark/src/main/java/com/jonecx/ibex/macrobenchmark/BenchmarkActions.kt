@@ -29,6 +29,21 @@ fun MacrobenchmarkScope.switchToGridView() {
     device.waitForIdle()
 }
 
+// Images/Videos open as an album list (folders holding media), so the scrollable grid lives one level in.
+// Opens the source tile, then steps into the seeded [album] (from ci_seed_media.sh).
+fun MacrobenchmarkScope.openMediaAlbum(tileName: String, album: String) {
+    val tile = device.wait(Until.findObject(By.text(tileName)), 5_000L)
+    requireNotNull(tile) { "Tile '$tileName' not found on HomeScreen" }
+    tile.click()
+    device.waitForIdle()
+
+    val albumTile = device.wait(Until.findObject(By.text(album)), 5_000L)
+    requireNotNull(albumTile) {
+        "Album '$album' not found under '$tileName' — did ci_seed_media.sh seed it and is storage granted?"
+    }
+    albumTile.click()
+}
+
 fun MacrobenchmarkScope.scrollContent(tileName: String) {
     val list = device.wait(Until.findObject(By.scrollable(true)), 10_000L)
     requireNotNull(list) {

@@ -6,6 +6,8 @@ import com.jonecx.ibex.di.FileRepositoryFactory
 
 class FakeFileRepositoryFactory(
     private val repository: FileRepository,
+    // Images/Videos browse album folders, so their fake can differ from the flat storage one; defaults to it.
+    private val mediaFolderRepositoryProvider: (MediaType) -> FileRepository = { repository },
 ) : FileRepositoryFactory {
     // Records which repository a source resolved to, so tests can pin the Images/Videos folder-browsing wiring.
     var lastMediaFileType: MediaType? = null
@@ -15,8 +17,10 @@ class FakeFileRepositoryFactory(
     override fun createMediaFileRepository(mediaType: MediaType): FileRepository =
         repository.also { lastMediaFileType = mediaType }
 
-    override fun createMediaFolderRepository(mediaType: MediaType): FileRepository =
-        repository.also { lastMediaFolderType = mediaType }
+    override fun createMediaFolderRepository(mediaType: MediaType): FileRepository {
+        lastMediaFolderType = mediaType
+        return mediaFolderRepositoryProvider(mediaType)
+    }
 
     override fun createAppsRepository(): FileRepository = repository
     override fun createRecentFilesRepository(): FileRepository = repository
