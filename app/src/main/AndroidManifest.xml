@@ -40,8 +40,10 @@
             android:name=".data.transfer.TransferActionReceiver"
             android:exported="false" />
 
+        <!-- Rotation must not recreate the activity: recreation tears down the video player mid-playback. -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Ibex">
