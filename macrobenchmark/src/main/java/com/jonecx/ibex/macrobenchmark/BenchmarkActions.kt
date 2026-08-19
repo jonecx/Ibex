@@ -2,8 +2,6 @@ package com.jonecx.ibex.macrobenchmark
 
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
-import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 
 fun MacrobenchmarkScope.grantStoragePermission() {
@@ -46,33 +44,23 @@ fun MacrobenchmarkScope.openMediaAlbum(tileName: String, album: String) {
 }
 
 fun MacrobenchmarkScope.scrollContent(tileName: String) {
-    // Re-find the list before each fling: after one fling the lazy grid re-lays-out and a reused
-    // UiObject2 goes stale (StaleObjectException). A fresh lookup per gesture avoids that.
-    fling(tileName, Direction.DOWN)
-    fling(tileName, Direction.UP)
+    // Confirm the grid loaded, then scroll by raw display coordinates instead of driving the
+    // UiObject2. The images grid keeps recomposing as thumbnails decode, so any live-node access
+    // (fling/getVisibleBounds) can go stale mid-gesture (StaleObjectException). Coordinates never
+    // touch the accessibility node, so the gesture cannot go stale.
+    val list = device.wait(Until.findObject(By.scrollable(true)), 10_000L)
+    requireNotNull(list) {
+        "No scrollable content in '$tileName' — is MANAGE_EXTERNAL_STORAGE granted?"
+    }
+    val x = device.displayWidth / 2
+    // Stay well inside the screen so the gesture is not read as a system edge swipe.
+    val top = device.displayHeight / 4
+    val bottom = device.displayHeight * 3 / 4
+    device.swipe(x, bottom, x, top, SWIPE_STEPS) // scroll down
+    device.waitForIdle()
+    device.swipe(x, top, x, bottom, SWIPE_STEPS) // scroll up
+    device.waitForIdle()
 }
 
-private fun MacrobenchmarkScope.fling(tileName: String, direction: Direction) {
-    // The lazy grid keeps recomposing as thumbnails load, so a UiObject2 can go stale between find
-    // and fling even after waitForIdle. Re-find fresh on every stale and retry until the deadline.
-    val deadline = System.currentTimeMillis() + FLING_RETRY_TIMEOUT_MS
-    var lastStale: StaleObjectException? = null
-    do {
-        val list = device.wait(Until.findObject(By.scrollable(true)), 10_000L)
-        requireNotNull(list) {
-            "No scrollable content in '$tileName' — is MANAGE_EXTERNAL_STORAGE granted?"
-        }
-        try {
-            list.setGestureMargin(device.displayWidth / 5)
-            list.fling(direction)
-            device.waitForIdle()
-            return
-        } catch (e: StaleObjectException) {
-            lastStale = e
-            device.waitForIdle()
-        }
-    } while (System.currentTimeMillis() < deadline)
-    throw requireNotNull(lastStale)
-}
-
-private const val FLING_RETRY_TIMEOUT_MS = 15_000L
+// Fewer steps = faster swipe; 10 gives a fling-like scroll while staying deterministic.
+private const val SWIPE_STEPS = 10
