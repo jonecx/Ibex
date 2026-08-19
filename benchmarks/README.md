@@ -108,6 +108,17 @@ Each collected run creates a directory in `results/` containing:
 - **Benchmark JSON files** — raw metrics (median, min, max, individual iteration data)
 - **metadata.txt** — device model, Android version, git SHA, branch, and optional label
 
+## APK size
+
+CI also tracks the minified release APK size on every push to `main` (`.github/workflows/apk-size.yml`) and publishes trend charts to the same GitHub Pages site: <https://jonecx.github.io/Ibex/dev/apk-size/>. It charts the total APK plus the dex, resources, and native-lib breakdown that R8 moves most (smaller-is-better, bytes). Both publishers share one concurrency group so gh-pages writes never race.
+
+Measure locally against any built APK:
+
+```bash
+./gradlew :app:assembleRelease
+python3 benchmarks/apk_size_to_gha.py --apk app/build/outputs/apk/release/app-release.apk
+```
+
 ## Tips
 
 - Run benchmarks on the **same device** for consistent comparisons
