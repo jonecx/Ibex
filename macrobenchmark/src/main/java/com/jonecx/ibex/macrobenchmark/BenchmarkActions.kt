@@ -2,6 +2,8 @@ package com.jonecx.ibex.macrobenchmark
 
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.BySelector
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 
 fun MacrobenchmarkScope.grantStoragePermission() {
@@ -11,19 +13,8 @@ fun MacrobenchmarkScope.grantStoragePermission() {
 }
 
 fun MacrobenchmarkScope.switchToGridView() {
-    val settingsButton = device.wait(
-        Until.findObject(By.desc("Settings")),
-        5_000L,
-    )
-    requireNotNull(settingsButton) { "Settings button not found on HomeScreen" }
-    settingsButton.click()
-    device.waitForIdle()
-
-    val gridOption = device.wait(Until.findObject(By.text("Grid")), 5_000L)
-    requireNotNull(gridOption) { "Grid option not found in Settings" }
-    gridOption.click()
-    device.waitForIdle()
-
+    clickStable(By.desc("Settings"), 5_000L) { "Settings button not found on HomeScreen" }
+    clickStable(By.text("Grid"), 5_000L) { "Grid option not found in Settings" }
     device.pressBack()
     device.waitForIdle()
 }
@@ -31,16 +22,10 @@ fun MacrobenchmarkScope.switchToGridView() {
 // Images/Videos open as an album list (folders holding media), so the scrollable grid lives one level in.
 // Opens the source tile, then steps into the seeded [album] (from ci_seed_media.sh).
 fun MacrobenchmarkScope.openMediaAlbum(tileName: String, album: String) {
-    val tile = device.wait(Until.findObject(By.text(tileName)), 5_000L)
-    requireNotNull(tile) { "Tile '$tileName' not found on HomeScreen" }
-    tile.click()
-    device.waitForIdle()
-
-    val albumTile = device.wait(Until.findObject(By.text(album)), 5_000L)
-    requireNotNull(albumTile) {
+    clickStable(By.text(tileName), 5_000L) { "Tile '$tileName' not found on HomeScreen" }
+    clickStable(By.text(album), 5_000L) {
         "Album '$album' not found under '$tileName' — did ci_seed_media.sh seed it and is storage granted?"
     }
-    albumTile.click()
 }
 
 fun MacrobenchmarkScope.scrollContent(tileName: String) {
@@ -62,5 +47,32 @@ fun MacrobenchmarkScope.scrollContent(tileName: String) {
     device.waitForIdle()
 }
 
+// Clicks the first node matching [selector], re-finding on staleness. Navigation screens stream in
+// folder-cover thumbnails and recompose, replacing the node behind a UiObject2, so a plain
+// find-then-click races and throws StaleObjectException; re-find and retry until the deadline.
+private fun MacrobenchmarkScope.clickStable(
+    selector: BySelector,
+    timeoutMs: Long,
+    missing: () -> String,
+) {
+    val deadline = System.currentTimeMillis() + CLICK_RETRY_TIMEOUT_MS
+    var lastStale: StaleObjectException? = null
+    do {
+        val target = device.wait(Until.findObject(selector), timeoutMs)
+        requireNotNull(target, missing)
+        try {
+            target.click()
+            device.waitForIdle()
+            return
+        } catch (e: StaleObjectException) {
+            lastStale = e
+            device.waitForIdle()
+        }
+    } while (System.currentTimeMillis() < deadline)
+    throw requireNotNull(lastStale)
+}
+
 // Fewer steps = faster swipe; 10 gives a fling-like scroll while staying deterministic.
 private const val SWIPE_STEPS = 10
+
+private const val CLICK_RETRY_TIMEOUT_MS = 10_000L
