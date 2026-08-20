@@ -48,12 +48,6 @@ class SmbFileRepository(
             setProperty("jcifs.smb.client.soTimeout", SOCKET_TIMEOUT_MS.toString())
             setProperty("jcifs.smb.client.minVersion", SMB_MIN_VERSION)
             setProperty("jcifs.smb.client.maxVersion", SMB_MAX_VERSION)
-            // SMB2/3 read size = min(transaction_buf_size - 512 - overhead, rcv_buf_size, server max),
-            // all defaulting to ~64KB per round trip; raising the three lets the player's read-ahead
-            // chunks travel as single 1MB requests while the server-max clamp keeps old NAS boxes safe.
-            setProperty("jcifs.smb.client.rcv_buf_size", IO_BUFFER_BYTES.toString())
-            setProperty("jcifs.smb.client.snd_buf_size", IO_BUFFER_BYTES.toString())
-            setProperty("jcifs.smb.client.transaction_buf_size", (IO_BUFFER_BYTES + 1024).toString())
         }
         val baseContext = BaseContext(PropertyConfiguration(properties))
         val context = if (connection.anonymous) {
@@ -126,6 +120,5 @@ class SmbFileRepository(
         private const val SOCKET_TIMEOUT_MS = "35000"
         private const val SMB_MIN_VERSION = "SMB202"
         private const val SMB_MAX_VERSION = "SMB311"
-        private const val IO_BUFFER_BYTES = 1024 * 1024
     }
 }
