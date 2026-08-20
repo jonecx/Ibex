@@ -16,6 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -33,6 +34,8 @@ class SmbFileRepositoryTest {
             settingsPreferences = fakeSettingsPreferences,
             ioDispatcher = testDispatcher,
             smbContextProvider = fakeSmbContextProvider,
+            // Fail before any socket so these stay unit tests, not real SMB round trips to a LAN IP.
+            smbFileFactory = { _, _ -> throw IOException("no SMB I/O in unit tests") },
         )
     }
 

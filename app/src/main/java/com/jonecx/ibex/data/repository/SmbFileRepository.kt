@@ -24,6 +24,8 @@ class SmbFileRepository(
     private val settingsPreferences: SettingsPreferencesContract,
     private val ioDispatcher: CoroutineDispatcher,
     private val smbContextProvider: SmbContextProviderContract,
+    // Seam for opening handles; tests inject a fake so resolution and caching run without real SMB I/O.
+    private val smbFileFactory: (String, CIFSContext) -> SmbFile = { url, context -> SmbFile(url, context) },
 ) : FileRepository {
 
     @Volatile
@@ -97,7 +99,7 @@ class SmbFileRepository(
         // Counting children is one extra SMB round trip per folder, so it is opt-in via settings.
         val includeItemCount = settingsPreferences.networkFolderItemCountEnabled.first()
         // SmbFile is AutoCloseable; close the listing handle and every child once mapped to a plain FileItem.
-        val files = SmbFile(smbUrl, context).use { smbFile ->
+        val files = smbFileFactory(smbUrl, context).use { smbFile ->
             smbFile.listFiles().map { child ->
                 child.use { it.toFileItem(detailed = includeItemCount) }
             }
@@ -110,7 +112,7 @@ class SmbFileRepository(
         val context = createSmbContext(connection)
         val rootUrl = buildRootUrl(connection)
         // Close the root handle and every child; keep only the shares mapped to plain FileItems.
-        val shares = SmbFile(rootUrl, context).use { root ->
+        val shares = smbFileFactory(rootUrl, context).use { root ->
             root.listFiles().mapNotNull { child ->
                 child.use { if (it.type == SmbFile.TYPE_SHARE) it.toFileItem(detailed = false) else null }
             }.sortedBy { it.name.lowercase() }
@@ -122,7 +124,7 @@ class SmbFileRepository(
         return try {
             val connection = resolveConnection()
             val context = createSmbContext(connection)
-            SmbFile(FileTypeUtils.smbEnsureTrailingSlash(path), context).use { smbFile ->
+            smbFileFactory(FileTypeUtils.smbEnsureTrailingSlash(path), context).use { smbFile ->
                 if (smbFile.exists()) smbFile.toFileItem() else null
             }
         } catch (_: Exception) {
