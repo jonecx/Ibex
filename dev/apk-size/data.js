@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787255408235,
+  "lastUpdate": 1787268644867,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex APK Size": [
@@ -2137,6 +2137,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "APK / dex (code)",
             "value": 8032484,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / resources",
+            "value": 851432,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / native libs",
+            "value": 3058872,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "fc2efaad50c4348b26646106436c3991cc549c7e",
+          "message": "transfer: serialize journal saves so concurrent writes cannot persist a stale queue\n\nRoute every save through a persistMutex helper that reads the snapshot under the lock, and make pruneFinished filter inside its atomic update so a concurrent enqueue is not dropped.",
+          "timestamp": "2026-08-20T16:26:19-07:00",
+          "tree_id": "bb5ea2a5dd11792481256c72c8fabad90986e6d3",
+          "url": "https://github.com/jonecx/Ibex/commit/fc2efaad50c4348b26646106436c3991cc549c7e"
+        },
+        "date": 1787268644292,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "APK / total",
+            "value": 13484541,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / dex (code)",
+            "value": 8033780,
             "unit": "bytes"
           },
           {
