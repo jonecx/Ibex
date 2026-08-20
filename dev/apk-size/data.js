@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787180693421,
+  "lastUpdate": 1787255408235,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex APK Size": [
@@ -2098,6 +2098,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "APK / resources",
             "value": 853108,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / native libs",
+            "value": 3058872,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "d191a91f6590dc3b53756348e3b2ea3fb2b8458c",
+          "message": "bump azmaree to 0.4.1",
+          "timestamp": "2026-08-20T06:42:00-07:00",
+          "tree_id": "9bd33bca477a6b0e1f17f00261b41e5c5c320075",
+          "url": "https://github.com/jonecx/Ibex/commit/d191a91f6590dc3b53756348e3b2ea3fb2b8458c"
+        },
+        "date": 1787255407438,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "APK / total",
+            "value": 13484541,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / dex (code)",
+            "value": 8032484,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / resources",
+            "value": 851432,
             "unit": "bytes"
           },
           {
