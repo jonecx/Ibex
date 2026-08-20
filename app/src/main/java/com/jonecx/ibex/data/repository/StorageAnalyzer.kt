@@ -1,11 +1,8 @@
 package com.jonecx.ibex.data.repository
 
-import android.app.usage.StorageStatsManager
 import android.content.Context
-import android.os.Build
 import android.os.Environment
 import android.os.StatFs
-import android.os.storage.StorageManager
 import android.provider.MediaStore
 import com.jonecx.ibex.data.model.StorageBreakdown
 import com.jonecx.ibex.data.model.StorageCategory
@@ -15,11 +12,11 @@ import com.jonecx.ibex.ui.theme.SourceDocumentsColor
 import com.jonecx.ibex.ui.theme.SourceImagesColor
 import com.jonecx.ibex.ui.theme.SourceStorageColor
 import com.jonecx.ibex.ui.theme.SourceVideosColor
+import com.jonecx.ibex.util.AppStorageUtils
 import com.jonecx.ibex.util.MediaStoreUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 interface StorageAnalyzer {
     suspend fun analyze(): StorageBreakdown
@@ -78,21 +75,6 @@ class MediaStoreStorageAnalyzer(
 
     private fun queryDocumentsSize(): Long = MediaStoreUtils.queryDocumentStats(context).sizeBytes
 
-    private fun queryAppsSize(): Long {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                val storageStatsManager = context.getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
-                val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
-                val uuid = storageManager.primaryStorageVolume.uuid
-                    ?.let { UUID.fromString(it) }
-                    ?: StorageManager.UUID_DEFAULT
-                val stats = storageStatsManager.queryStatsForUid(uuid, android.os.Process.myUid())
-                stats.appBytes + stats.cacheBytes
-            } catch (_: Exception) {
-                0L
-            }
-        } else {
-            0L
-        }
-    }
+    // Sum of every user-installed app's APK, matching the home "Apps" tile.
+    private fun queryAppsSize(): Long = AppStorageUtils.appStats(context).sizeBytes
 }

@@ -2,8 +2,6 @@ package com.jonecx.ibex.data.repository
 
 import android.content.ContentResolver
 import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -14,11 +12,11 @@ import com.jonecx.ibex.data.model.FileSourceType
 import com.jonecx.ibex.data.model.HomeStats
 import com.jonecx.ibex.data.model.SourceStats
 import com.jonecx.ibex.data.model.StorageUsage
+import com.jonecx.ibex.util.AppStorageUtils
 import com.jonecx.ibex.util.MediaStoreUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 // Provides per-tile file count + total size for the home grid.
@@ -97,13 +95,7 @@ class MediaStoreHomeSourceStatsRepository(
     }
 
     // User-installed apps only; size is the sum of their APK files.
-    private fun appStats(): SourceStats {
-        val userApps = context.packageManager
-            .getInstalledApplications(PackageManager.GET_META_DATA)
-            .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
-        val totalBytes = userApps.sumOf { File(it.sourceDir).length() }
-        return SourceStats(count = userApps.size, sizeBytes = totalBytes)
-    }
+    private fun appStats(): SourceStats = AppStorageUtils.appStats(context)
 
     private fun storageUsage(): StorageUsage {
         val stat = StatFs(Environment.getExternalStorageDirectory().absolutePath)

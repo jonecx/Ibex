@@ -2,10 +2,10 @@ package com.jonecx.ibex.data.repository
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.net.Uri
 import com.jonecx.ibex.data.model.FileItem
 import com.jonecx.ibex.data.model.FileType
+import com.jonecx.ibex.util.AppStorageUtils
 import com.jonecx.ibex.util.FileTypeUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -37,21 +37,8 @@ class AppsRepository(
         }
     }
 
-    private fun getInstalledApps(): List<FileItem> {
-        val apps = mutableListOf<FileItem>()
-        val packageManager = context.packageManager
-
-        val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-
-        for (appInfo in installedApps) {
-            // Only show user-installed apps (not system apps)
-            if (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
-                apps.add(createFileItemFromApp(appInfo))
-            }
-        }
-
-        return apps
-    }
+    private fun getInstalledApps(): List<FileItem> =
+        AppStorageUtils.userInstalledApps(context).map { createFileItemFromApp(it) }
 
     private fun createFileItemFromApp(appInfo: ApplicationInfo): FileItem {
         val packageManager = context.packageManager
