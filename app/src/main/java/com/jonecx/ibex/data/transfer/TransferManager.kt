@@ -98,6 +98,12 @@ class DefaultTransferManager(
     private var loaded = false
     private val loadMutex = Mutex()
 
+    // Serializes journal writes and reads the snapshot inside the lock, so the freshest committed queue
+    // reaches disk. Without it two concurrent saves race and the one holding an older snapshot can win,
+    // persisting stale state (a dropped pause, a dismissed job resurrected on reboot).
+    private val persistMutex = Mutex()
+    private suspend fun persist() = persistMutex.withLock { journal.save(jobsState.value) }
+
     // Populate the in-memory queue from the journal exactly once, mapping interrupted work back to QUEUED.
     // Called by every entry point so a reboot-triggered worker resumes even before the UI is created.
     private suspend fun ensureLoaded() {
@@ -142,7 +148,7 @@ class DefaultTransferManager(
         appScope.launch {
             ensureLoaded()
             jobsState.update { it + job }
-            journal.save(jobsState.value)
+            persist()
             scheduler.ensureRunning()
         }
     }
@@ -178,7 +184,7 @@ class DefaultTransferManager(
         // A running job is flipped to PAUSED by runJob's catch; a still-queued one never reaches the engine,
         // so mark it here. A checkpoint of its bytes/files is already persisted; the temp stays for resume.
         updateJob(jobId) { if (it.status == TransferStatus.QUEUED) it.copy(status = TransferStatus.PAUSED) else it }
-        appScope.launch { journal.save(jobsState.value) }
+        appScope.launch { persist() }
     }
 
     override fun resume(jobId: String) {
@@ -186,7 +192,7 @@ class DefaultTransferManager(
         cancelledIds.remove(jobId)
         updateJob(jobId) { if (it.status == TransferStatus.PAUSED) it.copy(status = TransferStatus.QUEUED) else it }
         appScope.launch {
-            journal.save(jobsState.value)
+            persist()
             // The engine skips already-finished files and continues from the .ibexpart temp.
             if (jobsState.value.any { it.status == TransferStatus.QUEUED }) scheduler.ensureRunning()
         }
@@ -197,7 +203,7 @@ class DefaultTransferManager(
             if (it.status == TransferStatus.QUEUED || it.status == TransferStatus.RUNNING) pausedIds.add(it.id)
         }
         updateJob { if (it.status == TransferStatus.QUEUED) it.copy(status = TransferStatus.PAUSED) else it }
-        appScope.launch { journal.save(jobsState.value) }
+        appScope.launch { persist() }
     }
 
     override fun retry(jobId: String) {
@@ -206,7 +212,7 @@ class DefaultTransferManager(
         pausedIds.remove(jobId)
         updateJob(jobId) { if (it.status == TransferStatus.FAILED) it.copy(status = TransferStatus.QUEUED) else it }
         appScope.launch {
-            journal.save(jobsState.value)
+            persist()
             if (jobsState.value.any { it.status == TransferStatus.QUEUED }) scheduler.ensureRunning()
         }
     }
@@ -216,7 +222,7 @@ class DefaultTransferManager(
         cancelledIds.remove(jobId)
         pausedIds.remove(jobId)
         jobsState.update { jobs -> jobs.filterNot { it.id == jobId && it.status == TransferStatus.FAILED } }
-        appScope.launch { journal.save(jobsState.value) }
+        appScope.launch { persist() }
     }
 
     override fun recoverAndResume() {
@@ -287,7 +293,7 @@ class DefaultTransferManager(
                 // Firm up the total as each top-level item's subtree is counted; the bar leaves "Preparing…" then.
                 updateJob(job.id) { it.copy(totalFiles = measuredFiles, totalBytes = measuredBytes) }
             }
-            journal.save(jobsState.value)
+            persist()
 
             // Only now, with every source copied without error, remove the originals for a MOVE — and only
             // if the byte/file counts prove the copy is actually complete. A partial copy keeps the source.
@@ -302,7 +308,7 @@ class DefaultTransferManager(
                 }
             }
             setStatus(job.id, TransferStatus.COMPLETED)
-            journal.save(jobsState.value)
+            persist()
             emitCompletions(job)
             pruneFinished()
             completedSuccess = true
@@ -319,7 +325,7 @@ class DefaultTransferManager(
                     elapsedMs = it.elapsedMs + runMs(),
                 )
             }
-            journal.save(jobsState.value)
+            persist()
         } catch (e: CancellationException) {
             // Whole worker was stopped (system, reboot). Checkpoint progress and leave the job QUEUED to resume.
             updateJob(job.id) {
@@ -330,12 +336,12 @@ class DefaultTransferManager(
                     elapsedMs = it.elapsedMs + runMs(),
                 )
             }
-            journal.save(jobsState.value)
+            persist()
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Transfer job failed: ${job.id}")
             updateJob(job.id) { it.copy(status = TransferStatus.FAILED, elapsedMs = it.elapsedMs + runMs()) }
-            journal.save(jobsState.value)
+            persist()
             // Keep the FAILED job (and its .ibexpart temp) so the sheet can offer a retry; pruneFinished
             // clears only COMPLETED/CANCELLED.
             pruneFinished()
@@ -407,7 +413,7 @@ class DefaultTransferManager(
             val now = System.currentTimeMillis()
             if (now - lastCheckpointMs >= CHECKPOINT_THROTTLE_MS) {
                 updateJob(job.id) { it.copy(bytesDone = bytesDone, filesDone = filesDone) }
-                journal.save(jobsState.value)
+                persist()
                 lastCheckpointMs = now
             }
         }
@@ -455,7 +461,7 @@ class DefaultTransferManager(
 
     private suspend fun finishCancelled(jobId: String) {
         setStatus(jobId, TransferStatus.CANCELLED)
-        journal.save(jobsState.value)
+        persist()
         pruneFinished()
     }
 
@@ -474,16 +480,19 @@ class DefaultTransferManager(
     // Drop terminal jobs from the live queue + journal so the bar reflects only in-flight work. PAUSED and
     // FAILED are not terminal here (both wait on the user), so they stay put with their temps.
     private suspend fun pruneFinished() {
-        val remaining = jobsState.value.filter {
-            it.status == TransferStatus.QUEUED ||
-                it.status == TransferStatus.RUNNING ||
-                it.status == TransferStatus.PAUSED ||
-                it.status == TransferStatus.FAILED
+        // Filter inside the atomic update so a job enqueued concurrently is never overwritten away.
+        var pruned = false
+        jobsState.update { jobs ->
+            val remaining = jobs.filter {
+                it.status == TransferStatus.QUEUED ||
+                    it.status == TransferStatus.RUNNING ||
+                    it.status == TransferStatus.PAUSED ||
+                    it.status == TransferStatus.FAILED
+            }
+            pruned = remaining.size != jobs.size
+            remaining
         }
-        if (remaining.size != jobsState.value.size) {
-            jobsState.update { remaining }
-            journal.save(remaining)
-        }
-        cancelledIds.retainAll(remaining.map { it.id }.toSet())
+        if (pruned) persist()
+        cancelledIds.retainAll(jobsState.value.map { it.id }.toSet())
     }
 }
