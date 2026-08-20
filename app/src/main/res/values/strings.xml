@@ -164,17 +164,9 @@
     <string name="settings_player">Player</string>
     <string name="settings_player_description">Playback, controls, buffering, and gestures</string>
     <string name="settings_reset">Reset to defaults</string>
-    <string name="settings_section_layout">Layout</string>
     <string name="settings_section_simple">Playback</string>
     <string name="settings_section_advanced">Advanced</string>
     <string name="settings_section_developer">Developer</string>
-    <string name="settings_play_position">Play button position</string>
-    <string name="settings_play_position_hint">Where the play controls sit over the video</string>
-    <string name="settings_play_position_center">Center</string>
-    <string name="settings_play_position_top_start">Top start</string>
-    <string name="settings_play_position_top_end">Top end</string>
-    <string name="settings_play_position_bottom_start">Bottom start</string>
-    <string name="settings_play_position_bottom_end">Bottom end</string>
     <string name="settings_seek_step">Seek step</string>
     <string name="settings_subtitles_default">Subtitles on by default</string>
     <string name="settings_keep_controls">Keep controls visible</string>

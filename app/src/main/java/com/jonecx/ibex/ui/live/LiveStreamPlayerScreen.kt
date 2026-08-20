@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import com.jonecx.azmaree.player.AzmareePlayer
 import com.jonecx.azmaree.player.model.PlayerSettings
 import com.jonecx.azmaree.player.model.PlayerTelemetry
+import com.jonecx.azmaree.player.model.withMaterialAccent
 import com.jonecx.ibex.R
 import com.jonecx.ibex.data.preferences.PlayerSettingsPreferencesContract
 import org.koin.androidx.compose.koinViewModel
@@ -41,18 +41,12 @@ fun LiveStreamPlayerScreen(
 
     val playerSettingsPreferences = koinInject<PlayerSettingsPreferencesContract>()
     val telemetry = koinInject<PlayerTelemetry>()
-    val accent = MaterialTheme.colorScheme.primary
     val defaults = remember { PlayerSettings() }
     val stored by playerSettingsPreferences.settings.collectAsState(initial = defaults)
-    val settings = remember(stored, accent) {
-        stored.copy(
-            style = stored.style.copy(
-                progressPlayedColor = accent,
-                bufferingIndicatorColor = accent,
-                errorActionColor = accent,
-                statsAccentColor = accent,
-            ),
-        )
+    // BrandRed is the primary accent; the SDK helper paints every accent surface, thumb-arc dial included.
+    val accentStyle = stored.style.withMaterialAccent()
+    val settings = remember(stored, accentStyle) {
+        stored.copy(style = accentStyle)
     }
 
     val pagerState = rememberPagerState(

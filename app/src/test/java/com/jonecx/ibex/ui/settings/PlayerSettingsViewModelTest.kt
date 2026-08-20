@@ -1,7 +1,6 @@
 package com.jonecx.ibex.ui.settings
 
 import app.cash.turbine.test
-import com.jonecx.azmaree.player.model.PlayButtonPosition
 import com.jonecx.azmaree.player.model.PlayerSettings
 import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +44,6 @@ class PlayerSettingsViewModelTest {
         viewModel.settings.test {
             val defaults = awaitSettings()
             assertEquals(10_000L, defaults.controls.seekStepMs)
-            assertEquals(PlayButtonPosition.CENTER, defaults.controls.playButtonPosition)
             // Ibex ships cast visible.
             assertTrue(defaults.cast.enabled)
         }
@@ -64,13 +62,10 @@ class PlayerSettingsViewModelTest {
     @Test
     fun `update writes through to preferences`() = runTest {
         viewModel.update {
-            it.copy(controls = it.controls.copy(playButtonPosition = PlayButtonPosition.BOTTOM_END))
+            it.copy(controls = it.controls.copy(hdMinHeight = 1080))
         }
 
-        assertEquals(
-            PlayButtonPosition.BOTTOM_END,
-            fakePreferences.currentSettings().controls.playButtonPosition,
-        )
+        assertEquals(1080, fakePreferences.currentSettings().controls.hdMinHeight)
     }
 
     @Test

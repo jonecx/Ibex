@@ -8,9 +8,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.jonecx.azmaree.player.model.CastConfig
-import com.jonecx.azmaree.player.model.PlayButtonPosition
 import com.jonecx.azmaree.player.model.PlayerSettings
 import com.jonecx.azmaree.player.model.PlayerStyle
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +39,6 @@ interface PlayerSettingsPreferencesContract {
 
 // Stored by stable name so a dropped field falls back to the SDK default instead of crashing.
 internal object PlayerSettingsKeys {
-    val PLAY_BUTTON_POSITION = stringPreferencesKey("play_button_position")
     val SEEK_STEP_MS = longPreferencesKey("seek_step_ms")
     val SUBTITLES_DEFAULT = booleanPreferencesKey("subtitles_default")
     val VOLUME_SWIPE = booleanPreferencesKey("volume_swipe")
@@ -105,7 +102,6 @@ internal fun Preferences.toPlayerSettings(): PlayerSettings {
                 ?: defaults.controls.subtitlesEnabledByDefault,
             hdMinHeight = this[keys.HD_MIN_HEIGHT] ?: defaults.controls.hdMinHeight,
             uhdMinHeight = this[keys.UHD_MIN_HEIGHT] ?: defaults.controls.uhdMinHeight,
-            playButtonPosition = playButtonPosition(defaults.controls.playButtonPosition),
         ),
         gestures = defaults.gestures.copy(
             volumeSwipeEnabled = this[keys.VOLUME_SWIPE] ?: defaults.gestures.volumeSwipeEnabled,
@@ -125,7 +121,6 @@ internal fun Preferences.toPlayerSettings(): PlayerSettings {
 // Inverse of toPlayerSettings: flatten the edited domain object back onto the stored keys.
 internal fun MutablePreferences.writeFrom(settings: PlayerSettings) {
     val keys = PlayerSettingsKeys
-    this[keys.PLAY_BUTTON_POSITION] = settings.controls.playButtonPosition.name
     this[keys.SEEK_STEP_MS] = settings.controls.seekStepMs
     this[keys.SUBTITLES_DEFAULT] = settings.controls.subtitlesEnabledByDefault
     this[keys.VOLUME_SWIPE] = settings.gestures.volumeSwipeEnabled
@@ -146,9 +141,3 @@ internal fun MutablePreferences.writeFrom(settings: PlayerSettings) {
     this[keys.FALLBACK_BRIGHTNESS] = settings.gestures.fallbackBrightness
     this[keys.DEBUG_OVERLAY] = settings.debug.statsOverlayEnabled
 }
-
-// Stored by name, so a value dropped from the enum falls back instead of crashing.
-private fun Preferences.playButtonPosition(default: PlayButtonPosition): PlayButtonPosition =
-    PlayButtonPosition.entries.firstOrNull {
-        it.name == this[PlayerSettingsKeys.PLAY_BUTTON_POSITION]
-    } ?: default

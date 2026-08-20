@@ -6,7 +6,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.jonecx.azmaree.player.model.PlayButtonPosition
 import com.jonecx.ibex.MainActivity
 import com.jonecx.ibex.fixtures.FakePlayerSettingsPreferences
 import org.junit.Assert.assertEquals
@@ -50,10 +49,9 @@ class PlayerSettingsScreenTest : KoinTest {
     fun displaysSectionsAndEntries() {
         navigateToPlayerSettings()
 
-        composeTestRule.onNodeWithText("Layout").assertIsDisplayed()
         composeTestRule.onNodeWithText("Playback").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Seek step").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Cast").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Seek step").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cast").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -83,19 +81,6 @@ class PlayerSettingsScreenTest : KoinTest {
         composeTestRule.waitForIdle()
 
         assertTrue(fakePreferences.currentSettings().controls.subtitlesEnabledByDefault)
-    }
-
-    @Test
-    fun playButtonPositionChangeUpdatesPreference() {
-        navigateToPlayerSettings()
-
-        composeTestRule.onNodeWithContentDescription("Top start").performClick()
-        composeTestRule.waitForIdle()
-
-        assertEquals(
-            PlayButtonPosition.TOP_START,
-            fakePreferences.currentSettings().controls.playButtonPosition,
-        )
     }
 
     @Test

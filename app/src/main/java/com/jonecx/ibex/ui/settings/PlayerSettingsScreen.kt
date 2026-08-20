@@ -1,26 +1,14 @@
 package com.jonecx.ibex.ui.settings
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,11 +17,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import com.jonecx.azmaree.player.model.PlayButtonPosition
 import com.jonecx.azmaree.player.model.PlaybackConfig
 import com.jonecx.azmaree.player.model.PlayerSettings
 import com.jonecx.azmaree.player.model.PlayerStyle
@@ -41,7 +26,6 @@ import com.jonecx.ibex.R
 import com.jonecx.ibex.data.preferences.PlayerSettingsPreferencesContract
 import com.jonecx.ibex.ui.components.IbexTopAppBar
 import com.jonecx.ibex.ui.settings.components.SettingsChoiceRow
-import com.jonecx.ibex.ui.settings.components.SettingsHint
 import com.jonecx.ibex.ui.settings.components.SettingsSectionHeader
 import com.jonecx.ibex.ui.settings.components.SettingsSliderRow
 import com.jonecx.ibex.ui.settings.components.SettingsSwitchRow
@@ -54,15 +38,6 @@ private typealias SettingsEdit = ((PlayerSettings) -> PlayerSettings) -> Unit
 
 // "Auto"/"Unlimited" caps are stored as the SDK's no-limit value.
 private const val NO_CAP = Int.MAX_VALUE
-
-// Every placement the player supports, mapped onto the preview frame it will occupy.
-private val PLAY_BUTTON_SPOTS = listOf(
-    PlayButtonPosition.TOP_START to Alignment.TopStart,
-    PlayButtonPosition.TOP_END to Alignment.TopEnd,
-    PlayButtonPosition.CENTER to Alignment.Center,
-    PlayButtonPosition.BOTTOM_START to Alignment.BottomStart,
-    PlayButtonPosition.BOTTOM_END to Alignment.BottomEnd,
-)
 
 @Composable
 fun PlayerSettingsScreen(
@@ -120,8 +95,6 @@ internal fun PlayerSettingsScreenContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            LayoutSection(settings, onUpdate)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             PlaybackSection(settings, onUpdate)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             AdvancedSection(settings, onUpdate)
@@ -135,95 +108,6 @@ internal fun PlayerSettingsScreenContent(
             }
         }
     }
-}
-
-@Composable
-private fun LayoutSection(settings: PlayerSettings, onUpdate: SettingsEdit) {
-    SettingsSectionHeader(stringResource(R.string.settings_section_layout))
-    PlayButtonPositionPicker(
-        selected = settings.controls.playButtonPosition,
-        onSelect = { position ->
-            onUpdate { it.copy(controls = it.controls.copy(playButtonPosition = position)) }
-        },
-    )
-}
-
-// Miniature of the video frame: each spot sits where the play row will, above a stand-in seek bar.
-@Composable
-private fun PlayButtonPositionPicker(
-    selected: PlayButtonPosition,
-    onSelect: (PlayButtonPosition) -> Unit,
-) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(stringResource(R.string.settings_play_position), style = MaterialTheme.typography.bodyLarge)
-        SettingsHint(stringResource(R.string.settings_play_position_hint))
-        Box(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .fillMaxWidth()
-                .height(160.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant),
-            )
-            PLAY_BUTTON_SPOTS.forEach { (position, alignment) ->
-                PositionSpot(
-                    label = stringResource(position.labelRes()),
-                    selected = position == selected,
-                    onSelect = { onSelect(position) },
-                    modifier = Modifier
-                        .align(alignment)
-                        .padding(4.dp)
-                        .padding(bottom = if (position.isBottomRow()) 12.dp else 0.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PositionSpot(
-    label: String,
-    selected: Boolean,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        // 48.dp keeps the minimum touch target, and the radio role makes the selection audible.
-        modifier = modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(if (selected) colors.primary else colors.surface)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Filled.PlayArrow,
-            contentDescription = label,
-            tint = if (selected) colors.onPrimary else colors.onSurfaceVariant,
-        )
-    }
-}
-
-private fun PlayButtonPosition.isBottomRow(): Boolean =
-    this == PlayButtonPosition.BOTTOM_START || this == PlayButtonPosition.BOTTOM_END
-
-@StringRes
-private fun PlayButtonPosition.labelRes(): Int = when (this) {
-    PlayButtonPosition.CENTER -> R.string.settings_play_position_center
-    PlayButtonPosition.TOP_START -> R.string.settings_play_position_top_start
-    PlayButtonPosition.TOP_END -> R.string.settings_play_position_top_end
-    PlayButtonPosition.BOTTOM_START -> R.string.settings_play_position_bottom_start
-    PlayButtonPosition.BOTTOM_END -> R.string.settings_play_position_bottom_end
 }
 
 @Composable

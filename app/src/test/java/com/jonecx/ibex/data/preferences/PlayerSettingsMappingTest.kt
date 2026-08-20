@@ -2,7 +2,6 @@ package com.jonecx.ibex.data.preferences
 
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
-import com.jonecx.azmaree.player.model.PlayButtonPosition
 import com.jonecx.azmaree.player.model.PlayerSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -16,7 +15,6 @@ class PlayerSettingsMappingTest {
         val settings = emptyPreferences().toPlayerSettings()
 
         assertEquals(10_000L, settings.controls.seekStepMs)
-        assertEquals(PlayButtonPosition.CENTER, settings.controls.playButtonPosition)
         // The SDK ships cast off; the app ships it visible unless the user opts out.
         assertTrue(settings.cast.enabled)
     }
