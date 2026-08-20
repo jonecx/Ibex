@@ -27,8 +27,12 @@ class MediaStoreFileTrashManager(
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.IS_TRASHED, 1)
             }
-            val updated = context.contentResolver.update(contentUri, values, null, null)
-            updated > 0
+            // MediaStore rejects trashing media the app doesn't own with a SecurityException; fall back to a direct delete.
+            try {
+                context.contentResolver.update(contentUri, values, null, null) > 0
+            } catch (_: SecurityException) {
+                deleteFileDirect(fileItem)
+            }
         } else {
             deleteFileDirect(fileItem)
         }
