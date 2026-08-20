@@ -57,6 +57,18 @@ class TransferEngine(
     private fun isRenameMove(source: TransferSource, destinationDir: String, operation: ClipboardOperation) =
         operation == ClipboardOperation.MOVE && handlerFor(source.path) === handlerFor(destinationDir)
 
+    // Stops the instant rename from silently replacing an existing destination. OVERWRITE deleted the old
+    // item and RENAME already chose a free name, so both are safe; AUTO ran no collision check, so it may
+    // rename in place only when the name is free, else it falls through to the auto-renaming copy path.
+    private suspend fun renameWontClobber(
+        conflictPolicy: ConflictPolicy,
+        dstHandler: ProtocolFileHandler,
+        destinationDir: String,
+        name: String,
+    ): Boolean =
+        conflictPolicy != ConflictPolicy.AUTO ||
+            dstHandler.sizeOf(buildChildPath(destinationDir, name)) < 0L
+
     // Copies one top-level source into destinationDir and returns a TransferOutcome: relocated is true when a
     // same-volume MOVE was an instant rename (source already gone); measured is the file/byte count found while
     // walking this source, so the caller gets the total from the copy pass with no separate remote walk.
@@ -102,6 +114,7 @@ class TransferEngine(
         // after the old item was removed). A RENAME to a new name falls through to copy-then-delete.
         if (targetName == source.name &&
             isRenameMove(source, destinationDir, operation) &&
+            renameWontClobber(conflictPolicy, dstHandler, destinationDir, source.name) &&
             srcHandler.moveFile(source.toFileItem(), destinationDir)
         ) {
             // The rename relocated the whole subtree at once; count it as a single unit.

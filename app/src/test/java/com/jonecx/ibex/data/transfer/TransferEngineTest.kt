@@ -183,6 +183,23 @@ class TransferEngineTest {
     }
 
     @Test
+    fun `transfer_sameHandlerMove_nameCollisionWithDifferentFile_doesNotOverwrite`() = runTest {
+        // A different file already owns the name. AUTO must never let the instant rename clobber it: it
+        // falls through to a copy under a free name (source deletion is the caller's job, so src stays).
+        val existing = "keep me".toByteArray()
+        handler.files["$MEM_SCHEME/dest/a.txt"] = existing
+        val data = "moved content".toByteArray()
+        val src = source("a.txt", data)
+
+        val outcome = engine.transfer(src, "$MEM_SCHEME/dest", ClipboardOperation.MOVE, ConflictPolicy.AUTO, RecordingListener())
+
+        assertFalse(outcome.relocated)
+        assertEquals(0, handler.moveCalls)
+        assertArrayEquals(existing, handler.files["$MEM_SCHEME/dest/a.txt"])
+        assertArrayEquals(data, handler.files["$MEM_SCHEME/dest/a (1).txt"])
+    }
+
+    @Test
     fun `transfer_directoryTree_measuresLeafFilesAndBytesDuringCopy`() = runTest {
         // The count now comes from the copy walk itself, so a nested tree must report every leaf once.
         handler.dirs.add("$MEM_SCHEME/src/Folder")
