@@ -22,40 +22,58 @@ class SmbContextProviderTest {
     }
 
     @Test
-    fun `register and get returns stored context`() {
-        val context = FakeTestCifsContext()
-        provider.register("192.168.1.1", context)
+    fun `getOrCreate stores context retrievable by get`() {
+        val context = provider.getOrCreate("192.168.1.1", "sig") { FakeTestCifsContext() }
 
         assertEquals(context, provider.get("192.168.1.1"))
     }
 
     @Test
-    fun `register overwrites existing context for same host`() {
-        val first = FakeTestCifsContext()
-        val second = FakeTestCifsContext()
-
-        provider.register("host", first)
-        provider.register("host", second)
-
-        assertEquals(second, provider.get("host"))
-    }
-
-    @Test
     fun `get returns null for different host`() {
-        provider.register("host-a", FakeTestCifsContext())
+        provider.getOrCreate("host-a", "sig") { FakeTestCifsContext() }
         assertNull(provider.get("host-b"))
     }
 
     @Test
     fun `multiple hosts are stored independently`() {
-        val ctxA = FakeTestCifsContext()
-        val ctxB = FakeTestCifsContext()
-
-        provider.register("host-a", ctxA)
-        provider.register("host-b", ctxB)
+        val ctxA = provider.getOrCreate("host-a", "sig") { FakeTestCifsContext() }
+        val ctxB = provider.getOrCreate("host-b", "sig") { FakeTestCifsContext() }
 
         assertEquals(ctxA, provider.get("host-a"))
         assertEquals(ctxB, provider.get("host-b"))
+    }
+
+    @Test
+    fun `getOrCreate builds once and reuses context for same signature`() {
+        var builds = 0
+        val first = provider.getOrCreate("host", "sig-1") {
+            builds++
+            FakeTestCifsContext()
+        }
+        val second = provider.getOrCreate("host", "sig-1") {
+            builds++
+            FakeTestCifsContext()
+        }
+
+        assertEquals(1, builds)
+        assertEquals(first, second)
+    }
+
+    @Test
+    fun `getOrCreate rebuilds when signature changes`() {
+        var builds = 0
+        val first = provider.getOrCreate("host", "sig-1") {
+            builds++
+            FakeTestCifsContext()
+        }
+        val second = provider.getOrCreate("host", "sig-2") {
+            builds++
+            FakeTestCifsContext()
+        }
+
+        assertEquals(2, builds)
+        assertTrue("Different signature should yield a different context", first !== second)
+        assertEquals(second, provider.get("host"))
     }
 
     @Test

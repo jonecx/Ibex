@@ -43,6 +43,15 @@ class SmbFileRepository(
 
     private fun createSmbContext(connection: NetworkConnection): CIFSContext {
         cachedContext?.let { return it }
+        // Reuse the host's live context (shared with thumbnails, player, transfers); rebuild only on cred change.
+        val context = smbContextProvider.getOrCreate(connection.host, connection.contextSignature()) {
+            buildSmbContext(connection)
+        }
+        cachedContext = context
+        return context
+    }
+
+    private fun buildSmbContext(connection: NetworkConnection): CIFSContext {
         val properties = Properties().apply {
             setProperty("jcifs.smb.client.responseTimeout", RESPONSE_TIMEOUT_MS.toString())
             setProperty("jcifs.smb.client.soTimeout", SOCKET_TIMEOUT_MS.toString())
@@ -50,7 +59,7 @@ class SmbFileRepository(
             setProperty("jcifs.smb.client.maxVersion", SMB_MAX_VERSION)
         }
         val baseContext = BaseContext(PropertyConfiguration(properties))
-        val context = if (connection.anonymous) {
+        return if (connection.anonymous) {
             baseContext.withAnonymousCredentials()
         } else {
             baseContext.withCredentials(
@@ -61,10 +70,11 @@ class SmbFileRepository(
                 ),
             )
         }
-        cachedContext = context
-        smbContextProvider.register(connection.host, context)
-        return context
     }
+
+    // Hashed so the raw password is never held in the long-lived context provider; only used to detect cred changes.
+    private fun NetworkConnection.contextSignature(): String =
+        "$host:$port:$anonymous:$username:$password".hashCode().toString()
 
     private fun buildRootUrl(connection: NetworkConnection): String {
         return if (connection.port == connection.protocol.defaultPort) {

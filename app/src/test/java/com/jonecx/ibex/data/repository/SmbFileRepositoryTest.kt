@@ -123,6 +123,19 @@ class SmbFileRepositoryTest {
     }
 
     @Test
+    fun `repeated visits reuse the same context instead of rebuilding`() = runTest {
+        fakePreferences.addConnection(NetworkConnectionFixtures.smbConnection)
+
+        repeat(3) {
+            createRepository(connectionId = "smb-1").getFiles("smb://192.168.1.100/share/").test {
+                awaitError() // network error expected
+            }
+        }
+
+        assertEquals(1, fakeSmbContextProvider.buildCount)
+    }
+
+    @Test
     fun `anonymous connection creates context without credentials`() = runTest {
         fakePreferences.addConnection(NetworkConnectionFixtures.anonymousConnection)
         val repo = createRepository(connectionId = "anon-1")

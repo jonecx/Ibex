@@ -5,11 +5,22 @@ import jcifs.CIFSContext
 
 class FakeSmbContextProvider : SmbContextProviderContract {
 
-    private val contexts = mutableMapOf<String, CIFSContext>()
+    private data class Entry(val signature: String, val context: CIFSContext)
 
-    override fun register(host: String, context: CIFSContext) {
-        contexts[host] = context
+    private val contexts = mutableMapOf<String, Entry>()
+
+    // Counts how often factory actually ran, so tests can assert contexts are reused, not rebuilt.
+    var buildCount = 0
+        private set
+
+    override fun get(host: String): CIFSContext? = contexts[host]?.context
+
+    override fun getOrCreate(host: String, signature: String, factory: () -> CIFSContext): CIFSContext {
+        val existing = contexts[host]
+        if (existing != null && existing.signature == signature) return existing.context
+        val created = factory()
+        buildCount++
+        contexts[host] = Entry(signature, created)
+        return created
     }
-
-    override fun get(host: String): CIFSContext? = contexts[host]
 }

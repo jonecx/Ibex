@@ -4,8 +4,10 @@ import jcifs.CIFSContext
 import java.util.concurrent.ConcurrentHashMap
 
 interface SmbContextProviderContract {
-    fun register(host: String, context: CIFSContext)
     fun get(host: String): CIFSContext?
+
+    // Reuse the live context for a host, rebuilding only when the connection signature changes.
+    fun getOrCreate(host: String, signature: String, factory: () -> CIFSContext): CIFSContext
 
     companion object {
         fun smbCacheKey(path: String): String =
@@ -15,11 +17,14 @@ interface SmbContextProviderContract {
 
 class SmbContextProvider() : SmbContextProviderContract {
 
-    private val contexts = ConcurrentHashMap<String, CIFSContext>()
+    private data class Entry(val signature: String, val context: CIFSContext)
 
-    override fun register(host: String, context: CIFSContext) {
-        contexts[host] = context
-    }
+    private val contexts = ConcurrentHashMap<String, Entry>()
 
-    override fun get(host: String): CIFSContext? = contexts[host]
+    override fun get(host: String): CIFSContext? = contexts[host]?.context
+
+    override fun getOrCreate(host: String, signature: String, factory: () -> CIFSContext): CIFSContext =
+        contexts.compute(host) { _, existing ->
+            if (existing != null && existing.signature == signature) existing else Entry(signature, factory())
+        }!!.context
 }
