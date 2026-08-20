@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
+   Auto Backup rules for API 30 (fullBackupContent). API 31+ uses data_extraction_rules.xml.
+   Both files must stay in sync: exclude anything wrapped by the non-exportable Keystore master key.
    See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Tink keyset is encrypted by the Keystore master key, which cannot be restored; stale ciphertext would break decryption. -->
+    <exclude domain="sharedpref" path="ibex_smb_keyset_prefs.xml" />
+    <!-- SMB credentials are AEAD-encrypted with that keyset, so they are useless once the key is gone. -->
+    <exclude domain="file" path="datastore/network_connections.preferences_pb" />
 </full-backup-content>

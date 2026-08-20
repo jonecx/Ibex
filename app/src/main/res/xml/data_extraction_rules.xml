@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
+   Data extraction rules for API 31+ (cloud backup and device transfer).
+   Keep in sync with backup_rules.xml: exclude anything wrapped by the non-exportable Keystore master key.
    See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Tink keyset is encrypted by the Keystore master key, which cannot be restored; stale ciphertext would break decryption. -->
+        <exclude domain="sharedpref" path="ibex_smb_keyset_prefs.xml" />
+        <!-- SMB credentials are AEAD-encrypted with that keyset, so they are useless once the key is gone. -->
+        <exclude domain="file" path="datastore/network_connections.preferences_pb" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Keystore keys do not transfer device-to-device either, so exclude the same artifacts here. -->
+        <exclude domain="sharedpref" path="ibex_smb_keyset_prefs.xml" />
+        <exclude domain="file" path="datastore/network_connections.preferences_pb" />
     </device-transfer>
-    -->
 </data-extraction-rules>
