@@ -75,8 +75,8 @@ class FileSystemMoveManager(
                     source.copyRecursively(destination, overwrite = false)
                 } else {
                     source.copyTo(destination, overwrite = false)
+                    true
                 }
-                true
             } catch (e: Exception) {
                 false
             }
