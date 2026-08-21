@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787268644867,
+  "lastUpdate": 1787270520807,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex APK Size": [
@@ -2186,6 +2186,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "APK / resources",
             "value": 851432,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / native libs",
+            "value": 3058872,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "9f71ecb76ebba0ae73217e6745810a97ab587567",
+          "message": "smb: open handles through an injectable factory so repository tests skip real SMB I/O\n\nThe unit tests hit a hardcoded LAN IP with 30s jcifs timeouts, hanging and flaking on CI. Tests now fail fast in memory.",
+          "timestamp": "2026-08-20T16:57:25-07:00",
+          "tree_id": "2afe0b1de8fd602c3c258e095e1a4031854d5a2c",
+          "url": "https://github.com/jonecx/Ibex/commit/9f71ecb76ebba0ae73217e6745810a97ab587567"
+        },
+        "date": 1787270520210,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "APK / total",
+            "value": 13484921,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / dex (code)",
+            "value": 8033632,
+            "unit": "bytes"
+          },
+          {
+            "name": "APK / resources",
+            "value": 851810,
             "unit": "bytes"
           },
           {
