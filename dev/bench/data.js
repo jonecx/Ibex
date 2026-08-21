@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787269598204,
+  "lastUpdate": 1787271575501,
   "repoUrl": "https://github.com/jonecx/Ibex",
   "entries": {
     "Ibex Macrobenchmarks (Pixel 7 Pro local)": [
@@ -2354,6 +2354,165 @@ window.BENCHMARK_DATA = {
           {
             "name": "StartupBenchmark.startupColdBaselineProfile / timeToInitialDisplayMs (median)",
             "value": 2509.240297,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "committer": {
+            "email": "jonecx@users.noreply.github.com",
+            "name": "jonecx",
+            "username": "jonecx"
+          },
+          "distinct": true,
+          "id": "9f71ecb76ebba0ae73217e6745810a97ab587567",
+          "message": "smb: open handles through an injectable factory so repository tests skip real SMB I/O\n\nThe unit tests hit a hardcoded LAN IP with 30s jcifs timeouts, hanging and flaking on CI. Tests now fail fast in memory.",
+          "timestamp": "2026-08-20T16:57:25-07:00",
+          "tree_id": "2afe0b1de8fd602c3c258e095e1a4031854d5a2c",
+          "url": "https://github.com/jonecx/Ibex/commit/9f71ecb76ebba0ae73217e6745810a97ab587567"
+        },
+        "date": 1787271574894,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameDurationCpuMs P50",
+            "value": 300.4300525,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameDurationCpuMs P90",
+            "value": 438.9683246,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameDurationCpuMs P99",
+            "value": 659.7093138400006,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameOverrunMs P50",
+            "value": 430.835455,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameOverrunMs P90",
+            "value": 628.9197266000002,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridCompilationNone / frameOverrunMs P99",
+            "value": 975.4357186300002,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameDurationCpuMs P50",
+            "value": 181.980561,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameDurationCpuMs P90",
+            "value": 218.34477880000003,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameDurationCpuMs P99",
+            "value": 238.8199866,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameOverrunMs P50",
+            "value": 244.008527,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameOverrunMs P90",
+            "value": 293.6011156,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridCompilationNone / frameOverrunMs P99",
+            "value": 327.15952034,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameDurationCpuMs P50",
+            "value": 297.848774,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameDurationCpuMs P90",
+            "value": 441.74710120000003,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameDurationCpuMs P99",
+            "value": 586.2182920399999,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameOverrunMs P50",
+            "value": 393.083983,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameOverrunMs P90",
+            "value": 631.9773238,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollImagesGridBaselineProfile / frameOverrunMs P99",
+            "value": 783.68168532,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameDurationCpuMs P50",
+            "value": 186.210086,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameDurationCpuMs P90",
+            "value": 229.61009980000003,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameDurationCpuMs P99",
+            "value": 250.38303492999998,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameOverrunMs P50",
+            "value": 256.21592050000004,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameOverrunMs P90",
+            "value": 302.0186173,
+            "unit": "ms"
+          },
+          {
+            "name": "ScrollBenchmark.scrollVideosGridBaselineProfile / frameOverrunMs P99",
+            "value": 339.4304489199999,
+            "unit": "ms"
+          },
+          {
+            "name": "StartupBenchmark.startupWarm / timeToInitialDisplayMs (median)",
+            "value": 989.587778,
+            "unit": "ms"
+          },
+          {
+            "name": "StartupBenchmark.startupColdNoCompilation / timeToInitialDisplayMs (median)",
+            "value": 3733.565387,
+            "unit": "ms"
+          },
+          {
+            "name": "StartupBenchmark.startupColdBaselineProfile / timeToInitialDisplayMs (median)",
+            "value": 3315.077159,
             "unit": "ms"
           }
         ]
